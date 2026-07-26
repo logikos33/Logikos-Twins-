@@ -97,3 +97,50 @@ Ver `DECISIONS.md`.
 
 - `WEBHOOK_BASE_URL` (interno vs público) — mesma classe do `S3_PUBLIC_ENDPOINT`; em
   produção fica vazio e usa a APP_URL.
+
+### D3 — Worker real (sem GPU) · 2026-07-26
+
+**Adicionado**
+
+- Worker completo: `handler.py` (SDK runpod) + `pipeline/` — download, normalização
+  ffmpeg (container unificado, rotação materializada nos pixels, **áudio removido e o
+  objeto bruto substituído** pela versão muda — decisão 8/LGPD), inferência plugável
+  (motor real na GPU; NPZs da fixture no dev), conversão NPZ→artefatos com filtro de
+  confiança, voxel-downsample próprio (numpy puro) e teto de 35 MB imposto como
+  invariante, upload com `video_key` real para a retenção.
+- Dockerfile CUDA 12.8: motor pinado em `1f480ae`, sem kaolin (ADR-0007), ffmpeg na
+  imagem. `[TESTAR no plug-in]` marcado onde só GPU valida.
+- mypy strict no ferramental Python (18 arquivos) + gate na CI; 31 testes Python.
+
+**Provado**
+
+- E2E do worker REAL no compose: WebM/VP9 com áudio → MP4 H.264 mudo no storage
+  (ffprobe: só stream de vídeo), 1,6 M pontos (22,9 MB) publicados, scan `done` em
+  1,2 s de pipeline.
+
+**Registrado**
+
+- ffmpeg moderno descarta a tag `rotate`; rotação real de celular é Display Matrix
+  (`-display_rotation`) — o teste reproduz o mecanismo verdadeiro.
+
+### D4 — Viewer "controle do mapa" · 2026-07-26
+
+**Adicionado**
+
+- Viewer Three.js com arquitetura React-fora-da-cena (a cena vive em ViewerEngine;
+  o React só faz UI): PLY com barra de progresso, órbita / voo WASD / planta baixa,
+  trajetória da câmera + replay animado, corte por altura, camadas ligáveis.
+- **Medição com calibração de escala**: dois picks + distância real → fator salvo em
+  `scans.scale`; medições passam a exibir metros. Verificado ao vivo: 7,09 u
+  calibrados como 5,67 m → fator 0,79999 (0,001% do exato) → remedição exibiu 5,67 m.
+- **Pins de anotação com foto-evidência**: clique na nuvem → pin + texto + JPEG do
+  keyframe cuja câmera estava mais próxima (rota de keyframe com redirect assinado).
+- Rotas: PUT scale, GET/POST annotations, GET keyframe; galeria `/` com thumbnails
+  e link de compartilhamento; picking com rejeição de arraste (clique de órbita não
+  vira ponto de medição).
+- 8 testes novos de lógica pura (escala, formatação, keyframe mais próximo).
+
+**Verificado em navegador**
+
+- Fluxo completo na cena sintética: medição, calibração, pin com foto, planta baixa
+  com corte a 50%, mobile 375×812 sem scroll horizontal.
