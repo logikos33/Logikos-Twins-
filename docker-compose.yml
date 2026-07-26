@@ -122,6 +122,9 @@ services:
       RUNPOD_ENDPOINT_ID: local
       RUNPOD_API_KEY: dev-nao-usado
       RUNPOD_WEBHOOK_SECRET: ${RUNPOD_WEBHOOK_SECRET:-webhook-secret-dev}
+      # O runner chama o webhook DE DENTRO da rede do compose — localhost seria ele
+      # mesmo. Em produção fica vazio e o webhook usa a APP_URL pública.
+      WEBHOOK_BASE_URL: http://web:3000
       ADMIN_TOKEN: ${ADMIN_TOKEN:-admin-token-dev}
       MAX_VIDEO_MB: ${MAX_VIDEO_MB:-300}
       MAX_VIDEO_SECONDS: ${MAX_VIDEO_SECONDS:-180}

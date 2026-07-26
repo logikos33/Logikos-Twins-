@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { completeUpload, findById, InvalidStateError } from "@/lib/services/scans";
+import { dispatchJob, markDispatchFailed } from "@/lib/services/processing";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +57,20 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   }
 
   try {
-    const updated = await completeUpload(scan, parsed.data.parts, durationS);
+    let updated = await completeUpload(scan, parsed.data.parts, durationS);
+
+    // O processamento dispara SOZINHO (ADR-0008): parar de gravar é o último gesto
+    // do usuário. Falha no disparo não desfaz o upload — vira `error` legível e a
+    // reconciliação/retry manual ficam possíveis.
+    if (updated.status === "uploaded") {
+      try {
+        updated = await dispatchJob(updated);
+      } catch (err) {
+        console.error(`disparo do job do scan ${updated.id} falhou:`, err);
+        updated = await markDispatchFailed(updated.id);
+      }
+    }
+
     return NextResponse.json({
       scanId: updated.id,
       status: updated.status,

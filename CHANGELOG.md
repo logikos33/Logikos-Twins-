@@ -71,3 +71,29 @@ Ver `DECISIONS.md`.
   modelo novo; cliente gerado fora do git.
 - Expor `ETag` no CORS do bucket é pré-condição do upload direto — item obrigatório do
   plug-in para o R2.
+
+### D2 — Jobs ponta a ponta · 2026-07-26
+
+**Adicionado**
+
+- **Cena sintética** (`scripts/make_fixture.py`, só numpy): sala 6×4×3 com objetos em
+  posições declaradas, 48 NPZs no schema exato do motor, trajetória circular, PLY
+  binário de 4 MB, poses.json, keyframes. 10 testes geométricos como regressão
+  permanente — incluindo a identidade desprojeção(depth,K,c2w) ≡ world_points, que é a
+  conta que a D5 usa para ancorar detecções (mediana de erro < 0,02 u).
+- Adapter `JobRunner` (payload real do RunPod: input/webhook/policy), disparo
+  automático do job ao concluir o upload, webhook autenticado com comparação de tempo
+  constante, e reconciliação por polling (60 s) no instrumentation hook do Next.
+- Estados ao vivo na página do scan; 10 testes novos de transição de estado.
+
+**Provado**
+
+- Caminho rápido: parar a gravação → `done` em 9 s (webhook na 1ª tentativa).
+- Rede de segurança AO VIVO: com o webhook inalcançável (bug real de rede interna do
+  compose, depois corrigido via `WEBHOOK_BASE_URL`), a reconciliação convergiu o scan
+  para `done` sozinha — exatamente o cenário que o DoD pedia.
+
+**Registrado**
+
+- `WEBHOOK_BASE_URL` (interno vs público) — mesma classe do `S3_PUBLIC_ENDPOINT`; em
+  produção fica vazio e usa a APP_URL.
