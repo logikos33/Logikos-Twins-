@@ -14,6 +14,15 @@ const bodySchema = z.object({
       scan_id: z.string(),
       outputs: z.record(z.string(), z.string()),
       metrics: z.record(z.string(), z.unknown()),
+      // Escala ArUco (D6): opcional; sobrescreve a manual quando presente.
+      scale: z
+        .object({
+          factor: z.number().positive(),
+          method: z.literal("aruco"),
+          marker_side_m: z.number().positive(),
+          views: z.number().int().positive(),
+        })
+        .optional(),
     })
     .nullable()
     .optional(),

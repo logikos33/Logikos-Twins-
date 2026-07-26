@@ -61,6 +61,27 @@ COLORS = {
 
 IMG_W, IMG_H = 518, 388  # resolução de inferência do motor (lado maior 518)
 
+# ---------------------------------------------------------------------------
+# Marcador ArUco plantado no chão (D6): DICT_4X4_50, id 0 — bitmap extraído do
+# OpenCV uma única vez e congelado (1 = célula branca). Lado de 0,30 u na cena;
+# o "lado real" declarado no teste dá o fator esperado = lado_real / lado_cena.
+# ---------------------------------------------------------------------------
+
+ARUCO_BITMAP = np.array(
+    [
+        [0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 1, 1, 0],
+        [0, 0, 1, 0, 1, 0],
+        [0, 0, 0, 1, 1, 0],
+        [0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ],
+    dtype=np.uint8,
+)
+ARUCO_CENTER = (3.4, 1.5)  # sob o anel da câmera — vistas de cima, pouco oblíquas
+ARUCO_SIDE = 0.55  # unidades de cena — grande o bastante para o detector a ~518 px
+ARUCO_Z = 0.002  # um fio acima do piso, para vencer o z-buffer dos pontos do chão
+
 
 # ---------------------------------------------------------------------------
 # Geometria — funções puras
@@ -182,6 +203,95 @@ def camera_trajectory(frames: int) -> list[np.ndarray]:
         c2w[:, 3] = eye
         poses.append(c2w.astype(np.float32))
     return poses
+
+
+def composite_marker(
+    img: np.ndarray,
+    depth: np.ndarray,
+    wp: np.ndarray,
+    conf: np.ndarray,
+    c2w: np.ndarray,
+    K: np.ndarray,
+) -> None:
+    """Pinta o marcador ArUco (com margem de "papel" branca) na imagem, por ray-cast.
+
+    A nuvem de pontos não produz imagem contínua o bastante para o detector de
+    quadriláteros do OpenCV; o marcador entra NÍTIDO nos frames pelo caminho exato
+    da geometria (raio pixel→plano do chão), com depth/world_points/conf coerentes —
+    então a desprojeção dos cantos funciona igual à de dados reais. In-place.
+    """
+    h, w = depth.shape
+    R = c2w[:, :3]
+    eye = c2w[:, 3]
+
+    paper_half = ARUCO_SIDE * 0.75  # papel = 1,5× o lado do marcador
+    cx, cy = ARUCO_CENTER
+
+    # Bbox do papel projetado — para não varrer a imagem inteira.
+    corners_world = np.array(
+        [
+            [cx - paper_half, cy - paper_half, ARUCO_Z],
+            [cx + paper_half, cy - paper_half, ARUCO_Z],
+            [cx + paper_half, cy + paper_half, ARUCO_Z],
+            [cx - paper_half, cy + paper_half, ARUCO_Z],
+        ]
+    )
+    cam = (corners_world - eye) @ R
+    if (cam[:, 2] <= 0.05).any():
+        return
+    uv = cam @ K.T
+    us = uv[:, 0] / uv[:, 2]
+    vs = uv[:, 1] / uv[:, 2]
+    u0, u1 = int(max(0, us.min())), int(min(w - 1, us.max())) + 1
+    v0, v1 = int(max(0, vs.min())), int(min(h - 1, vs.max())) + 1
+    if u0 >= u1 or v0 >= v1:
+        return
+
+    # Raio de cada pixel do recorte até o plano z = ARUCO_Z.
+    uu, vv = np.meshgrid(np.arange(u0, u1) + 0.5, np.arange(v0, v1) + 0.5)
+    pix = np.stack([uu, vv, np.ones_like(uu)], axis=-1)  # (h', w', 3)
+    dir_cam = pix @ np.linalg.inv(K).T
+    dir_world = dir_cam @ R.T
+    dz = dir_world[..., 2]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        t = (ARUCO_Z - eye[2]) / dz
+    hit = (t > 0.05) & np.isfinite(t)
+
+    wx = eye[0] + t * dir_world[..., 0]
+    wy = eye[1] + t * dir_world[..., 1]
+    on_paper = hit & (np.abs(wx - cx) <= paper_half) & (np.abs(wy - cy) <= paper_half)
+    if not on_paper.any():
+        return
+
+    # Célula do bitmap (6×6 cobre o marcador; fora dele, papel branco).
+    half = ARUCO_SIDE / 2
+    # np.floor, não astype(int): a truncagem para zero mapearia pixels logo FORA
+    # da borda esquerda/superior para a célula 0 — o quadrado preto crescia uma
+    # célula em dois lados e desalinhava a grade de bits do detector (medido).
+    gx = np.floor((wx - (cx - half)) / ARUCO_SIDE * 6).astype(int)
+    gy = np.floor((wy - (cy - half)) / ARUCO_SIDE * 6).astype(int)
+    on_marker = on_paper & (gx >= 0) & (gx < 6) & (gy >= 0) & (gy < 6)
+    white = np.array([245, 245, 245], dtype=np.uint8)
+    black = np.array([12, 12, 12], dtype=np.uint8)
+
+    view = img[v0:v1, u0:u1]
+    dview = depth[v0:v1, u0:u1]
+    wview = wp[v0:v1, u0:u1]
+    cview = conf[v0:v1, u0:u1]
+
+    view[on_paper] = white
+    # Espelho em um eixo: o padrão é visto DE CIMA — desenhar (gx, gy) direto no
+    # plano produziria a imagem especular (inválida para o dicionário; medido).
+    bit = np.zeros_like(on_marker, dtype=np.uint8)
+    bit[on_marker] = ARUCO_BITMAP[gy[on_marker], 5 - gx[on_marker]]
+    view[on_marker & (bit == 0)] = black
+
+    # Geometria coerente: o depth em câmera é o próprio t (dir_cam tem z = 1).
+    dview[on_paper] = t[on_paper].astype(np.float32)
+    wview[on_paper] = np.stack(
+        [wx[on_paper], wy[on_paper], np.full(on_paper.sum(), ARUCO_Z)], axis=-1
+    ).astype(np.float32)
+    cview[on_paper] = 2.0
 
 
 def intrinsics() -> np.ndarray:
@@ -326,6 +436,10 @@ def main() -> None:
         # de 1.5 usado pelo worker, para o filtro ser exercitado de verdade.
         conf = np.where(valid, 2.0, 0.0).astype(np.float32)
 
+        # Marcador ArUco nítido (D6): pintado por ray-cast DEPOIS do render de
+        # pontos, com depth/world_points/conf coerentes com o plano do chão.
+        composite_marker(img, depth, wp, conf, c2w, K)
+
         np.savez_compressed(
             npz_dir / f"frame_{i:06d}.npz",
             world_points=wp,
@@ -367,6 +481,12 @@ def main() -> None:
         "synthetic": True,
         "room": ROOM,
         "objects": {k: {"center": v[0], "size": v[1]} for k, v in OBJECTS.items()},
+        "aruco": {
+            "dict": "DICT_4X4_50",
+            "id": 0,
+            "center": list(ARUCO_CENTER),
+            "side_scene_units": ARUCO_SIDE,
+        },
         "frames": args.frames,
         "fps": 8,
         "resolution": [IMG_W, IMG_H],
