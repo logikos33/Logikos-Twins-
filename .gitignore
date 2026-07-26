@@ -71,3 +71,6 @@ Thumbs.db
 
 # Cliente Prisma gerado (regenerado por `prisma generate` no build)
 apps/web/src/generated/
+
+# Pesos de modelos (baixados por scripts/fetch_yolox.py etc.)
+/models/
