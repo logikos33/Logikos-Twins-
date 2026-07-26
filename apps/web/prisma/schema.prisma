@@ -48,6 +48,10 @@ model Scan {
   // parte é assinada num request separado durante a gravação.
   uploadId String? @map("upload_id")
 
+  // Blur de rostos opcional por scan (D6, LGPD): aplicado aos keyframes/thumb
+  // pelo worker; o vídeo bruto morre na retenção.
+  blurFaces Boolean @default(false) @map("blur_faces")
+
   // --- processamento ---------------------------------------------------------
   extractFps  Int     @default(8) @map("extract_fps")
   frames      Int?

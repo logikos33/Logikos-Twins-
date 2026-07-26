@@ -20,6 +20,7 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
   const router = useRouter();
   const { state, videoRef, openCamera, start, stop } = useRecorder(maxSeconds);
   const [showFallback, setShowFallback] = useState(false);
+  const [blurFaces, setBlurFaces] = useState(false);
 
   // A câmera abre assim que a página monta — a primeira coisa que o usuário vê é
   // o próprio ambiente, não um formulário.
@@ -112,10 +113,25 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
               <li>· Feche voltas: termine onde começou</li>
               <li>· Limite: {Math.floor(maxSeconds / 60)} minutos</li>
             </ul>
+            <label className="mt-3 flex items-center gap-2 text-xs text-neutral-300">
+              <input
+                type="checkbox"
+                checked={blurFaces}
+                onChange={(e) => setBlurFaces(e.target.checked)}
+                className="h-4 w-4 accent-white"
+              />
+              Borrar rostos nas fotos do mapa (LGPD)
+            </label>
             <p className="mt-3 text-xs text-neutral-400">
               O vídeo é enviado durante a gravação e apagado após 7 dias; o mapa 3D
               permanece. Ao gravar, você concorda com o processamento das imagens.
             </p>
+            <a
+              href="/api/marker"
+              className="mt-2 inline-block text-xs text-neutral-400 underline underline-offset-2"
+            >
+              Quer o mapa em metros? Imprima o marcador de escala (PDF)
+            </a>
           </div>
         )}
 
@@ -135,7 +151,7 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
         <footer className="flex flex-col items-center gap-4 pb-4">
           {state.phase === "ready" && (
             <button
-              onClick={() => void start()}
+              onClick={() => void start(blurFaces)}
               aria-label="Começar a gravar"
               className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/80 bg-transparent"
             >
