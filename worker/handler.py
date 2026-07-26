@@ -31,7 +31,9 @@ def handler(job: dict[str, Any]) -> dict[str, Any]:
     inp = job["input"]
     scan_id: str = inp["scan_id"]
     video_url: str = inp["video_url"]
-    fps: int = int(inp.get("params", {}).get("fps", 8))
+    params = inp.get("params", {})
+    fps: int = int(params.get("fps", 8))
+    blur: bool = bool(params.get("blur_faces", False))
 
     t0 = time.monotonic()
     log.info(f"scan {scan_id}: iniciando (fps={fps})")
@@ -64,6 +66,16 @@ def handler(job: dict[str, Any]) -> dict[str, Any]:
             },
         )
 
+        # 4b. Blur de rostos (D6, opcional por scan) — ANTES do upload, e só nos
+        #     keyframes/thumb: o vídeo bruto morre na retenção. Aqui a falha É
+        #     fatal de propósito: o usuário pediu privacidade; subir keyframes com
+        #     rostos nítidos seria quebrar a promessa em silêncio.
+        if blur:
+            from pipeline import blur_faces
+
+            blurred = blur_faces.blur_keyframes(work / "artifacts")
+            log.info(f"scan {scan_id}: blur pedido — {blurred} rosto(s) borrados")
+
         # 5. Upload dos artefatos.
         outputs = transfer.upload_artifacts(scan_id, work / "artifacts")
         # A normalização pode ter trocado a extensão do bruto (webm→mp4); quem
@@ -73,6 +85,9 @@ def handler(job: dict[str, Any]) -> dict[str, Any]:
         # 6. Detecção ancorada (D5) — a GPU já está paga; roda no mesmo job.
         #    Falha aqui NÃO derruba o scan: o mapa sem pins ainda é um mapa.
         detection_summary = _run_detection(scan_id, npz_dir, work / "artifacts")
+
+        # 7. Escala automática por ArUco (D6) — melhor-esforço, como a detecção.
+        scale = _run_aruco_scale(npz_dir, work / "artifacts")
 
         total_s = time.monotonic() - t0
         metrics = {
@@ -89,7 +104,10 @@ def handler(job: dict[str, Any]) -> dict[str, Any]:
         }
         log.info(f"scan {scan_id}: concluído em {total_s:.1f}s — {json.dumps(metrics)}")
 
-        return {"scan_id": scan_id, "outputs": outputs, "metrics": metrics}
+        result: dict[str, Any] = {"scan_id": scan_id, "outputs": outputs, "metrics": metrics}
+        if scale:
+            result["scale"] = scale
+        return result
 
 
 def _run_detection(scan_id: str, npz_dir: Path, artifacts_dir: Path) -> dict[str, Any]:
@@ -144,6 +162,20 @@ def _run_detection(scan_id: str, npz_dir: Path, artifacts_dir: Path) -> dict[str
     except Exception as exc:
         log.warning(f"detecção pulada: {exc}")
         return {"detector": "none", "detections": 0}
+
+
+def _run_aruco_scale(npz_dir: Path, artifacts_dir: Path) -> dict[str, Any] | None:
+    """Escala automática (D6). Sem marcador ou erro → None; a manual continua valendo."""
+    import json as _json
+
+    try:
+        from pipeline import aruco_scale
+
+        poses = _json.loads((artifacts_dir / "poses.json").read_text())
+        return aruco_scale.detect_scale(npz_dir, poses["keyframes"])
+    except Exception as exc:
+        log.warning(f"escala ArUco pulada: {exc}")
+        return None
 
 
 if __name__ == "__main__":

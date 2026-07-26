@@ -1,6 +1,6 @@
 # STATUS
 
-**Etapa atual:** D6
+**Etapa atual:** D7
 **Última atualização:** 2026-07-26
 
 > Este arquivo é por onde o Vitor acompanha. Uma etapa fechada é atualizada aqui no mesmo
@@ -18,8 +18,8 @@
 | **D3** | Worker real completo, rodando sem GPU | ✅ concluída |
 | **D4** | Viewer "controle do mapa": medição, pins, trajetória | ✅ concluída |
 | **D5** | Detecções ancoradas em 3D (+ D5.5 Recognition) | ✅ concluída² |
-| **D6** | Escala automática por ArUco + blur de rostos | ⏳ em andamento |
-| D7 | Retenção, painel admin, limites, logs | ⬜ |
+| **D6** | Escala automática por ArUco + blur de rostos | ✅ concluída |
+| **D7** | Retenção, painel admin, limites, logs | ⏳ em andamento |
 | **PLUG-IN** | Contas, GPU real, deploy | 🔒 **só com o Vitor presente** |
 
 ¹ Um critério da D1 aguarda validação física: gravar 60 s **de um celular de verdade**
@@ -130,10 +130,19 @@ make check
   da D5.5 documentado.
 - Ancoragem testada: pin a < 5% da cena, medido à caixa do objeto (métrica registrada).
 
-## O que falta para a D6
+## O que a D6 deixou pronto
 
-- ArUco (DICT_4X4_50) nos keyframes → escala automática (`scale.method='aruco'`),
-  com fallback manual preservado.
-- PDF do marcador para impressão, linkado na página de gravação.
-- Blur de rostos opcional por scan — VERIFICAR a licença do detector de faces antes
-  de adotar (OPEN-QUESTIONS Q5); aplicar só a keyframes/thumbnail.
+- Escala automática por ArUco provada no E2E (fator a 1,5% do gabarito, zero cliques),
+  com fallback manual intacto; PDF do marcador em `/api/marker`.
+- Blur de rostos opcional por scan com YuNet (MIT verificado na fonte — Q5 resolvido),
+  testado com foto real; falha de blur é fatal por decisão (privacidade não degrada
+  em silêncio).
+
+## O que falta para a D7
+
+- Retenção: job periódico apaga vídeos brutos além do prazo (TTL em minutos no dev);
+  artefatos ficam; `video_deleted_at` marcado.
+- Painel `/admin` (ADMIN_TOKEN): scans, custo acumulado de `metrics`, erros; galeria
+  completa passa a exigir o token.
+- Limite `MAX_SCANS_PER_DAY` sem token; logs JSON na web; `PLUGIN-CHECKLIST.md`;
+  revisão final do README.

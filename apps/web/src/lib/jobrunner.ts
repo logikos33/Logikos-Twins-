@@ -10,7 +10,7 @@ import { env } from "./env";
 export type RunJobInput = {
   scanId: string;
   videoUrl: string;
-  params: { fps: number };
+  params: { fps: number; blur_faces: boolean };
 };
 
 export type JobStatus = {
@@ -25,6 +25,8 @@ export type JobOutput = {
   scan_id: string;
   outputs: Record<string, string>;
   metrics: Record<string, unknown>;
+  // Escala automática por ArUco (D6) — presente só quando o marcador foi visto.
+  scale?: { factor: number; method: "aruco"; marker_side_m: number; views: number };
 };
 
 function baseUrl(): string {

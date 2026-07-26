@@ -82,7 +82,7 @@ a obrigação de abrir o código. Não é uma questão de gosto por licenças.
 |---|---|---|
 | `lingbot-map.pt` (4,63 GB) | HF `robbyant/lingbot-map` | Apache-2.0 (segue o repositório) |
 | YOLOX-s ONNX (COCO) | GitHub `Megvii-BaseDetection/YOLOX` | Apache-2.0 |
-| Detector de rostos (blur, D6) | **a definir** | **verificar ANTES de adotar** — ver `OPEN-QUESTIONS.md` Q5 |
+| **YuNet** (detector de rostos p/ blur, D6) | OpenCV Zoo `face_detection_yunet` | **MIT** ✔ — verificado na fonte em 2026-07-26 (LICENSE do diretório do modelo: "MIT License, Copyright (c) 2020 Shiqi Yu"; README: "All files in this directory are licensed under MIT License"). Resolvido o Q5 de OPEN-QUESTIONS.md |
 
 ---
 

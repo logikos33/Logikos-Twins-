@@ -31,7 +31,7 @@ export async function dispatchJob(scan: Scan): Promise<Scan> {
   const jobId = await jobrunner.startJob({
     scanId: scan.id,
     videoUrl,
-    params: { fps: scan.extractFps },
+    params: { fps: scan.extractFps, blur_faces: scan.blurFaces },
   });
 
   return db.scan.update({
@@ -69,6 +69,9 @@ export async function applyJobResult(
         // O Json do Prisma aceita o objeto direto; o cast é só para o TS.
         metrics: (result.output.metrics ?? {}) as object,
         errorMsg: null,
+        // ArUco SOBRESCREVE a calibração manual (decisão 4 do prompt): quando o
+        // marcador está na cena, a escala automática é a fonte de verdade.
+        ...(result.output.scale ? { scale: result.output.scale } : {}),
       },
     });
     return;

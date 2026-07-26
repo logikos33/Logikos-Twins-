@@ -167,3 +167,25 @@ Ver `DECISIONS.md`.
 - Métrica de ancoragem: distância à CAIXA do objeto, não ao centroide (a
   desprojeção ancora na superfície visível — comportamento correto do produto).
 - DETECTOR=synthetic é o default do DEV (yolox exige pesos); produção usa yolox.
+
+### D6 — Escala ArUco + blur de rostos · 2026-07-26
+
+**Adicionado**
+
+- **Escala métrica sem fricção**: marcador ArUco (DICT_4X4_50, 150 mm) detectado nos
+  keyframes → cantos desprojetados em 3D → fator pela mediana entre vistas →
+  `scale.method='aruco'` sobrescreve a manual. E2E no compose: fator 0,27694 vs
+  0,27273 esperado (1,5%), automático.
+- PDF do marcador gerado à mão (sem dependência nova) em `/api/marker`, com
+  instruções de impressão; link na página de gravação.
+- **Blur de rostos opcional por scan** (YuNet/OpenCV Zoo, MIT verificado NA FONTE):
+  toggle na captura → `blur_faces` no job → keyframes/thumb borrados antes do upload.
+  Falha do blur é fatal — privacidade prometida não degrada em silêncio. Verificado
+  com foto real.
+- Fixture ganhou o marcador plantado (compositor por ray-cast com AA de geometria
+  coerente) + 2 testes de escala.
+
+**Corrigido**
+
+- Compositor do marcador: `np.floor` no lugar de `astype(int)` — a truncagem para
+  zero engrossava o quadrado preto em dois lados e o detector rejeitava os bits.

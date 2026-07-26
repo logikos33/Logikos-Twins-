@@ -8,6 +8,8 @@ const bodySchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
   // O MIME real do MediaRecorder (varia por navegador — ADR-0008).
   mimeType: z.string().min(1).max(100),
+  // Blur de rostos opcional (D6, LGPD).
+  blurFaces: z.boolean().optional(),
 });
 
 /**
