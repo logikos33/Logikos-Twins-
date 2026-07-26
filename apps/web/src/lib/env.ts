@@ -33,6 +33,10 @@ const serverSchema = z.object({
   RUNPOD_ENDPOINT_ID: z.string().default("local"),
   RUNPOD_API_KEY: z.string().default("dev-nao-usado"),
   RUNPOD_WEBHOOK_SECRET: z.string().min(8),
+  // URL que o RUNNER usa para chamar o webhook de volta. No compose, o fake-runpod
+  // não resolve `localhost:3000` (seria ele mesmo) — precisa de `http://web:3000`.
+  // Em produção é a própria APP_URL; por isso o default.
+  WEBHOOK_BASE_URL: z.string().url().optional(),
 
   ADMIN_TOKEN: z.string().min(8),
 

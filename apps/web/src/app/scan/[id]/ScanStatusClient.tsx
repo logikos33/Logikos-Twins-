@@ -19,7 +19,7 @@ type ScanInfo = {
 const LABELS: Record<string, string> = {
   recording: "Gravando…",
   uploading: "Recebendo o vídeo…",
-  uploaded: "Vídeo recebido — processamento na D2",
+  uploaded: "Vídeo recebido — preparando o processamento…",
   queued: "Na fila de processamento…",
   processing: "Reconstruindo o ambiente em 3D…",
   postprocessing: "Preparando o mapa…",

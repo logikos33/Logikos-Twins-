@@ -55,10 +55,16 @@ jobs:
           python-version: "3.11"
 
       - name: instalar ferramental
-        run: pip install pytest ruff mypy
+        run: pip install pytest ruff mypy numpy
 
       - run: ruff check .
       - run: ruff format --check .
+
+      # A fixture é gerada, nunca versionada — sem ela os testes geométricos
+      # (a regressão permanente do projeto) se pulariam silenciosamente.
+      - name: gerar cena sintética
+        run: python scripts/make_fixture.py --out fixtures
+
       - run: python -m pytest
 
   gates:

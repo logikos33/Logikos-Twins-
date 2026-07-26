@@ -1,6 +1,6 @@
 # STATUS
 
-**Etapa atual:** D2
+**Etapa atual:** D3
 **Última atualização:** 2026-07-26
 
 > Este arquivo é por onde o Vitor acompanha. Uma etapa fechada é atualizada aqui no mesmo
@@ -14,8 +14,8 @@
 |---|---|---|
 | **D0** | Bootstrap: monorepo, compose sem credenciais, governança, CI | ✅ concluída |
 | **D1** | Banco + captura ao vivo na página (sem botão de upload) | ✅ concluída¹ |
-| **D2** | Fluxo de jobs ponta a ponta com o sósia do RunPod | ⏳ em andamento |
-| D3 | Worker real completo, rodando sem GPU | ⬜ |
+| **D2** | Fluxo de jobs ponta a ponta com o sósia do RunPod | ✅ concluída |
+| **D3** | Worker real completo, rodando sem GPU | ⏳ em andamento |
 | D4 | Viewer "controle do mapa": medição, pins, trajetória | ⬜ |
 | D5 | Detecções ancoradas em 3D (+ D5.5 Recognition) | ⬜ |
 | D6 | Escala automática por ArUco + blur de rostos | ⬜ |
@@ -81,10 +81,23 @@ make check
 - E2E provado: criar → 2 partes → complete → objeto de 8 MiB no MinIO (ETag multipart).
 - `docs/protocolo-captura.md` (inclui como testar a câmera no celular: mkcert/túnel).
 
-## O que falta para a D2
+## O que a D2 deixou pronto
 
-- Disparo automático do job quando o scan chega em `uploaded`.
-- Adapter `JobRunner` com o payload real do contrato RunPod.
-- Webhook `/api/webhooks/runpod?token=` + reconciliação por polling.
-- Estados de processamento ao vivo na página `/scan/[id]`.
-- Cena sintética (`scripts/make_fixture.py`) — pré-requisito do modo `synthetic`.
+- **Cena sintética**: sala 6×4×3 com objetos plantados, 48 NPZs no schema do motor,
+  PLY de 4 MB, poses, keyframes. 10 testes geométricos — incluindo a identidade de
+  desprojeção que a D5 vai usar, já validada com mediana < 0,02 u.
+- Adapter `JobRunner` com o payload real (`input/webhook/policy`), disparo automático
+  no fim do upload, webhook autenticado (comparação de tempo constante) e
+  **reconciliação por polling** que converge scans órfãos.
+- **A rede de segurança foi provada ao vivo**: com o webhook inalcançável, o polling
+  levou o scan a `done` sozinho. Do toque em "parar" ao `done`: 9 s no caminho rápido.
+- 26 testes na web; a CI passou a gerar a fixture antes do pytest.
+
+## O que falta para a D3
+
+- `worker/handler.py` (SDK runpod) + `pipeline/`: download, normalização ffmpeg
+  (WebM→MP4), strip de áudio + re-upload, subprocess do `batch_demo.py`,
+  `npz_to_artifacts` (filtro conf ≥ 1.5, voxel-downsample → 1,8 M pontos, PLY binário),
+  poses/meta/keyframes, upload, métricas.
+- Dockerfile CUDA 12.8 buildável (execução GPU só no plug-in; `[TESTAR no plug-in]`).
+- `FAKE_MODE=local-worker` processando as fixtures ponta a ponta.
