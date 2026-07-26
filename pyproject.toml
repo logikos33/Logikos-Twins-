@@ -1,0 +1,52 @@
+[project]
+name = "logikos-twins-python"
+version = "0.1.0"
+description = "Ferramental Python do Logikos Twins: worker de reconstrução, sósia do RunPod e scripts."
+requires-python = ">=3.10"
+
+# Configuração compartilhada por worker/, fake-runpod/ e scripts/. Uma configuração de
+# lint só, para os três não divergirem de estilo.
+
+[tool.ruff]
+line-length = 96
+target-version = "py310"
+# `*.md` fica de fora porque o ruff também formata blocos de código Python dentro de
+# Markdown — e reescreveria os trechos ilustrativos dos ADRs e do plano de handoff, que
+# são citações do que existe lá fora, não código nosso para manter.
+extend-exclude = ["fixtures", ".venv", "*.md"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "C4",  # comprehensions
+    "SIM", # simplify
+    "T20", # sem print() — logging estruturado é requisito, ver CLAUDE.md
+    "RUF",
+]
+ignore = [
+    "E501", # comprimento de linha é responsabilidade do formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts de linha de comando falam com o operador por stdout; é a interface deles.
+"scripts/*.py" = ["T20"]
+"worker/tests/*.py" = ["T20"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+# numpy e open3d não trazem stubs completos; o alternativa seria salpicar
+# `# type: ignore` no código, o que esconde erros de verdade.
+ignore_missing_imports = true
+exclude = ["fixtures/", "\\.venv/"]
+
+[tool.pytest.ini_options]
+testpaths = ["worker/tests", "fake-runpod/tests"]
+pythonpath = ["worker", "fake-runpod", "scripts"]
+addopts = "-q"

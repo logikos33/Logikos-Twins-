@@ -1,0 +1,52 @@
+{
+  "_comment": [
+    "Exceções da auditoria de dependências de PRODUÇÃO (apps/web).",
+    "Cada entrada precisa de motivo concreto e prazo. Exceção vencida reprova o build —",
+    "é o que força a revisita em vez de deixar a lista virar depósito.",
+    "Antes de adicionar uma entrada, tente de verdade atualizar a dependência."
+  ],
+  "exceptions": [
+    {
+      "package": "next",
+      "advisory": "GHSA-f88m-g3jw-g9cj (sharp/libvips), postcss XSS",
+      "reason": "Avisos transitivos internos do Next 16.2.12 (sharp e postcss). A única correção oferecida pelo npm é regredir para next@9.3.3, o que é inviável. sharp só é exercitado pelo otimizador de imagens do Next, que este produto não usa para conteúdo de terceiros — as imagens servidas são keyframes gerados pelo nosso próprio worker.",
+      "expires": "2026-10-31"
+    },
+    {
+      "package": "sharp",
+      "advisory": "CVE-2026-33327, CVE-2026-33328, CVE-2026-35590, CVE-2026-35591",
+      "reason": "Transitiva de next@16.2.12; sem versão corrigida disponível sem regredir o Next. Superfície limitada ao pipeline de imagem do Next, que não processa upload de usuário (o vídeo vai direto ao bucket e os keyframes vêm do nosso worker).",
+      "expires": "2026-10-31"
+    },
+    {
+      "package": "postcss",
+      "advisory": "XSS via unescaped </style>; leitura arbitrária de arquivo",
+      "reason": "Transitiva de next@16.2.12, usada em tempo de build, não em runtime de requisição.",
+      "expires": "2026-10-31"
+    },
+    {
+      "package": "prisma",
+      "advisory": "via @prisma/dev → find-my-way, valibot",
+      "reason": "Já estamos na versão mais recente publicada (7.9.0); o npm aponta como 'correção' a 7.8.0, que é ANTERIOR — o dado do aviso está defasado. @prisma/dev é ferramenta de desenvolvimento e não vai para o runtime servido.",
+      "expires": "2026-10-31"
+    },
+    {
+      "package": "@prisma/dev",
+      "advisory": "find-my-way DDoS via HTTP2; valibot",
+      "reason": "Idem acima — ferramenta de desenvolvimento do Prisma, fora do caminho servido.",
+      "expires": "2026-10-31"
+    },
+    {
+      "package": "valibot",
+      "advisory": "GHSA-5qjj-4xww-7phc",
+      "reason": "Transitiva de @prisma/dev (ferramenta). Este projeto valida com Zod, não com valibot.",
+      "expires": "2026-10-31"
+    },
+    {
+      "package": "find-my-way",
+      "advisory": "DDoS com HTTP2",
+      "reason": "Transitiva de @prisma/dev (ferramenta), fora do caminho servido.",
+      "expires": "2026-10-31"
+    }
+  ]
+}

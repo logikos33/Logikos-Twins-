@@ -1,0 +1,14 @@
+# Dependências do worker de produção (GPU).
+#
+# Licenças verificadas em LICENSES.md. Regra dura: nada de AGPL ou copyleft forte —
+# o que bane o stack ultralytics. Ver ADR-0005.
+#
+# torch e o próprio LingBot-Map são instalados no Dockerfile (índice CUDA específico
+# e clone com commit pinado), não aqui.
+
+runpod==1.7.9
+boto3==1.35.99
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
+open3d==0.18.0
+onnxruntime==1.20.1

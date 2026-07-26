@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/*
+ * A interface é escura por decisão, não por preferência de tema do sistema: a maior
+ * parte do tempo de tela é o viewer 3D, e uma moldura clara ao redor de uma nuvem de
+ * pontos escurece a percepção de contraste da própria nuvem. A captura no celular
+ * também fica melhor com a moldura escura ao redor do preview da câmera.
+ */
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  /* O viewer captura gestos de arraste; o "puxar para atualizar" do celular
+     competiria com a órbita da câmera. */
+  overscroll-behavior-y: none;
+}

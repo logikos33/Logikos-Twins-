@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Um push novo cancela a execução anterior do mesmo branch — não faz sentido pagar
+# por CI de um commit que já foi substituído.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: web · lint, tipos, testes, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm run test
+
+      - name: build
+        run: npm run build
+        env:
+          # O build do Next avalia rotas; as variáveis precisam existir e passar na
+          # validação Zod, mas nenhuma delas é segredo real.
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          S3_ENDPOINT: http://localhost:9000
+          S3_ACCESS_KEY_ID: ci
+          S3_SECRET_ACCESS_KEY: ci-secret
+          S3_BUCKET: ci
+          RUNPOD_WEBHOOK_SECRET: ci-webhook-secret
+          ADMIN_TOKEN: ci-admin-token
+
+  python:
+    name: python · lint, tipos, testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: instalar ferramental
+        run: pip install pytest ruff mypy
+
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: python -m pytest
+
+  gates:
+    name: gates · licença e vulnerabilidades
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      # Nada de AGPL no caminho servido. Ver ADR-0005.
+      - name: gate de licença
+        run: python scripts/license_gate.py
+
+      - name: instalar dependências da web
+        run: npm ci
+        working-directory: apps/web
+
+      # Vulnerabilidade high/critical sem exceção registrada reprova o merge.
+      - name: gate de vulnerabilidades
+        run: npm run audit:gate
+        working-directory: apps/web
+
+  worker-image:
+    name: worker · build da imagem (sem GPU)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: build da imagem do worker
+        run: |
+          if [ -f worker/Dockerfile ]; then
+            docker build -t logikos-twins-worker:ci ./worker
+          else
+            echo "worker/Dockerfile ainda não existe (chega na D3) — etapa ignorada."
+          fi
+
+  spec:
+    name: processo · a etapa em curso tem spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # SDD é gate, não sugestão: código sem spec não entra. O script lê a etapa
+      # declarada em STATUS.md e confere que existe `docs/specs/D<N>-*.md`.
+      - name: conferir spec da etapa
+        run: python scripts/check_spec.py
