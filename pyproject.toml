@@ -43,7 +43,10 @@ ignore = [
 "worker/tests/*.py" = ["T20"]
 
 [tool.mypy]
-python_version = "3.10"
+# 3.12, não 3.10: os stubs do numpy 2.x usam `type` statements (PEP 695), que o mypy
+# só analisa a partir do 3.12. A compatibilidade do NOSSO código com 3.10 (o Python
+# do container) é garantida pelo ruff (target-version py310), não por aqui.
+python_version = "3.12"
 strict = true
 warn_unused_configs = true
 disallow_untyped_defs = true

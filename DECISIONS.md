@@ -107,3 +107,17 @@ header `ETag`** da resposta para o `CompleteMultipartUpload`. Cross-origin, isso
 complete OK). **No R2, expor o ETag na configuração de CORS do bucket é item obrigatório
 do plug-in** — adicionado ao PLUGIN-CHECKLIST (D7). Sem isso, a gravação ao vivo falha com
 "parte sem ETag na resposta".
+
+---
+
+## [2026-07-26] torch 2.8.0+cu128 não existe mais no índice do PyTorch
+
+**Plano (§3.3/§6):** worker com `torch==2.8.0` do índice `whl/cu128`.
+
+**Medido:** o índice cu128 oferece `2.7.0, 2.7.1, 2.9.0, 2.9.1, 2.10.0, 2.11.0` — o
+2.8.0 foi removido. O erro reproduz em build limpo.
+
+**Decisão:** `torch==2.9.1+cu128` + `torchvision==0.24.1` (o par mais próximo acima do
+que o plano pedia; 2.7.x ficaria ABAIXO do que o motor foi testado). Compatibilidade do
+LingBot-Map com 2.9.1 marcada `[TESTAR no plug-in]` — é exatamente o tipo de validação
+que a F0 existe para fazer.

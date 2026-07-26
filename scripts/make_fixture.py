@@ -79,7 +79,10 @@ def sample_plane(
     n = max(1, int(area * density))
     s = rng.random(n)
     t = rng.random(n)
-    return origin[None, :] + s[:, None] * u_vec[None, :] + t[:, None] * v_vec[None, :]
+    result: np.ndarray = (
+        origin[None, :] + s[:, None] * u_vec[None, :] + t[:, None] * v_vec[None, :]
+    )
+    return result
 
 
 def box_surface(
@@ -146,15 +149,22 @@ def build_room_cloud(density: float, rng: np.random.Generator) -> tuple[np.ndarr
 
 
 def camera_trajectory(frames: int) -> list[np.ndarray]:
-    """Trajetória circular dentro da sala, olhando para o centro. → lista de c2w 3×4."""
+    """Trajetória circular dentro da sala, olhando para o centro. → lista de c2w 3×4.
+
+    O alvo OSCILA em altura (0,6 → 2,4) ao longo da volta — como uma pessoa varrendo o
+    ambiente de baixo a cima. Sem isso, o topo das paredes nunca aparece em frame algum
+    e a nuvem reconstruída por união de frames fica mais baixa que a sala (o teste de
+    conversão pegou exatamente isso).
+    """
     cx, cy = ROOM["x"] / 2, ROOM["y"] / 2
     radius = min(ROOM["x"], ROOM["y"]) * 0.28
     height = 1.5  # altura de quem filma com celular
-    target = np.array([cx, cy, 1.0])
 
     poses: list[np.ndarray] = []
     for i in range(frames):
         ang = 2 * np.pi * i / frames
+        # Duas oscilações completas por volta: garante teto e chão vistos de vários lados.
+        target = np.array([cx, cy, 1.5 + 0.9 * np.sin(2 * ang)])
         eye = np.array([cx + radius * np.cos(ang), cy + radius * np.sin(ang), height])
 
         # Convenção OpenCV: +Z da câmera aponta para a cena.
