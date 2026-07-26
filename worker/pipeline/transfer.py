@@ -6,6 +6,7 @@ presignada do vídeo. A convenção de chaves espelha `apps/web/src/lib/storage.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import mimetypes
 import os
@@ -54,13 +55,11 @@ def replace_raw_video(scan_id: str, video: Path, ext: str = "mp4") -> str:
     s3.upload_file(str(video), bucket, key, ExtraArgs={"ContentType": "video/mp4"})
 
     # Se a gravação veio com outra extensão (webm/mov), o objeto antigo é removido —
-    # senão o áudio sobreviveria num objeto órfão.
+    # senão o áudio sobreviveria num objeto órfão. Não existir é o caso normal.
     for old_ext in ("webm", "mov"):
         if old_ext != ext:
-            try:
+            with contextlib.suppress(Exception):
                 s3.delete_object(Bucket=bucket, Key=f"videos/{scan_id}.{old_ext}")
-            except Exception:
-                pass
     log.info("vídeo bruto substituído por versão sem áudio: %s", key)
     return key
 
