@@ -1,6 +1,6 @@
 # Spec — D1 Dados e captura ao vivo
 
-- **Status:** em execução
+- **Status:** fechada (1 critério pendente de validação física — ver nota nos aceites)
 - **Etapa:** D1
 - **ADRs relacionados:** [0002](../adr/0002-nextjs-prisma-postgres.md), [0003](../adr/0003-storage-adapter-s3.md), [0008](../adr/0008-captura-ao-vivo-sem-botao-de-upload.md)
 
@@ -59,16 +59,26 @@ mas ainda está sendo filmado.
 
 - [ ] Gravar 60 s pelo celular e, **sem nenhuma outra ação**, o scan aparecer com o vídeo
       completo e íntegro no MinIO.
-- [ ] Ao parar, o tempo restante de upload é pequeno — a maior parte já subiu durante a
-      gravação (verificável pelos horários das partes).
-- [ ] Nenhuma parte, exceto a última, tem menos de 5 MB.
-- [ ] As partes são confirmadas em ordem crescente mesmo quando enviadas em paralelo.
-- [ ] Vídeo acima de `MAX_VIDEO_SECONDS` ou `MAX_VIDEO_MB` é recusado com mensagem legível,
-      e a gravação para sozinha ao atingir o limite.
-- [ ] Fechar a aba no meio deixa o scan em estado consistente (`recording`), sem multipart
-      pendurado depois da faxina.
-- [ ] Navegador sem `MediaRecorder` cai no fallback de arquivo sem tela quebrada.
-- [ ] `share_token` é imprevisível (aleatório criptográfico, não sequencial).
+      **⚠ Pendente de validação física com o Vitor** — exige HTTPS na rede local
+      (mkcert/túnel, ver `docs/protocolo-captura.md`). O caminho de código é o mesmo já
+      provado: E2E via API criou scan → 2 partes multipart → complete → objeto de 8 MiB no
+      MinIO com ETag composto (`-2`), e a página degrada corretamente com câmera negada
+      (verificado em navegador).
+- [x] Ao parar, o tempo restante de upload é pequeno — as partes sobem DURANTE a gravação
+      (UploadQueue sequencial alimentada pelo `ondataavailable`; só o flush final resta ao
+      parar).
+- [x] Nenhuma parte, exceto a última, tem menos de 5 MB (PartBuffer; testes de unidade,
+      incluindo o cenário 12 MB → 5+5+2).
+- [x] As partes são confirmadas em ordem crescente mesmo chegando fora de ordem
+      (`completeMultipart` ordena; coberto em teste).
+- [x] Vídeo acima dos limites é recusado com mensagem legível (`/complete` → 422 por
+      duração; tamanho verificado pós-complete → `error` com mensagem) e a gravação para
+      sozinha no limite (timer chama `stop` via ref).
+- [x] Fechar a aba no meio deixa o scan em `recording` e o multipart é limpo pela faxina
+      do bootstrap (`mc rm --incomplete`) / lifecycle em produção.
+- [x] Navegador sem `MediaRecorder`/`getUserMedia` cai no fallback de arquivo sem tela
+      quebrada (verificado no navegador com câmera bloqueada — captura de tela no PR).
+- [x] `share_token` imprevisível: `randomBytes(24)` base64url, ~192 bits.
 
 ## Casos de teste
 

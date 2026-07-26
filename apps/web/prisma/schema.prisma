@@ -1,0 +1,101 @@
+// Schema do plano §4.2, com os acréscimos justificados na spec D1:
+// `uploadId`/`videoExt` (a gravação ao vivo usa multipart e o container varia por
+// navegador — ADR-0008) e os estados `recording`/`uploading` antes de `queued`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Prisma 7: a URL de conexão não vive mais aqui — está em prisma.config.ts (migrate)
+// e no adapter do PrismaClient (runtime), ambos lendo DATABASE_URL.
+datasource db {
+  provider = "postgresql"
+}
+
+enum ScanStatus {
+  recording // multipart aberto, o celular ainda está filmando
+  uploading // parou de gravar; partes finais subindo
+  uploaded // objeto completo no storage, pronto para disparar o job (D2 usa)
+  queued // job aceito pelo runner
+  processing // inferência 3D em andamento
+  postprocessing // NPZ→PLY, poses, keyframes
+  done
+  error
+}
+
+model Scan {
+  id        String     @id @default(uuid()) @db.Uuid
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  status    ScanStatus @default(recording)
+  title     String?
+
+  // Acesso sem login: quem tem o token vê o scan. Gerado com aleatoriedade
+  // criptográfica — é a única barreira, então não pode ser adivinhável.
+  shareToken String @unique @map("share_token")
+
+  // --- vídeo de entrada ------------------------------------------------------
+  videoKey   String? @map("video_key")
+  // Extensão real do container gravado (mp4 no Safari, webm no Chrome Android).
+  videoExt   String  @default("mp4") @map("video_ext")
+  videoBytes BigInt? @map("video_bytes")
+  durationS  Float?  @map("duration_s")
+  // O vídeo bruto morre após a retenção (LGPD); os artefatos 3D ficam. O timestamp
+  // marca quando a faxina apagou, e null significa "ainda existe".
+  videoDeletedAt DateTime? @map("video_deleted_at") @db.Timestamptz()
+
+  // Multipart em andamento — precisa sobreviver entre requisições, porque cada
+  // parte é assinada num request separado durante a gravação.
+  uploadId String? @map("upload_id")
+
+  // --- processamento ---------------------------------------------------------
+  extractFps  Int     @default(8) @map("extract_fps")
+  frames      Int?
+  runpodJobId String? @map("runpod_job_id")
+  errorMsg    String? @map("error_msg")
+
+  // {cloud_preview_key, cloud_full_key?, poses_key, meta_key, keyframes_prefix, thumb_key?}
+  outputs Json?
+  // {infer_s, total_s, points_raw, points_preview, cost_usd_est, ...}
+  metrics Json?
+  // {factor, method: 'none'|'reference_distance'|'aruco', ref_points}
+  scale   Json?
+
+  annotations Annotation[]
+  detections  Detection[]
+
+  @@index([status, createdAt])
+  @@map("scans")
+}
+
+model Annotation {
+  id        String   @id @default(uuid()) @db.Uuid
+  scanId    String   @map("scan_id") @db.Uuid
+  scan      Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  // 'pin' | 'measure' | 'note' — texto livre em vez de enum: os tipos de anotação
+  // evoluem com o viewer (D4/D6) e não valem uma migration cada.
+  type      String
+  // Posição 3D no referencial da nuvem: {x,y,z} para pin, {a:{x,y,z}, b:{x,y,z}} para medição.
+  position  Json
+  data      Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([scanId])
+  @@map("annotations")
+}
+
+model Detection {
+  id       String @id @default(uuid()) @db.Uuid
+  scanId   String @map("scan_id") @db.Uuid
+  scan     Scan   @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  frameIdx Int    @map("frame_idx")
+  label    String
+  score    Float
+  // [x1, y1, x2, y2] em pixels do keyframe
+  bbox     Json
+  // {x, y, z} no referencial da nuvem — o coração da tese (D5)
+  worldPos Json?  @map("world_pos")
+
+  @@index([scanId, label])
+  @@map("detections")
+}

@@ -67,3 +67,43 @@ LingBot-Map). O gerador de fixture (`scripts/make_fixture.py`) foi escrito para 
 **apenas de numpy** (PLY binário escrito à mão, sem `open3d`), justamente porque `open3d`
 ainda não publica wheels para Python 3.14 e a fixture precisa rodar na máquina do Vitor
 sem container.
+
+---
+
+## [2026-07-26] Postgres do compose exposto na porta 5433 do host
+
+**Medido:** a máquina do Vitor tem um Postgres **nativo** escutando em `127.0.0.1:5432` e
+`::1:5432` (processo `postgres` do usuário, fora do Docker). O bind `*:5432` do Docker era
+sombreado para conexões a `localhost` — o Prisma conectava no Postgres errado e falhava com
+`role "twins" does not exist`.
+
+**Decisão:** o serviço `postgres` do compose publica em **5433** no host. Dentro da rede do
+compose continua `postgres:5432`. `.env.example` e docs atualizados.
+
+---
+
+## [2026-07-26] Prisma 7: configuração nova (prisma.config.ts + driver adapter)
+
+**Plano/handoff:** citava "Prisma (ou Drizzle)" sem versão. O ecossistema instalou o
+**Prisma 7.9**, que mudou o modelo de configuração: `url` no `datasource` do schema **não é
+mais suportado** (erro P1012), o provider do generator virou `prisma-client`, e o runtime
+exige driver adapter (`@prisma/adapter-pg`).
+
+**Decisão:** seguir o modelo novo (realidade > plano): conexão do migrate em
+`prisma.config.ts` (lendo o `.env` da raiz via `process.loadEnvFile`), cliente gerado em
+`src/generated/prisma` (fora do git; `postinstall`/`prebuild` regeneram), e singleton
+**lazy** em `src/lib/db.ts` — o `next build` importa as rotas para coletar metadados, e um
+cliente instanciado no import exigiria DATABASE_URL em tempo de build.
+
+---
+
+## [2026-07-26] ETag exposto no CORS é pré-condição do upload direto
+
+**Contexto:** o navegador envia cada parte por `PUT` direto ao storage e precisa **ler o
+header `ETag`** da resposta para o `CompleteMultipartUpload`. Cross-origin, isso exige
+`Access-Control-Expose-Headers: ETag` do lado do bucket.
+
+**Estado:** no MinIO do compose funciona (verificado no E2E — upload de 2 partes com
+complete OK). **No R2, expor o ETag na configuração de CORS do bucket é item obrigatório
+do plug-in** — adicionado ao PLUGIN-CHECKLIST (D7). Sem isso, a gravação ao vivo falha com
+"parte sem ETag na resposta".
