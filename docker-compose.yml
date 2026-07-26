@@ -1,0 +1,139 @@
+# Ambiente de desenvolvimento completo, sem nenhuma credencial externa.
+#
+# MinIO faz o papel do R2 e o fake-runpod faz o papel do RunPod — os dois falam os
+# mesmos protocolos dos serviços reais (ADR-0003, ADR-0004). A FASE PLUG-IN troca
+# variáveis de ambiente; nada aqui vira código descartado.
+
+name: logikos-twins
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: twins
+      POSTGRES_PASSWORD: twins-dev
+      POSTGRES_DB: twins
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U twins -d twins"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: twins-dev
+      MINIO_ROOT_PASSWORD: twins-dev-secret
+      # O navegador do celular envia as partes do multipart direto para cá; sem CORS
+      # liberado, o PUT morre no preflight e o upload nunca sai do lugar.
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+    ports:
+      - "9000:9000" # API S3
+      - "9001:9001" # console web
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Cria o bucket e libera leitura pública dos artefatos. Roda uma vez e sai.
+  minio-bootstrap:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    volumes:
+      - ./scripts/minio-bootstrap.sh:/bootstrap.sh:ro
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: twins-dev
+      MINIO_ROOT_PASSWORD: twins-dev-secret
+      S3_BUCKET: ${S3_BUCKET:-logikos-twins}
+
+  fake-runpod:
+    build:
+      context: ./fake-runpod
+      dockerfile: Dockerfile
+    depends_on:
+      minio-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      FAKE_MODE: ${FAKE_MODE:-synthetic}
+      FAKE_COLD_START_S: ${FAKE_COLD_START_S:-2}
+      FAKE_PROCESS_S: ${FAKE_PROCESS_S:-6}
+      FAKE_DROP_WEBHOOKS: ${FAKE_DROP_WEBHOOKS:-false}
+      FIXTURE_DIR: /fixtures
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY_ID: twins-dev
+      S3_SECRET_ACCESS_KEY: twins-dev-secret
+      S3_BUCKET: ${S3_BUCKET:-logikos-twins}
+      S3_REGION: auto
+    ports:
+      - "8080:8080"
+    volumes:
+      # A cena sintética é gerada no host (`make fixture`) e lida daqui.
+      - ./fixtures:/fixtures:ro
+      # O modo `local-worker` executa o worker real; montado para não precisar
+      # reconstruir a imagem a cada mudança no pipeline.
+      - ./worker:/worker:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-bootstrap:
+        condition: service_completed_successfully
+      fake-runpod:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      APP_NAME: ${APP_NAME:-Logikos Twins}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      DATABASE_URL: postgresql://twins:twins-dev@postgres:5432/twins
+      # Endereço interno (web → MinIO) e endereço que vai assinado para o NAVEGADOR.
+      # Uma URL assinada para `minio:9000` é inútil fora da rede do Docker.
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:9000}
+      S3_ACCESS_KEY_ID: twins-dev
+      S3_SECRET_ACCESS_KEY: twins-dev-secret
+      S3_BUCKET: ${S3_BUCKET:-logikos-twins}
+      S3_REGION: auto
+      S3_FORCE_PATH_STYLE: "true"
+      RUNPOD_BASE_URL: http://fake-runpod:8080
+      RUNPOD_ENDPOINT_ID: local
+      RUNPOD_API_KEY: dev-nao-usado
+      RUNPOD_WEBHOOK_SECRET: ${RUNPOD_WEBHOOK_SECRET:-webhook-secret-dev}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-admin-token-dev}
+      MAX_VIDEO_MB: ${MAX_VIDEO_MB:-300}
+      MAX_VIDEO_SECONDS: ${MAX_VIDEO_SECONDS:-180}
+      EXTRACT_FPS: ${EXTRACT_FPS:-8}
+      VIDEO_RETENTION_MINUTES: ${VIDEO_RETENTION_MINUTES:-10080}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web/src:/app/src
+      - ./apps/web/prisma:/app/prisma
+      - ./apps/web/public:/app/public
+      # Volume anônimo: preserva o node_modules da imagem em vez de deixar o bind
+      # mount do host escondê-lo (binários nativos diferem entre macOS e Linux).
+      - /app/node_modules
+
+volumes:
+  pgdata:
+  miniodata:
