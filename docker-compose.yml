@@ -14,7 +14,10 @@ services:
       POSTGRES_PASSWORD: twins-dev
       POSTGRES_DB: twins
     ports:
-      - "5432:5432"
+      # 5433 no host: a máquina do Vitor tem um Postgres nativo ocupando o 5432 em
+      # 127.0.0.1, que sombreava o bind do Docker para conexões localhost. Dentro da
+      # rede do compose continua 5432. Ver DECISIONS.md (2026-07-26).
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

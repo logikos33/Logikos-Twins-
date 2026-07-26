@@ -1,6 +1,6 @@
 # STATUS
 
-**Etapa atual:** D1
+**Etapa atual:** D2
 **Última atualização:** 2026-07-26
 
 > Este arquivo é por onde o Vitor acompanha. Uma etapa fechada é atualizada aqui no mesmo
@@ -13,14 +13,18 @@
 | Etapa | O que entrega | Situação |
 |---|---|---|
 | **D0** | Bootstrap: monorepo, compose sem credenciais, governança, CI | ✅ concluída |
-| **D1** | Banco + captura ao vivo na página (sem botão de upload) | ⏳ em andamento |
-| D2 | Fluxo de jobs ponta a ponta com o sósia do RunPod | ⬜ |
+| **D1** | Banco + captura ao vivo na página (sem botão de upload) | ✅ concluída¹ |
+| **D2** | Fluxo de jobs ponta a ponta com o sósia do RunPod | ⏳ em andamento |
 | D3 | Worker real completo, rodando sem GPU | ⬜ |
 | D4 | Viewer "controle do mapa": medição, pins, trajetória | ⬜ |
 | D5 | Detecções ancoradas em 3D (+ D5.5 Recognition) | ⬜ |
 | D6 | Escala automática por ArUco + blur de rostos | ⬜ |
 | D7 | Retenção, painel admin, limites, logs | ⬜ |
 | **PLUG-IN** | Contas, GPU real, deploy | 🔒 **só com o Vitor presente** |
+
+¹ Um critério da D1 aguarda validação física: gravar 60 s **de um celular de verdade**
+exige HTTPS na rede local (mkcert ou túnel — instruções em `docs/protocolo-captura.md`).
+O caminho de código é o mesmo já provado por E2E via API + verificação em navegador.
 
 ---
 
@@ -64,10 +68,23 @@ make check
   reprova o build, para a lista não virar depósito.
 - Gate de processo: a CI confere que a etapa declarada aqui tem spec escrita.
 
-## O que falta para a D1
+## O que a D1 deixou pronto
 
-- Schema Prisma + primeira migration (plano §4.2).
-- `/api/scans` com multipart presigned; `/api/scans/[id]`.
-- Página `/new`: gravação com `getUserMedia` + `MediaRecorder`, envio em segundo plano
-  durante a gravação, wake lock, fallback de arquivo.
-- `docs/protocolo-captura.md`.
+- Schema Prisma completo (scans, annotations, detections) + primeira migration aplicada.
+- Rotas: `POST /api/scans` (abre multipart), `POST .../parts` (assina parte),
+  `POST .../complete` (fecha e valida limites), `GET /api/scans/[id]` (estado +
+  artefatos). Token errado → **404**, nunca 403 — não se vaza existência.
+- Página `/new`: gravação com câmera traseira, envio em segundo plano DURANTE a
+  gravação (PartBuffer ≥ 5 MB + UploadQueue sequencial com backoff — ambos puros e
+  testados), wake lock, auto-parada no limite, e fallback de arquivo pelo MESMO pipeline.
+- Página `/scan/[id]` com polling de estado.
+- E2E provado: criar → 2 partes → complete → objeto de 8 MiB no MinIO (ETag multipart).
+- `docs/protocolo-captura.md` (inclui como testar a câmera no celular: mkcert/túnel).
+
+## O que falta para a D2
+
+- Disparo automático do job quando o scan chega em `uploaded`.
+- Adapter `JobRunner` com o payload real do contrato RunPod.
+- Webhook `/api/webhooks/runpod?token=` + reconciliação por polling.
+- Estados de processamento ao vivo na página `/scan/[id]`.
+- Cena sintética (`scripts/make_fixture.py`) — pré-requisito do modo `synthetic`.
