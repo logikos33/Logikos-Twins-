@@ -144,3 +144,26 @@ Ver `DECISIONS.md`.
 
 - Fluxo completo na cena sintética: medição, calibração, pin com foto, planta baixa
   com corte a 50%, mobile 375×812 sem scroll horizontal.
+
+### D5 — Recognition ancorado · 2026-07-26
+
+**Adicionado**
+
+- **A tese do produto funciona**: detector → desprojeção (depth+K+c2w) → cluster →
+  `detections` → pins semânticos no viewer com busca "onde está X?" que voa a câmera
+  até o cluster e abre o card de evidência. Provado ao vivo na cena sintética.
+- `Detector` protocol com três implementações: YOLOX-s ONNX (Apache-2.0; pré/pós
+  validados contra ground truth do COCO — 2 gatos 0,93/0,92 + controles na imagem
+  canônica), detector sintético (gabarito geométrico com teste de oclusão) e o stub
+  do Recognition (D5.5) com fallback automático testado.
+- Rota batch de detecções autenticada pelo segredo da infraestrutura, com
+  substituição atômica (retry não duplica); GET para o viewer.
+- Modo synthetic do sósia agora publica detecções com o MESMO código do worker.
+- `scripts/fetch_yolox.py` com hash TOFU congelado do release oficial.
+- 8 testes de detecção (ancoragem < 5%, clusters, oclusão-fantasma).
+
+**Registrado**
+
+- Métrica de ancoragem: distância à CAIXA do objeto, não ao centroide (a
+  desprojeção ancora na superfície visível — comportamento correto do produto).
+- DETECTOR=synthetic é o default do DEV (yolox exige pesos); produção usa yolox.

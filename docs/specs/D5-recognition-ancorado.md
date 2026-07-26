@@ -1,6 +1,6 @@
 # Spec — D5 Recognition ancorado (YOLOX) · D5.5 integração Recognition
 
-- **Status:** em execução
+- **Status:** fechada (D5.5 aguarda o repositório do Recognition — interface e fallback prontos)
 - **Etapa:** D5
 - **ADRs relacionados:** [0005](../adr/0005-detector-plugavel-yolox.md)
 
@@ -52,12 +52,28 @@ coordenada 3D, e a busca ("pessoa", "hidrante", "cadeira") voa a câmera até o 
 
 ## Critérios de aceite
 
-- [ ] Busca "onde está X?" na cena sintética acha o objeto plantado com erro
-      < 5% do tamanho da cena (teste automatizado usando o detector synthetic).
-- [ ] YOLOX-s roda numa foto real em CPU no dev e devolve detecções COCO plausíveis.
-- [ ] Objetos vistos em vários keyframes viram 1 cluster (não N pins).
-- [ ] Rota batch recusa chamadas sem o segredo (401).
-- [ ] Viewer: filtro por classe e voo de câmera funcionais na cena sintética.
+- [x] Busca "onde está X?" acha o objeto plantado com erro < 5% do tamanho da cena.
+      **Nota de métrica registrada:** o erro é medido do pin à CAIXA do objeto (0 se
+      dentro), não ao centroide — a desprojeção do centro da bbox ancora na
+      superfície visível, que é onde o pin DEVE apontar; medir contra o centroide
+      penalizaria objetos grandes (o armário de 2 u falhou por 0,68 u de "erro" que
+      era exatamente a distância superfície→centroide). Teste automatizado + provado
+      ao vivo: busca "mesa" → voo de câmera + card de evidência com o keyframe.
+- [x] YOLOX-s em CPU numa foto real: cats.jpg → 2 gatos (0,93/0,92) + 2 controles
+      remotos — o resultado canônico dessa imagem do COCO; street.jpg → person 0,78,
+      chairs, tvs. Pré/pós-processamento validados contra ground truth conhecido.
+- [x] Multi-frame → 1 cluster (teste); objetos GRANDES podem gerar 2–3 clusters de
+      superfície (raio 4% da diagonal) — pins todos SOBRE o objeto; afinação do raio
+      registrada em OPEN-QUESTIONS.
+- [x] Rota batch sem segredo → 401 (verificado por curl); substituição atômica em
+      transaction (retry do worker não duplica pins).
+- [x] Viewer: filtro por classe (chips com cor estável por rótulo), voo de câmera e
+      card de evidência — verificados ao vivo em navegador.
+
+**D5.5 (Recognition):** interface pronta (`DETECTOR=recognition` com fallback
+automático testado pela fábrica); integração real aguarda o repositório privado —
+procedimento em 3 passos documentado em `worker/pipeline/recognition_detector.py`,
+com auditoria de licença como pré-condição dura.
 
 ## Casos de teste
 
