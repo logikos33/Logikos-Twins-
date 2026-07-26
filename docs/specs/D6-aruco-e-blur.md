@@ -1,6 +1,6 @@
 # Spec — D6 Escala ArUco + blur de rostos
 
-- **Status:** em execução
+- **Status:** fechada
 - **Etapa:** D6
 - **ADRs relacionados:** [0005](../adr/0005-detector-plugavel-yolox.md) (a regra de licença vale para o detector de faces)
 
@@ -50,19 +50,29 @@ quando o scan pedir.
 
 ## Critérios de aceite
 
-- [ ] Cena sintética com marcador → `scale.method='aruco'` com fator correto ± 2%
-      (teste automatizado; o gabarito é conhecido por construção).
-- [ ] Sem marcador → nada muda; calibração manual continua funcionando.
-- [ ] PDF do marcador imprimível baixável da página de gravação, com instruções.
-- [ ] Toggle de blur por scan; keyframes de um scan com blur têm os rostos borrados
-      (verificação com foto real contendo rosto).
-- [ ] Licença do detector de faces registrada em LICENSES.md ANTES da adoção.
+- [x] Cena com marcador → escala automática: teste (fator ± 2% do gabarito) E provado
+      no E2E do compose — scan `done` com `scale {factor: 0.27694, method: aruco,
+      views: 3}` vs 0.27273 esperado (1,5%), sem nenhum clique.
+- [x] Sem marcador → `detect_scale` devolve None (teste); a calibração manual da D4
+      permanece intacta.
+- [x] PDF do marcador (gerado à mão, sem dependência) em `/api/marker`, linkado no
+      card de instruções da página de gravação, com instruções de impressão a 100%.
+- [x] Toggle "Borrar rostos" por scan; blur verificado com FOTO REAL (rosto
+      irreconhecível, resto intacto); falha do blur é FATAL de propósito — privacidade
+      prometida não degrada em silêncio.
+- [x] Licença do YuNet verificada NA FONTE antes da adoção (MIT — LICENSE e README do
+      diretório do modelo no OpenCV Zoo) e registrada em LICENSES.md; Q5 resolvido.
+
+**Achado registrado:** truncagem `astype(int)` vs `np.floor` no compositor do marcador
+— pixels logo fora da borda esquerda/superior caíam na célula 0 e engrossavam o
+quadrado preto em dois lados, desalinhando a grade de bits do detector. Duas horas de
+depuração que o comentário no código poupa da próxima vez.
 
 ## Casos de teste
 
 | Caso | Entrada | Esperado |
 |---|---|---|
-| Escala automática | fixture com marcador de 0,3 u no chão, "lado real" 0,15 m | fator 0,5 ± 2% |
+| Escala automática | fixture com marcador de 0,55 u no chão, "lado real" 0,15 m | fator 0,2727 ± 2% |
 | Múltiplas vistas | marcador visível em N keyframes | mediana dos fatores, não a 1ª vista |
 | Sem marcador | fixture normal | `scale` inalterada |
 | Manual + aruco | calibração manual seguida de reprocesso com marcador | aruco vence |

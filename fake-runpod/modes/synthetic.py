@@ -47,7 +47,23 @@ async def run_synthetic(payload: dict[str, Any], process_seconds: float) -> dict
     detection_summary = await asyncio.to_thread(_run_detection_from_fixture, str(scan_id))
     metrics.update(detection_summary)
 
-    return {"scan_id": scan_id, "outputs": outputs, "metrics": metrics}
+    result: dict[str, Any] = {"scan_id": scan_id, "outputs": outputs, "metrics": metrics}
+
+    # Escala ArUco (D6): mesmo código do worker, sobre os NPZs da fixture.
+    scale = await asyncio.to_thread(_run_aruco_from_fixture)
+    if scale:
+        result["scale"] = scale
+    return result
+
+
+def _run_aruco_from_fixture() -> dict[str, object] | None:
+    try:
+        from handler import _run_aruco_scale
+
+        return _run_aruco_scale(FIXTURE_DIR / "npz", FIXTURE_DIR)
+    except Exception as exc:
+        log.warning("escala ArUco no modo synthetic pulada: %s", exc)
+        return None
 
 
 def _run_detection_from_fixture(scan_id: str) -> dict[str, object]:

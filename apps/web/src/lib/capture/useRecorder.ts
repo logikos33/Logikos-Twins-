@@ -153,75 +153,83 @@ export function useRecorder(maxSeconds: number) {
     }
   }, [patch]);
 
-  const start = useCallback(async () => {
-    const stream = streamRef.current;
-    const mimeType = pickMimeType();
-    if (!stream || !mimeType) return;
+  const start = useCallback(
+    async (blurFaces = false) => {
+      const stream = streamRef.current;
+      const mimeType = pickMimeType();
+      if (!stream || !mimeType) return;
 
-    patch({ phase: "recording", elapsedS: 0, partsSent: 0, partsQueued: 0 });
+      patch({ phase: "recording", elapsedS: 0, partsSent: 0, partsQueued: 0 });
 
-    try {
-      // 1. Cria o scan e abre o multipart ANTES do primeiro frame.
-      const created = await api<{ scanId: string; shareToken: string }>("/api/scans", {
-        mimeType,
-      });
-
-      const queue = new UploadQueue(
-        async (partNumber, blob) => {
-          const { url } = await api<{ url: string }>(
-            `/api/scans/${created.scanId}/parts`,
-            { partNumber, shareToken: created.shareToken },
-          );
-          const put = await fetch(url, { method: "PUT", body: blob });
-          if (!put.ok) throw new Error(`PUT da parte ${partNumber}: HTTP ${put.status}`);
-          // O ETag é a prova de recebimento — obrigatório no complete.
-          const etag = put.headers.get("ETag");
-          if (!etag) throw new Error(`parte ${partNumber} sem ETag na resposta`);
-          return etag;
-        },
-        (sent, queued) => patch({ partsSent: sent, partsQueued: queued }),
-      );
-
-      sessionRef.current = {
-        scanId: created.scanId,
-        shareToken: created.shareToken,
-        buffer: new PartBuffer(),
-        queue,
-      };
-
-      // 2. Wake lock: a tela apagando mata a gravação. Degrada em silêncio
-      // onde a API não existir.
       try {
-        wakeLockRef.current = (await navigator.wakeLock?.request("screen")) ?? null;
-      } catch {
-        wakeLockRef.current = null;
+        // 1. Cria o scan e abre o multipart ANTES do primeiro frame.
+        const created = await api<{ scanId: string; shareToken: string }>("/api/scans", {
+          mimeType,
+          blurFaces,
+        });
+
+        const queue = new UploadQueue(
+          async (partNumber, blob) => {
+            const { url } = await api<{ url: string }>(
+              `/api/scans/${created.scanId}/parts`,
+              { partNumber, shareToken: created.shareToken },
+            );
+            const put = await fetch(url, { method: "PUT", body: blob });
+            if (!put.ok)
+              throw new Error(`PUT da parte ${partNumber}: HTTP ${put.status}`);
+            // O ETag é a prova de recebimento — obrigatório no complete.
+            const etag = put.headers.get("ETag");
+            if (!etag) throw new Error(`parte ${partNumber} sem ETag na resposta`);
+            return etag;
+          },
+          (sent, queued) => patch({ partsSent: sent, partsQueued: queued }),
+        );
+
+        sessionRef.current = {
+          scanId: created.scanId,
+          shareToken: created.shareToken,
+          buffer: new PartBuffer(),
+          queue,
+        };
+
+        // 2. Wake lock: a tela apagando mata a gravação. Degrada em silêncio
+        // onde a API não existir.
+        try {
+          wakeLockRef.current = (await navigator.wakeLock?.request("screen")) ?? null;
+        } catch {
+          wakeLockRef.current = null;
+        }
+
+        // 3. MediaRecorder com timeslice: chunks a cada 3 s viram partes no buffer.
+        const recorder = new MediaRecorder(stream, { mimeType });
+        recorderRef.current = recorder;
+
+        recorder.ondataavailable = (event) => {
+          const session = sessionRef.current;
+          if (!session || event.data.size === 0) return;
+          const part = session.buffer.push(event.data);
+          if (part) session.queue.enqueue(part.partNumber, part.blob);
+        };
+
+        recorder.start(TIMESLICE_MS);
+        startedAtRef.current = Date.now();
+
+        timerRef.current = setInterval(() => {
+          const elapsed = (Date.now() - startedAtRef.current) / 1000;
+          patch({ elapsedS: Math.floor(elapsed) });
+          // Limite de duração: para sozinho, concluindo o envio (critério da spec).
+          // Via ref porque `stop` é declarado depois — o timer só roda em runtime.
+          if (elapsed >= maxSeconds) void stopRef.current?.();
+        }, 500);
+      } catch (err) {
+        patch({
+          phase: "error",
+          error: String(err instanceof Error ? err.message : err),
+        });
       }
-
-      // 3. MediaRecorder com timeslice: chunks a cada 3 s viram partes no buffer.
-      const recorder = new MediaRecorder(stream, { mimeType });
-      recorderRef.current = recorder;
-
-      recorder.ondataavailable = (event) => {
-        const session = sessionRef.current;
-        if (!session || event.data.size === 0) return;
-        const part = session.buffer.push(event.data);
-        if (part) session.queue.enqueue(part.partNumber, part.blob);
-      };
-
-      recorder.start(TIMESLICE_MS);
-      startedAtRef.current = Date.now();
-
-      timerRef.current = setInterval(() => {
-        const elapsed = (Date.now() - startedAtRef.current) / 1000;
-        patch({ elapsedS: Math.floor(elapsed) });
-        // Limite de duração: para sozinho, concluindo o envio (critério da spec).
-        // Via ref porque `stop` é declarado depois — o timer só roda em runtime.
-        if (elapsed >= maxSeconds) void stopRef.current?.();
-      }, 500);
-    } catch (err) {
-      patch({ phase: "error", error: String(err instanceof Error ? err.message : err) });
-    }
-  }, [maxSeconds, patch]);
+    },
+    [maxSeconds, patch],
+  );
 
   const stop = useCallback(async () => {
     const recorder = recorderRef.current;
