@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ViewerGate } from "./ViewerGate";
+import type { ScaleInfo } from "@/lib/viewer/scale";
 
 /**
- * Estado do scan com polling. Na D1 mostra o essencial (o vídeo chegou inteiro?);
- * a D2 acrescenta os estados de processamento ao vivo e a D4 troca o "done" pelo
- * viewer 3D.
+ * Estado do scan com polling; quando `done`, vira o viewer 3D (D4).
+ * O polling PARA ao entrar no viewer — o estado é terminal.
  */
 
 type ScanInfo = {
@@ -14,6 +15,8 @@ type ScanInfo = {
   title: string | null;
   durationS: number | null;
   error: string | null;
+  scale: ScaleInfo | null;
+  artifacts: Record<string, string>;
 };
 
 const LABELS: Record<string, string> = {
@@ -39,18 +42,42 @@ export function ScanStatusClient({ scanId, token }: { scanId: string; token: str
       if (!active) return;
       if (res.status === 404) {
         setNotFound(true);
+        clearInterval(id);
         return;
       }
-      if (res.ok) setScan((await res.json()) as ScanInfo);
+      if (res.ok) {
+        const data = (await res.json()) as ScanInfo;
+        setScan(data);
+        // Estado terminal: parar de fazer polling — cada poll re-assina URLs à toa,
+        // e trocar a URL da nuvem embaixo do viewer não ajuda ninguém.
+        if (data.status === "done" || data.status === "error") clearInterval(id);
+      }
     }
 
-    void poll();
     const id = setInterval(() => void poll(), 3000);
+    void poll();
     return () => {
       active = false;
       clearInterval(id);
     };
   }, [scanId, token]);
+
+  // Estado terminal com artefatos → o viewer assume a tela inteira.
+  if (
+    scan?.status === "done" &&
+    scan.artifacts["cloud_preview_url"] &&
+    scan.artifacts["poses_url"]
+  ) {
+    return (
+      <ViewerGate
+        scanId={scanId}
+        token={token}
+        cloudUrl={scan.artifacts["cloud_preview_url"]}
+        posesUrl={scan.artifacts["poses_url"]}
+        initialScale={scan.scale}
+      />
+    );
+  }
 
   if (notFound) {
     return (

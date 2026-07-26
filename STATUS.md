@@ -1,6 +1,6 @@
 # STATUS
 
-**Etapa atual:** D3
+**Etapa atual:** D5
 **Última atualização:** 2026-07-26
 
 > Este arquivo é por onde o Vitor acompanha. Uma etapa fechada é atualizada aqui no mesmo
@@ -15,9 +15,9 @@
 | **D0** | Bootstrap: monorepo, compose sem credenciais, governança, CI | ✅ concluída |
 | **D1** | Banco + captura ao vivo na página (sem botão de upload) | ✅ concluída¹ |
 | **D2** | Fluxo de jobs ponta a ponta com o sósia do RunPod | ✅ concluída |
-| **D3** | Worker real completo, rodando sem GPU | ⏳ em andamento |
-| D4 | Viewer "controle do mapa": medição, pins, trajetória | ⬜ |
-| D5 | Detecções ancoradas em 3D (+ D5.5 Recognition) | ⬜ |
+| **D3** | Worker real completo, rodando sem GPU | ✅ concluída |
+| **D4** | Viewer "controle do mapa": medição, pins, trajetória | ✅ concluída |
+| **D5** | Detecções ancoradas em 3D (+ D5.5 Recognition) | ⏳ em andamento |
 | D6 | Escala automática por ArUco + blur de rostos | ⬜ |
 | D7 | Retenção, painel admin, limites, logs | ⬜ |
 | **PLUG-IN** | Contas, GPU real, deploy | 🔒 **só com o Vitor presente** |
@@ -93,11 +93,34 @@ make check
   levou o scan a `done` sozinho. Do toque em "parar" ao `done`: 9 s no caminho rápido.
 - 26 testes na web; a CI passou a gerar a fixture antes do pytest.
 
-## O que falta para a D3
+## O que a D3 deixou pronto
 
-- `worker/handler.py` (SDK runpod) + `pipeline/`: download, normalização ffmpeg
-  (WebM→MP4), strip de áudio + re-upload, subprocess do `batch_demo.py`,
-  `npz_to_artifacts` (filtro conf ≥ 1.5, voxel-downsample → 1,8 M pontos, PLY binário),
-  poses/meta/keyframes, upload, métricas.
-- Dockerfile CUDA 12.8 buildável (execução GPU só no plug-in; `[TESTAR no plug-in]`).
-- `FAKE_MODE=local-worker` processando as fixtures ponta a ponta.
+- Worker completo: handler (SDK runpod) + pipeline com download, normalização ffmpeg
+  (WebM/MOV → MP4 H.264, rotação materializada, **áudio removido e bruto substituído**),
+  inferência (real na GPU / fixtures no dev), NPZ→artefatos (filtro conf ≥ 1.5,
+  voxel-downsample próprio em numpy, PLY binário com teto de 35 MB imposto), upload
+  e métricas com `video_key` real.
+- **E2E do worker REAL no compose** (`FAKE_MODE=local-worker`): WebM com áudio entrou
+  pelo fluxo de partes; MP4 mudo ficou no storage; 1,6 M pontos publicados; `done`.
+- Dockerfile CUDA 12.8 com o motor pinado em `1f480ae`, sem kaolin. mypy strict verde.
+- Achado: celulares gravam rotação como Display Matrix (`-display_rotation`), não como
+  tag `rotate` — o teste gera vídeo do jeito real.
+
+## O que a D4 deixou pronto
+
+- Viewer Three.js completo (React fora da cena): PLY com progresso, órbita / voo /
+  planta baixa, trajetória + replay, corte por altura, camadas, galeria com thumbs
+  e compartilhamento.
+- **Medição com calibração verificada ao vivo**: 7,09 u calibrados como 5,67 m →
+  fator 0,79999 → remedição exibiu 5,67 m. Pin com foto do keyframe mais próximo
+  funcionando (aberto em navegador, foto carregada por redirect assinado).
+- Mobile 375×812 verificado.
+
+## O que falta para a D5
+
+- Detector protocol + YOLOX-s ONNX (Apache-2.0) nos keyframes, no worker.
+- Desprojeção bbox→world_pos (a identidade já validada na fixture) + cluster por
+  rótulo/raio → tabela `detections` → rota batch.
+- Pins semânticos no viewer, filtro por classe e busca que voa até o cluster.
+- Objetos "plantados" da cena viram o teste de posição (< 5% do tamanho da cena).
+- D5.5: auditoria de licença do Recognition e integração via `DETECTOR=recognition`.
