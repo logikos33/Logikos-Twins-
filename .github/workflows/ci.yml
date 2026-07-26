@@ -55,10 +55,13 @@ jobs:
           python-version: "3.11"
 
       - name: instalar ferramental
-        run: pip install pytest ruff mypy numpy
+        # As libs de runtime (fastapi, boto3, opencv) entram para o mypy enxergar
+        # tipos reais em vez de Any — sem elas o strict mode vira teatro.
+        run: pip install pytest ruff mypy numpy fastapi pydantic httpx boto3 opencv-python-headless
 
       - run: ruff check .
       - run: ruff format --check .
+      - run: mypy worker scripts fake-runpod
 
       # A fixture é gerada, nunca versionada — sem ela os testes geométricos
       # (a regressão permanente do projeto) se pulariam silenciosamente.
@@ -99,13 +102,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: build da imagem do worker
+        with:
+          fetch-depth: 0
+
+      # A imagem carrega CUDA + torch (vários GB). Repositório privado paga minutos
+      # de CI — o build só roda quando worker/ mudou (custo mínimo é requisito).
+      - name: detectar mudanças no worker
+        id: changes
         run: |
-          if [ -f worker/Dockerfile ]; then
-            docker build -t logikos-twins-worker:ci ./worker
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            if git diff --name-only "$base"...HEAD | grep -q '^worker/'; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "worker/Dockerfile ainda não existe (chega na D3) — etapa ignorada."
+            # Push direto (merge em main): mesmo critério, contra o commit anterior.
+            if git diff --name-only HEAD^ HEAD | grep -q '^worker/'; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
+
+      - name: build da imagem do worker
+        if: steps.changes.outputs.changed == 'true'
+        run: docker build -t logikos-twins-worker:ci ./worker
+
+      - name: sem mudanças no worker
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "worker/ intocado neste diff — build pulado (o pin é o mesmo já validado)."
 
   spec:
     name: processo · a etapa em curso tem spec

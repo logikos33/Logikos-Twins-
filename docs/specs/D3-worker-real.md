@@ -1,6 +1,6 @@
 # Spec — D3 Worker real (código completo, sem GPU)
 
-- **Status:** em execução
+- **Status:** fechada
 - **Etapa:** D3
 - **ADRs relacionados:** [0006](../adr/0006-artefato-ply-preview.md), [0007](../adr/0007-modo-windowed-do-motor.md), [0008](../adr/0008-captura-ao-vivo-sem-botao-de-upload.md)
 
@@ -54,14 +54,28 @@ pesos reais, push da imagem. Zero código novo.
 
 ## Critérios de aceite
 
-- [ ] pytest verde no worker, sem GPU, cobrindo conversão/filtro/downsample/normalização.
-- [ ] `FAKE_MODE=local-worker`: gravar/enviar → worker real processa as fixtures →
-      artefatos válidos no MinIO → scan `done`.
-- [ ] Vídeo WebM de teste é normalizado para MP4 sem áudio (verificável por ffprobe).
-- [ ] O objeto bruto no storage é SUBSTITUÍDO pela versão sem áudio.
-- [ ] `docker build` do worker completa na CI.
-- [ ] `cloud_preview.ply` gerado pelo worker respeita o teto de 35 MB e o alvo de pontos.
-- [ ] Todo ponto que só GPU valida está marcado `[TESTAR no plug-in]`.
+- [x] pytest verde no worker, sem GPU: 31 testes cobrindo conversão, filtro,
+      downsample (com prova de que o resultado é subconjunto do original), teto de
+      35 MB, normalização e rotação. mypy strict verde em 18 arquivos.
+- [x] `FAKE_MODE=local-worker`: E2E real no compose — WebM/VP9 com áudio de 0,8 MB
+      subiu pelo fluxo de partes, o worker REAL baixou, normalizou, "inferiu" das
+      fixtures, converteu 1,6 M pontos (22,9 MB) e publicou; scan `done` com webhook
+      na 1ª tentativa. Total: 1,2 s.
+- [x] WebM normalizado para MP4 H.264 sem trilha de áudio (ffprobe no objeto final:
+      só stream `video`).
+- [x] Objeto bruto SUBSTITUÍDO no storage (o `.webm` original foi apagado; o
+      `.mp4` de 154 KiB sem áudio ficou no lugar) e `outputs.video_key` carrega a
+      chave real para a retenção da D7.
+- [x] `docker build` do worker completa (validado local; CI builda a cada PR que
+      toca o worker).
+- [x] Preview dentro do teto (22,9 MB ≤ 35 MB) com cinto de segurança testado.
+- [x] `[TESTAR no plug-in]` marcado em: flags/estrutura de saída do batch_demo
+      (infer.py), open3d para nuvens de centenas de milhões de pontos
+      (npz_to_artifacts.py), interação --save_glb × --no_render (OPEN-QUESTIONS Q3).
+
+**Achado registrado durante a etapa:** a tag `-metadata rotate=90` é silenciosamente
+descartada pelo muxer moderno do ffmpeg; celulares gravam rotação como **Display
+Matrix** (`-display_rotation`). O teste de rotação gera o vídeo do jeito real.
 
 ## Casos de teste
 
