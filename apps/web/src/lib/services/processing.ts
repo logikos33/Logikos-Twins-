@@ -46,7 +46,8 @@ export async function markDispatchFailed(scanId: string): Promise<Scan> {
     where: { id: scanId },
     data: {
       status: "error",
-      errorMsg: "O vídeo chegou, mas o processamento não pôde ser iniciado. Tente de novo em instantes.",
+      errorMsg:
+        "O vídeo chegou, mas o processamento não pôde ser iniciado. Tente de novo em instantes.",
     },
   });
 }

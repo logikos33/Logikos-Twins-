@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
   // O corpo não carrega scan_id fora do output; localiza-se o scan pelo job.
   const scanId =
     output?.scan_id ??
-    (await db.scan.findFirst({ where: { runpodJobId: jobId }, select: { id: true } }))?.id;
+    (await db.scan.findFirst({ where: { runpodJobId: jobId }, select: { id: true } }))
+      ?.id;
 
   if (!scanId) {
     console.error(`webhook para job ${jobId} sem scan correspondente`);

@@ -35,9 +35,8 @@ process.env.S3_BUCKET = "t";
 process.env.RUNPOD_WEBHOOK_SECRET = "segredo-de-teste";
 process.env.ADMIN_TOKEN = "admin-de-teste";
 
-const { applyJobResult, isValidWebhookToken, reconcileStuckScans } = await import(
-  "./processing"
-);
+const { applyJobResult, isValidWebhookToken, reconcileStuckScans } =
+  await import("./processing");
 
 beforeEach(() => {
   updateMany.mockReset().mockResolvedValue({ count: 1 });
@@ -69,8 +68,14 @@ describe("applyJobResult — convergência de estado", () => {
   });
 
   it("FAILED vira error com a mensagem do runner", async () => {
-    await applyJobResult("scan-1", { status: "FAILED", output: null, error: "GPU morreu" });
-    const call = updateMany.mock.calls[0]![0] as { data: { status: string; errorMsg: string } };
+    await applyJobResult("scan-1", {
+      status: "FAILED",
+      output: null,
+      error: "GPU morreu",
+    });
+    const call = updateMany.mock.calls[0]![0] as {
+      data: { status: string; errorMsg: string };
+    };
     expect(call.data.status).toBe("error");
     expect(call.data.errorMsg).toBe("GPU morreu");
   });
