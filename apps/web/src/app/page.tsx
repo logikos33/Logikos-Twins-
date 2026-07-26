@@ -1,29 +1,88 @@
 import Link from "next/link";
+import { listScans } from "@/lib/services/gallery";
+
+export const dynamic = "force-dynamic";
+
+const STATUS_LABEL: Record<string, string> = {
+  recording: "gravando",
+  uploading: "enviando",
+  uploaded: "enviado",
+  queued: "na fila",
+  processing: "processando",
+  postprocessing: "finalizando",
+  done: "pronto",
+  error: "falhou",
+};
 
 /**
- * Galeria de scans. Na D0 é só a casca — a listagem real e as miniaturas chegam na D4,
- * e a proteção por ADMIN_TOKEN na D7.
+ * Galeria de scans. Na D4 lista tudo (dev); a D7 põe a listagem completa atrás do
+ * ADMIN_TOKEN — o acesso a um scan individual permanece pelo link com share_token.
  */
-export default function Home() {
+export default async function Home() {
+  const scans = await listScans().catch(() => []);
+
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center gap-8 px-6 py-16">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Logikos Twins</h1>
-        <p className="mt-3 text-pretty text-neutral-400">
-          Filme um ambiente andando com o celular. Minutos depois, abra o mapa 3D
-          navegável daquele lugar — com medição, anotações e detecções ancoradas no
-          espaço.
+    <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-6 py-12">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Logikos Twins</h1>
+          <p className="mt-2 max-w-md text-pretty text-sm text-neutral-400">
+            Filme um ambiente andando com o celular e receba o mapa 3D navegável — com
+            medição, anotações e detecções ancoradas no espaço.
+          </p>
+        </div>
+        <Link
+          href="/new"
+          className="inline-flex items-center rounded-full bg-white px-6 py-3 font-medium text-neutral-950 transition hover:bg-neutral-200"
+        >
+          Novo scan
+        </Link>
+      </header>
+
+      {scans.length === 0 ? (
+        <p className="text-sm text-neutral-500">
+          Nenhum scan ainda — toque em “Novo scan” e filme o primeiro ambiente.
         </p>
-      </div>
+      ) : (
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {scans.map((s) => (
+            <li key={s.scanId}>
+              <Link
+                href={`/scan/${s.scanId}?token=${s.shareToken}`}
+                className="group block overflow-hidden rounded-2xl border border-neutral-800 transition hover:border-neutral-600"
+              >
+                <div className="aspect-video bg-neutral-900">
+                  {s.thumbUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- thumb vem por URL assinada do storage
+                    <img
+                      src={s.thumbUrl}
+                      alt=""
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-2xl text-neutral-700">
+                      🗺️
+                    </div>
+                  )}
+                </div>
+                <div className="p-3">
+                  <p className="truncate text-sm font-medium">
+                    {s.title ?? "Scan sem título"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-neutral-500">
+                    {STATUS_LABEL[s.status] ?? s.status} ·{" "}
+                    {new Date(s.createdAt).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
-      <Link
-        href="/new"
-        className="inline-flex w-fit items-center rounded-full bg-white px-6 py-3 font-medium text-neutral-950 transition hover:bg-neutral-200"
-      >
-        Novo scan
-      </Link>
-
-      <p className="text-sm text-neutral-500">A galeria de scans aparece aqui na D4.</p>
+      <p className="text-xs text-neutral-600">
+        O vídeo bruto de cada scan é apagado após 7 dias; o mapa 3D permanece.
+      </p>
     </main>
   );
 }
