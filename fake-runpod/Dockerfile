@@ -1,6 +1,10 @@
 # Sósia do RunPod Serverless. Serviço de desenvolvimento — nunca vai para produção.
 FROM python:3.11-slim
 
+# ffmpeg: o modo local-worker executa o pipeline REAL, que normaliza vídeo.
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /srv
 
 COPY requirements.txt .

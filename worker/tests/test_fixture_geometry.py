@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -26,8 +27,9 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="module")
-def meta() -> dict:
-    return json.loads((FIXTURES / "meta.json").read_text())
+def meta() -> dict[str, Any]:
+    loaded: dict[str, Any] = json.loads((FIXTURES / "meta.json").read_text())
+    return loaded
 
 
 @pytest.fixture(scope="module")
@@ -51,7 +53,9 @@ def cloud() -> np.ndarray:
 
 
 class TestDimensoesDaSala:
-    def test_bounding_box_bate_com_o_declarado(self, cloud: np.ndarray, meta: dict) -> None:
+    def test_bounding_box_bate_com_o_declarado(
+        self, cloud: np.ndarray, meta: dict[str, Any]
+    ) -> None:
         room = meta["room"]
         mins = cloud.min(axis=0)
         maxs = cloud.max(axis=0)
@@ -71,7 +75,7 @@ class TestDimensoesDaSala:
 
 class TestObjetosPlantados:
     def test_cada_objeto_tem_pontos_no_lugar_declarado(
-        self, cloud: np.ndarray, meta: dict
+        self, cloud: np.ndarray, meta: dict[str, Any]
     ) -> None:
         for name, obj in meta["objects"].items():
             center = np.array(obj["center"])
@@ -131,7 +135,7 @@ class TestSchemaNpz:
 
 
 class TestPosesEArtefatos:
-    def test_poses_json_cobre_todos_os_frames(self, meta: dict) -> None:
+    def test_poses_json_cobre_todos_os_frames(self, meta: dict[str, Any]) -> None:
         poses = json.loads((FIXTURES / "poses.json").read_text())
         assert len(poses["frames"]) == meta["frames"]
         assert poses["keyframes"] == meta["keyframes"]
@@ -139,7 +143,7 @@ class TestPosesEArtefatos:
         assert len(first["c2w"]) == 3 and len(first["c2w"][0]) == 4
         assert len(first["K"]) == 3
 
-    def test_trajetoria_dentro_da_sala(self, meta: dict) -> None:
+    def test_trajetoria_dentro_da_sala(self, meta: dict[str, Any]) -> None:
         """Câmera atravessando parede = trajetória quebrada no viewer."""
         poses = json.loads((FIXTURES / "poses.json").read_text())
         room = meta["room"]
@@ -151,6 +155,6 @@ class TestPosesEArtefatos:
         mb = (FIXTURES / "cloud_preview.ply").stat().st_size / 1024 / 1024
         assert mb <= 35, f"cloud_preview.ply com {mb:.1f} MB estoura o teto do ADR-0006"
 
-    def test_keyframes_existem(self, meta: dict) -> None:
+    def test_keyframes_existem(self, meta: dict[str, Any]) -> None:
         for i in meta["keyframes"]:
             assert (FIXTURES / "keyframes" / f"{i}.jpg").exists()
