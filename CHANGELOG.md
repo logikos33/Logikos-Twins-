@@ -40,3 +40,34 @@ Ainda sem versionamento semântico — a demo não foi lançada.
 - Commit do LingBot-Map pinado em `1f480ae` (Apache-2.0, verificado).
 
 Ver `DECISIONS.md`.
+
+### D1 — Dados e captura ao vivo · 2026-07-26
+
+**Adicionado**
+
+- Schema Prisma (scans, annotations, detections) e primeira migration; estados
+  `recording`/`uploading` acrescentados ao ciclo do plano (a gravação ao vivo cria um
+  intervalo em que o scan existe mas ainda está sendo filmado).
+- Rotas de scan: criação com multipart aberto, assinatura de partes durante a gravação,
+  complete com validação de limites, e consulta com presigned GETs. Token errado → 404.
+- Página `/new` como página de GRAVAÇÃO (ADR-0008): câmera traseira, overlay guiado com
+  protocolo de captura, timer com auto-parada no limite, wake lock, envio em segundo
+  plano durante a gravação e aviso LGPD. Sem botão de upload no fluxo do celular.
+- `PartBuffer` (≥ 5 MB por parte, exceção só na última) e `UploadQueue` (sequencial,
+  backoff exponencial) como lógica pura — 13 testes de unidade, incluindo o bug de
+  progresso que o teste pegou antes do navegador.
+- Fallback de arquivo pelo MESMO pipeline de partes (desktop, drone, navegador sem
+  suporte) e página `/scan/[id]` com polling.
+- `docs/protocolo-captura.md`.
+
+**Corrigido**
+
+- Postgres do compose movido para a porta 5433 do host: a máquina tem um Postgres nativo
+  sombreando a 5432 para conexões localhost (ver DECISIONS.md).
+
+**Registrado**
+
+- Prisma 7 mudou o modelo de configuração (prisma.config.ts + driver adapter) — seguido o
+  modelo novo; cliente gerado fora do git.
+- Expor `ETag` no CORS do bucket é pré-condição do upload direto — item obrigatório do
+  plug-in para o R2.
