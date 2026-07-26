@@ -70,6 +70,10 @@ def handler(job: dict[str, Any]) -> dict[str, Any]:
         # consome (retenção da D7) precisa da chave REAL, não da original.
         outputs["video_key"] = video_key
 
+        # 6. Detecção ancorada (D5) — a GPU já está paga; roda no mesmo job.
+        #    Falha aqui NÃO derruba o scan: o mapa sem pins ainda é um mapa.
+        detection_summary = _run_detection(scan_id, npz_dir, work / "artifacts")
+
         total_s = time.monotonic() - t0
         metrics = {
             **artifacts.metrics,
@@ -81,10 +85,65 @@ def handler(job: dict[str, Any]) -> dict[str, Any]:
             "cost_usd_est": round(
                 (total_s / 3600) * float(os.environ.get("GPU_USD_PER_HOUR", "0")), 4
             ),
+            **detection_summary,
         }
         log.info(f"scan {scan_id}: concluído em {total_s:.1f}s — {json.dumps(metrics)}")
 
         return {"scan_id": scan_id, "outputs": outputs, "metrics": metrics}
+
+
+def _run_detection(scan_id: str, npz_dir: Path, artifacts_dir: Path) -> dict[str, Any]:
+    """Detecta nos keyframes, ancora em 3D e envia os clusters à API (rota batch).
+
+    Melhor-esforço deliberado: detector sem pesos ou API fora do ar degradam para
+    "sem pins", nunca para scan em erro.
+    """
+    import json as _json
+    import urllib.request
+
+    from pipeline import detect
+
+    try:
+        detector_kind = os.environ.get("DETECTOR", "yolox")
+        if detector_kind == "synthetic":
+            objects = detect.load_scene_objects(artifacts_dir / "meta.json")
+            detector: Any = detect.SyntheticDetector(objects)
+        else:
+            detector_kind, detector = detect.make_detector(detector_kind)
+
+        poses = _json.loads((artifacts_dir / "poses.json").read_text())
+        _, clusters = detect.detect_over_keyframes(npz_dir, poses["keyframes"], detector)
+
+        app_url = os.environ.get("APP_INTERNAL_URL") or os.environ.get("APP_URL")
+        secret = os.environ.get("RUNPOD_WEBHOOK_SECRET")
+        if app_url and secret and clusters:
+            payload = _json.dumps(
+                {
+                    "clusters": [
+                        {
+                            "label": c.label,
+                            "score": round(c.score, 4),
+                            "count": c.count,
+                            "world_pos": [round(v, 4) for v in c.center],
+                            "best_frame": c.best_frame,
+                        }
+                        for c in clusters
+                    ]
+                }
+            ).encode()
+            req = urllib.request.Request(
+                f"{app_url}/api/scans/{scan_id}/detections?token={secret}",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            urllib.request.urlopen(req, timeout=30)
+            log.info(f"scan {scan_id}: {len(clusters)} clusters enviados ({detector_kind})")
+
+        return {"detector": detector_kind, "detections": len(clusters)}
+    except Exception as exc:
+        log.warning(f"detecção pulada: {exc}")
+        return {"detector": "none", "detections": 0}
 
 
 if __name__ == "__main__":

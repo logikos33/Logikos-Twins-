@@ -41,4 +41,20 @@ async def run_synthetic(payload: dict[str, Any], process_seconds: float) -> dict
     )
     log.info("artefatos sintéticos publicados para o scan %s", scan_id)
 
+    # Detecções ancoradas (D5): o modo synthetic usa O MESMO código do worker real
+    # (montado em /worker) sobre os NPZs da fixture — a demo completa, inclusive a
+    # busca "onde está X?", funciona no modo default.
+    detection_summary = await asyncio.to_thread(_run_detection_from_fixture, str(scan_id))
+    metrics.update(detection_summary)
+
     return {"scan_id": scan_id, "outputs": outputs, "metrics": metrics}
+
+
+def _run_detection_from_fixture(scan_id: str) -> dict[str, object]:
+    try:
+        from handler import _run_detection
+
+        return _run_detection(scan_id, FIXTURE_DIR / "npz", FIXTURE_DIR)
+    except Exception as exc:
+        log.warning("detecção no modo synthetic pulada: %s", exc)
+        return {"detector": "none", "detections": 0}

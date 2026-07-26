@@ -81,6 +81,18 @@ apresentações, aquecer manualmente ~10 min antes.
 **Quando decidir.** Plug-in, medindo. Se for ruim, avaliar 1 worker "active" nas horas de demo
 — decisão de custo, vai para `DECISIONS.md` com o número que a justificar.
 
+### Q7 — Raio de cluster para objetos grandes
+
+**Contexto.** O cluster usa raio de 4% da diagonal da cena. Objetos grandes (armário
+de 2 u) vistos de ângulos diferentes ancoram em pontos de superfície mais distantes
+que o raio → 2–3 pins sobre o MESMO objeto (todos corretos, mas redundantes).
+
+**Default adotado.** Mantido: cada pin está sobre o objeto e a busca voa para o de
+melhor score. Com detectores reais não se conhece o tamanho do objeto a priori.
+
+**Quando decidir.** Se incomodar na demo real: raio por classe (person < mesa <
+estante) ou merge de clusters com evidências em frames disjuntos.
+
 ---
 
 ## Registrado e resolvido
