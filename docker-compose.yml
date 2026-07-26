@@ -78,6 +78,11 @@ services:
       # inferência usa os NPZs da cena sintética.
       WORKER_MODE: fixture
       FIXTURE_NPZ_DIR: /fixtures/npz
+      # Detecção (D5): na cena sintética o detector é o gabarito geométrico;
+      # YOLOX exige pesos (scripts/fetch_yolox.py) e entra no plug-in/na imagem real.
+      DETECTOR: ${DETECTOR:-synthetic}
+      APP_INTERNAL_URL: http://web:3000
+      RUNPOD_WEBHOOK_SECRET: ${RUNPOD_WEBHOOK_SECRET:-webhook-secret-dev}
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY_ID: twins-dev
       S3_SECRET_ACCESS_KEY: twins-dev-secret

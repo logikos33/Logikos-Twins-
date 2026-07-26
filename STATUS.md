@@ -1,6 +1,6 @@
 # STATUS
 
-**Etapa atual:** D5
+**Etapa atual:** D6
 **Última atualização:** 2026-07-26
 
 > Este arquivo é por onde o Vitor acompanha. Uma etapa fechada é atualizada aqui no mesmo
@@ -17,14 +17,18 @@
 | **D2** | Fluxo de jobs ponta a ponta com o sósia do RunPod | ✅ concluída |
 | **D3** | Worker real completo, rodando sem GPU | ✅ concluída |
 | **D4** | Viewer "controle do mapa": medição, pins, trajetória | ✅ concluída |
-| **D5** | Detecções ancoradas em 3D (+ D5.5 Recognition) | ⏳ em andamento |
-| D6 | Escala automática por ArUco + blur de rostos | ⬜ |
+| **D5** | Detecções ancoradas em 3D (+ D5.5 Recognition) | ✅ concluída² |
+| **D6** | Escala automática por ArUco + blur de rostos | ⏳ em andamento |
 | D7 | Retenção, painel admin, limites, logs | ⬜ |
 | **PLUG-IN** | Contas, GPU real, deploy | 🔒 **só com o Vitor presente** |
 
 ¹ Um critério da D1 aguarda validação física: gravar 60 s **de um celular de verdade**
 exige HTTPS na rede local (mkcert ou túnel — instruções em `docs/protocolo-captura.md`).
 O caminho de código é o mesmo já provado por E2E via API + verificação em navegador.
+
+² A D5.5 (integração do Recognition real) aguarda o repositório privado: a interface,
+o fallback automático e o procedimento (com auditoria de licença como pré-condição)
+estão prontos em `worker/pipeline/recognition_detector.py`.
 
 ---
 
@@ -116,11 +120,20 @@ make check
   funcionando (aberto em navegador, foto carregada por redirect assinado).
 - Mobile 375×812 verificado.
 
-## O que falta para a D5
+## O que a D5 deixou pronto
 
-- Detector protocol + YOLOX-s ONNX (Apache-2.0) nos keyframes, no worker.
-- Desprojeção bbox→world_pos (a identidade já validada na fixture) + cluster por
-  rótulo/raio → tabela `detections` → rota batch.
-- Pins semânticos no viewer, filtro por classe e busca que voa até o cluster.
-- Objetos "plantados" da cena viram o teste de posição (< 5% do tamanho da cena).
-- D5.5: auditoria de licença do Recognition e integração via `DETECTOR=recognition`.
+- **A tese funciona de ponta a ponta**: detector → desprojeção → cluster → pins
+  semânticos → busca "onde está X?" com voo de câmera e card de evidência — provado
+  ao vivo na cena sintética, no modo DEFAULT do compose.
+- YOLOX-s ONNX validado contra ground truth do COCO em CPU (gatos 0,93; person 0,78).
+- Detector plugável com fallback automático; stub do Recognition com o procedimento
+  da D5.5 documentado.
+- Ancoragem testada: pin a < 5% da cena, medido à caixa do objeto (métrica registrada).
+
+## O que falta para a D6
+
+- ArUco (DICT_4X4_50) nos keyframes → escala automática (`scale.method='aruco'`),
+  com fallback manual preservado.
+- PDF do marcador para impressão, linkado na página de gravação.
+- Blur de rostos opcional por scan — VERIFICAR a licença do detector de faces antes
+  de adotar (OPEN-QUESTIONS Q5); aplicar só a keyframes/thumbnail.
