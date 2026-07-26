@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import license_gate
+import pytest
 
 
 def test_repositorio_atual_passa() -> None:
@@ -17,7 +18,9 @@ def test_repositorio_atual_passa() -> None:
     assert license_gate.check_imports() == []
 
 
-def test_reprova_pacote_agpl_em_requirements(tmp_path: Path, monkeypatch) -> None:
+def test_reprova_pacote_agpl_em_requirements(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     fake_repo = tmp_path
     (fake_repo / "worker").mkdir()
     (fake_repo / "worker" / "requirements.txt").write_text(
@@ -31,7 +34,7 @@ def test_reprova_pacote_agpl_em_requirements(tmp_path: Path, monkeypatch) -> Non
     assert "AGPL" in problems[0]
 
 
-def test_reprova_import_agpl_no_codigo(tmp_path: Path, monkeypatch) -> None:
+def test_reprova_import_agpl_no_codigo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     fake_repo = tmp_path
     (fake_repo / "worker").mkdir()
     (fake_repo / "worker" / "detector.py").write_text(
@@ -44,7 +47,9 @@ def test_reprova_import_agpl_no_codigo(tmp_path: Path, monkeypatch) -> None:
     assert "detector.py" in problems[0]
 
 
-def test_comentario_mencionando_pacote_banido_nao_reprova(tmp_path: Path, monkeypatch) -> None:
+def test_comentario_mencionando_pacote_banido_nao_reprova(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Citar o nome numa nota não é usar a biblioteca — o gate não pode virar folclore."""
     fake_repo = tmp_path
     (fake_repo / "worker").mkdir()

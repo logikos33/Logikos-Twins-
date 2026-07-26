@@ -4,3 +4,7 @@ uvicorn[standard]==0.34.0
 httpx==0.28.1
 pydantic==2.10.5
 boto3==1.35.99
+
+# Para o modo local-worker, que executa o pipeline REAL do worker em CPU.
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
