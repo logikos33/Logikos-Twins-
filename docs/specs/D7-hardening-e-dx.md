@@ -1,6 +1,6 @@
 # Spec — D7 Hardening e DX
 
-- **Status:** em execução
+- **Status:** fechada
 - **Etapa:** D7
 - **ADRs relacionados:** [0003](../adr/0003-storage-adapter-s3.md) (retenção opera no storage), [0004](../adr/0004-fake-runpod-sosia-de-contrato.md)
 
@@ -44,16 +44,20 @@ abuso tem teto; e o caminho do plug-in está escrito passo a passo.
 
 ## Critérios de aceite
 
-- [ ] Scan com vídeo além do prazo → objeto some do storage, `video_deleted_at`
-      preenchido, artefatos e viewer intactos (provado no compose com TTL de minutos).
-- [ ] Scans dentro do prazo e scans já limpos não são tocados (idempotência).
-- [ ] 21º scan do dia sem token → 429; com ADMIN_TOKEN → passa.
-- [ ] `/admin` mostra scans, custo acumulado e erros; sem token → 404.
-- [ ] Galeria `/` sem token não lista scans de terceiros.
-- [ ] 10 uploads consecutivos sem intervenção manual (script) — DoD do desenvolvimento.
-- [ ] PLUGIN-CHECKLIST.md cobre: contas/billing caps, bucket+CORS+ETag+lifecycle,
-      volume de pesos, imagem+endpoint, F0/runbook, deploy Railway, smoke real,
-      inventário de `[TESTAR no plug-in]`.
+- [x] Retenção provada AO VIVO no compose (TTL 1 min): **18 vídeos brutos apagados**
+      num tick, `video_deleted_at` preenchido, artefatos intactos no storage, logs
+      JSON `retention.video_deleted` com scan_id. Idempotência e "processando nunca
+      perde vídeo" cobertos por teste puro.
+- [x] Scans dentro do prazo intocados (2 recentes sobraram no bucket) e já limpos
+      não são revisitados (teste).
+- [x] Limite: com 21 scans no dia, POST sem token → **429** com mensagem legível;
+      com `X-Admin-Token` → 201.
+- [x] `/admin?token=` → 200 com scans/custo/erros; sem token → **404**.
+- [x] Galeria `/` sem token não lista nada (verificado por conteúdo); com
+      `?admin=` lista.
+- [x] **10/10 uploads consecutivos `done`** sem intervenção.
+- [x] PLUGIN-CHECKLIST.md completo, incluindo CORS-ETag do R2 e o inventário
+      `[TESTAR no plug-in]`.
 
 ## Casos de teste
 
