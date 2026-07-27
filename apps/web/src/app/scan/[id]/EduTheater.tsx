@@ -44,8 +44,16 @@ function buildScene(): { pts: P3[]; traj: P3[] } {
   const cluster = (n: number, fx: () => Omit<P3, "b">) => {
     for (let i = 0; i < n; i++) pts.push({ ...fx(), b: 0.35 + rnd() * 0.65 });
   };
-  cluster(620, () => ({ x: -3 + rnd() * 6, y: 0.02 + rnd() * 0.05, z: -2.3 + rnd() * 4.6 }));
-  cluster(300, () => ({ x: -3.05 + rnd() * 0.12, y: rnd() * 2.1, z: -2.3 + rnd() * 4.6 }));
+  cluster(620, () => ({
+    x: -3 + rnd() * 6,
+    y: 0.02 + rnd() * 0.05,
+    z: -2.3 + rnd() * 4.6,
+  }));
+  cluster(300, () => ({
+    x: -3.05 + rnd() * 0.12,
+    y: rnd() * 2.1,
+    z: -2.3 + rnd() * 4.6,
+  }));
   cluster(300, () => ({ x: -3 + rnd() * 6, y: rnd() * 2.1, z: -2.35 + rnd() * 0.12 }));
   cluster(230, () => ({ x: 0.5 + rnd() * 1.3, y: rnd() * 0.78, z: 0.1 + rnd() * 0.8 }));
   cluster(260, () => ({ x: -2.6 + rnd() * 0.7, y: rnd() * 1.9, z: -1.0 + rnd() * 0.5 }));
@@ -193,7 +201,7 @@ export function EduTheater() {
           ctx.lineWidth = 1.4;
           ctx.stroke();
           if (at > 0.85) {
-            ctx.font = '10px var(--font-jetbrains-mono, monospace)';
+            ctx.font = "10px var(--font-jetbrains-mono, monospace)";
             ctx.fillStyle = "#f4f6f8";
             ctx.textAlign = "center";
             ctx.fillText(d.label, x, y - r - 6);

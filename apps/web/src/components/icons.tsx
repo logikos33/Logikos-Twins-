@@ -66,13 +66,20 @@ export const IconClock = (p: P) => (
 );
 export const IconPrint = (p: P) => (
   <I {...p}>
-    <path d="M7 8V4h10v4M7 17H4v-6a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 11v6h-3" {...s} />
+    <path
+      d="M7 8V4h10v4M7 17H4v-6a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 11v6h-3"
+      {...s}
+    />
     <rect x="7" y="14.5" width="10" height="6" rx="1" {...s} />
   </I>
 );
 export const IconShield = (p: P) => (
   <I {...p}>
-    <path d="M12 3l7 2.6v5.2c0 4.6-3 8.2-7 10.2-4-2-7-5.6-7-10.2V5.6L12 3z" {...s} strokeWidth={1.6} />
+    <path
+      d="M12 3l7 2.6v5.2c0 4.6-3 8.2-7 10.2-4-2-7-5.6-7-10.2V5.6L12 3z"
+      {...s}
+      strokeWidth={1.6}
+    />
   </I>
 );
 export const IconCamOff = (p: P) => (
@@ -129,13 +136,26 @@ export const IconOrbit = (p: P) => (
 );
 export const IconRuler = (p: P) => (
   <I {...p}>
-    <rect x="2.8" y="9" width="18.4" height="6" rx="1.4" transform="rotate(-35 12 12)" {...s} strokeWidth={1.6} />
+    <rect
+      x="2.8"
+      y="9"
+      width="18.4"
+      height="6"
+      rx="1.4"
+      transform="rotate(-35 12 12)"
+      {...s}
+      strokeWidth={1.6}
+    />
     <path d="M9.4 13.4l1 1.5M12 11.5l1 1.5M14.6 9.7l1 1.5" {...s} strokeWidth={1.4} />
   </I>
 );
 export const IconPin = (p: P) => (
   <I {...p}>
-    <path d="M12 21s-6.5-6.2-6.5-10.6a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z" {...s} strokeWidth={1.7} />
+    <path
+      d="M12 21s-6.5-6.2-6.5-10.6a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"
+      {...s}
+      strokeWidth={1.7}
+    />
     <circle cx="12" cy="10.3" r="2.1" {...s} strokeWidth={1.6} />
   </I>
 );
@@ -183,7 +203,11 @@ export const IconShare = (p: P) => (
 );
 export const IconEye = (p: P) => (
   <I {...p}>
-    <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z" {...s} strokeWidth={1.7} />
+    <path
+      d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"
+      {...s}
+      strokeWidth={1.7}
+    />
     <circle cx="12" cy="12" r="2.6" {...s} strokeWidth={1.7} />
   </I>
 );
@@ -207,7 +231,12 @@ export const IconRoute = (p: P) => (
   <I {...p}>
     <circle cx="6" cy="18" r="2.2" {...s} strokeWidth={1.6} />
     <circle cx="18" cy="6" r="2.2" {...s} strokeWidth={1.6} />
-    <path d="M8 17h6a3.5 3.5 0 0 0 0-7H9.5a3.5 3.5 0 0 1 0-7H16" {...s} strokeWidth={1.6} strokeDasharray="3 3" />
+    <path
+      d="M8 17h6a3.5 3.5 0 0 0 0-7H9.5a3.5 3.5 0 0 1 0-7H16"
+      {...s}
+      strokeWidth={1.6}
+      strokeDasharray="3 3"
+    />
   </I>
 );
 export const IconMail = (p: P) => (

@@ -115,11 +115,7 @@ export function ScanStatusClient({ scanId, token }: { scanId: string; token: str
   useEffect(() => {
     if (!viewerReady || revealed) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
-      setRevealed(true);
-      return;
-    }
-    const t = setTimeout(() => setRevealed(true), 1400);
+    const t = setTimeout(() => setRevealed(true), reduced ? 0 : 1400);
     return () => clearTimeout(t);
   }, [viewerReady, revealed]);
 
@@ -205,7 +201,10 @@ export function ScanStatusClient({ scanId, token }: { scanId: string; token: str
 
       {/* Stepper honesto: etapas concluídas são fatos; a ativa apenas pulsa. */}
       {!failed && (
-        <div className="mt-5 mb-4 flex items-start" aria-label="Progresso do processamento">
+        <div
+          className="mt-5 mb-4 flex items-start"
+          aria-label="Progresso do processamento"
+        >
           {STEP_LABELS.map((label, i) => (
             <div key={label} className="relative flex flex-1 flex-col items-center gap-2">
               {i > 0 && (
@@ -249,8 +248,8 @@ export function ScanStatusClient({ scanId, token }: { scanId: string; token: str
             </p>
           )}
           <p className="mt-2.5 text-[13px] leading-relaxed text-mist">
-            Grave de novo com <b className="font-medium text-signal">mais luz ambiente</b> e
-            movimentos mais lentos.
+            Grave de novo com <b className="font-medium text-signal">mais luz ambiente</b>{" "}
+            e movimentos mais lentos.
           </p>
           <a
             href="/new"
@@ -302,7 +301,9 @@ export function ScanStatusClient({ scanId, token }: { scanId: string; token: str
         <button
           onClick={copyLink}
           className={`mt-2.5 inline-flex min-h-(--tap) items-center rounded-[10px] border px-4 font-mono text-xs transition ${
-            copied ? "border-success text-success" : "border-line-strong hover:border-cyan"
+            copied
+              ? "border-success text-success"
+              : "border-line-strong hover:border-cyan"
           }`}
         >
           {copied ? "copiado ✓" : "copiar link"}

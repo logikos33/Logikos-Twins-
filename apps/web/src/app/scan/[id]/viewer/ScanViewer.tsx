@@ -342,7 +342,8 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
   // ---------------------------------------------------------------------------
 
   const uniqueLabels = [...new Set(detections.map((d) => d.label))];
-  const countByLabel = (label: string) => detections.filter((d) => d.label === label).length;
+  const countByLabel = (label: string) =>
+    detections.filter((d) => d.label === label).length;
 
   const scaleChip =
     !scale || scale.method === "none"
@@ -571,7 +572,9 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
                   setCamOpen(false);
                 }}
                 className={`flex h-10 items-center gap-2.5 rounded-[10px] px-3 text-[13px] transition ${
-                  mode === m ? "bg-cyan font-semibold text-ink" : "text-mist hover:text-signal"
+                  mode === m
+                    ? "bg-cyan font-semibold text-ink"
+                    : "text-mist hover:text-signal"
                 }`}
               >
                 <Icon className="h-[18px] w-[18px]" />
@@ -677,7 +680,10 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
           {uniqueLabels.length > 0 && (
             <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-3">
               {uniqueLabels.map((label) => (
-                <span key={label} className="flex items-center gap-2 text-[13px] text-mist">
+                <span
+                  key={label}
+                  className="flex items-center gap-2 text-[13px] text-mist"
+                >
                   <i
                     className="h-2 w-2 rotate-45 rounded-[2px]"
                     style={{ backgroundColor: cssColor(labelColor(label)) }}
@@ -728,9 +734,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
             {matches.length > 1 && (
               <div className="mt-auto flex gap-1.5 pt-1.5">
                 <button
-                  onClick={() =>
-                    openEvidence(matches, (matchIdx + 1) % matches.length)
-                  }
+                  onClick={() => openEvidence(matches, (matchIdx + 1) % matches.length)}
                   className="h-[34px] rounded-lg border border-line-strong px-3 font-mono text-xs transition hover:border-cyan hover:text-cyan"
                 >
                   próxima ›
@@ -756,7 +760,8 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         <div className="absolute top-[68px] left-1/2 z-10 max-w-[92vw] -translate-x-1/2 rounded-lg border border-cyan-deep/60 bg-graphite/95 px-4 py-3 text-sm backdrop-blur-md">
           {measurePts.length < 2 ? (
             <p className="text-mist">
-              Toque em {measurePts.length === 0 ? "dois pontos" : "mais um ponto"} da nuvem
+              Toque em {measurePts.length === 0 ? "dois pontos" : "mais um ponto"} da
+              nuvem
             </p>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
@@ -897,7 +902,9 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
               <button
                 key={label}
                 onClick={() => setLabelFilter(labelFilter === label ? null : label)}
-                style={{ color: labelFilter === label ? cssColor(labelColor(label)) : undefined }}
+                style={{
+                  color: labelFilter === label ? cssColor(labelColor(label)) : undefined,
+                }}
                 className={`inline-flex h-9 flex-none items-center gap-1.5 rounded-full border px-3 text-[13px] backdrop-blur-sm transition ${
                   labelFilter === label
                     ? "bg-graphite/90"

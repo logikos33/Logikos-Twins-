@@ -69,7 +69,10 @@ export function LoginClient() {
             )}
 
             <form onSubmit={submitLogin} noValidate>
-              <label className="mb-1.5 block text-[13px] font-medium text-mist" htmlFor="email">
+              <label
+                className="mb-1.5 block text-[13px] font-medium text-mist"
+                htmlFor="email"
+              >
                 E-mail
               </label>
               <input
@@ -82,7 +85,10 @@ export function LoginClient() {
                   view === "error" ? "border-magenta/55" : "border-line"
                 }`}
               />
-              <label className="mb-1.5 block text-[13px] font-medium text-mist" htmlFor="pwd">
+              <label
+                className="mb-1.5 block text-[13px] font-medium text-mist"
+                htmlFor="pwd"
+              >
                 Senha
               </label>
               <div className="relative mb-1">
@@ -102,7 +108,11 @@ export function LoginClient() {
                   onClick={() => setShowPwd((v) => !v)}
                   className="absolute top-1/2 right-1 grid h-(--tap) w-(--tap) -translate-y-1/2 place-items-center rounded-[10px] text-mist hover:text-signal"
                 >
-                  {showPwd ? <IconEyeOff className="h-5 w-5" /> : <IconEye className="h-5 w-5" />}
+                  {showPwd ? (
+                    <IconEyeOff className="h-5 w-5" />
+                  ) : (
+                    <IconEye className="h-5 w-5" />
+                  )}
                 </button>
               </div>
               <div className="mb-3.5 flex justify-end">
@@ -137,10 +147,14 @@ export function LoginClient() {
             </button>
             <h1 className="font-display text-[23px] font-bold">Redefinir senha</h1>
             <p className="mt-1 mb-4 text-[13px] leading-relaxed text-mist">
-              Informe o e-mail da sua conta de operador. Enviaremos um link de redefinição.
+              Informe o e-mail da sua conta de operador. Enviaremos um link de
+              redefinição.
             </p>
             <form onSubmit={submitForgot} noValidate>
-              <label className="mb-1.5 block text-[13px] font-medium text-mist" htmlFor="email2">
+              <label
+                className="mb-1.5 block text-[13px] font-medium text-mist"
+                htmlFor="email2"
+              >
                 E-mail
               </label>
               <input
@@ -165,7 +179,9 @@ export function LoginClient() {
             <span className="mx-auto grid h-16 w-16 place-items-center rounded-full border-[1.5px] border-success/50">
               <IconMail className="h-7 w-7 text-success" />
             </span>
-            <h2 className="mt-3.5 font-display text-lg font-medium">Verifique seu e-mail</h2>
+            <h2 className="mt-3.5 font-display text-lg font-medium">
+              Verifique seu e-mail
+            </h2>
             <p className="mt-1.5 text-[13px] leading-relaxed text-mist">
               Se{" "}
               <b className="font-medium text-signal">
@@ -184,8 +200,8 @@ export function LoginClient() {
       </div>
 
       <p className="relative mt-4 max-w-[340px] text-center text-[12.5px] leading-relaxed text-mist">
-        O login <b className="font-medium text-signal">nunca é exigido</b> para ver um scan
-        compartilhado — o link com token continua sendo a chave.
+        O login <b className="font-medium text-signal">nunca é exigido</b> para ver um
+        scan compartilhado — o link com token continua sendo a chave.
       </p>
       <Link
         href="/"
