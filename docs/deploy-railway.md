@@ -56,8 +56,9 @@ Build pelo Dockerfile do diretório; o `railway.json` já força
 
 ## 4. `web` (repo, root directory `apps/web/`)
 
-Railpack detecta Next; o `railway.json` roda `prisma migrate deploy` antes do start e
-aponta o healthcheck para `/api/health`. Domínio público → target port do serviço.
+Build pelo `Dockerfile` de `apps/web/` (não Railpack/auto-detecção, para o build ser
+reprodutível); o `railway.json` roda `prisma migrate deploy` antes do start e aponta o
+healthcheck para `/api/health`. Domínio público → target port do serviço.
 
 | Variável | Valor |
 |---|---|
