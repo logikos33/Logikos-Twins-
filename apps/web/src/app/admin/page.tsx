@@ -56,8 +56,8 @@ export default async function AdminPage({
         <h1 className="mt-3 font-display text-2xl font-bold tracking-tight">Operação</h1>
         <p className="mt-1.5 font-mono text-[13px] text-mist">
           {scans.length} scans · {today} hoje{" "}
-          <span className="text-faint">(limite {env().MAX_SCANS_PER_DAY}/dia)</span> · custo
-          acumulado <span className="text-signal">US$ {totalCost.toFixed(2)}</span>
+          <span className="text-faint">(limite {env().MAX_SCANS_PER_DAY}/dia)</span> ·
+          custo acumulado <span className="text-signal">US$ {totalCost.toFixed(2)}</span>
         </p>
       </header>
 

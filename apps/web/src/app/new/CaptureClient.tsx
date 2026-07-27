@@ -47,9 +47,12 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
     void openCamera();
   }, [openCamera]);
 
-  // Estado inicial vem do localStorage DEPOIS da hidratação (evita mismatch SSR).
+  // Estado inicial vem do localStorage DEPOIS da hidratação (evita mismatch SSR);
+  // o timeout 0 tira o setState do corpo síncrono do efeito (regra do lint).
   useEffect(() => {
-    if (window.localStorage.getItem(INSTR_KEY) === "1") setInstrOpen(false);
+    if (window.localStorage.getItem(INSTR_KEY) !== "1") return;
+    const t = setTimeout(() => setInstrOpen(false), 0);
+    return () => clearTimeout(t);
   }, []);
 
   // Gravação concluída → direto para a página do scan, que mostra o processamento.
@@ -65,7 +68,8 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
 
   const recordingHint = useMemo(() => {
     if (state.phase !== "recording") return null;
-    if (nearLimit) return `encerrando em 0:${remaining.toString().padStart(2, "0")} · feche a volta`;
+    if (nearLimit)
+      return `encerrando em 0:${remaining.toString().padStart(2, "0")} · feche a volta`;
     return "1 passo por segundo · feche a volta";
   }, [state.phase, nearLimit, remaining]);
 
@@ -179,7 +183,8 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
                 <IconSteps className="h-5 w-5 flex-none text-cyan" />
                 <span>
                   <b className="font-semibold">Ande devagar:</b>{" "}
-                  <span className="font-mono text-mist">1 passo/s</span>. Sem giros bruscos.
+                  <span className="font-mono text-mist">1 passo/s</span>. Sem giros
+                  bruscos.
                 </span>
               </li>
               <li className="flex items-center gap-2.5">
@@ -236,8 +241,8 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
 
             <p className="mt-2 text-xs leading-relaxed text-mist">
               <IconShield className="mr-1.5 -mt-0.5 inline h-3.5 w-3.5" />O vídeo bruto é
-              apagado após 7 dias; o mapa 3D e as fotos de evidência permanecem. Ao gravar,
-              você concorda com o processamento das imagens.
+              apagado após 7 dias; o mapa 3D e as fotos de evidência permanecem. Ao
+              gravar, você concorda com o processamento das imagens.
             </p>
 
             <button
@@ -258,7 +263,9 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
             <span className="grid h-[72px] w-[72px] place-items-center rounded-full border-[1.5px] border-magenta/50">
               <IconCamOff className="h-8 w-8 text-magenta" />
             </span>
-            <h1 className="mt-4 font-display text-[22px] font-bold">Sem acesso à câmera</h1>
+            <h1 className="mt-4 font-display text-[22px] font-bold">
+              Sem acesso à câmera
+            </h1>
             <p className="mt-2 text-sm leading-relaxed text-mist">{state.error}</p>
             <button
               onClick={() => void openCamera()}
@@ -273,7 +280,8 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
               Enviar um arquivo de vídeo
             </button>
             <p className="mt-5 text-[11px] text-faint">
-              Nada foi gravado nem enviado — o vídeo só sai do aparelho durante a gravação.
+              Nada foi gravado nem enviado — o vídeo só sai do aparelho durante a
+              gravação.
             </p>
           </div>
         )}
@@ -299,8 +307,12 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
           {(state.phase === "ready" || state.phase === "recording") &&
             !showInstructions && (
               <button
-                onClick={() => void (state.phase === "recording" ? stop() : start(blurFaces))}
-                aria-label={state.phase === "recording" ? "Parar e processar" : "Começar a gravar"}
+                onClick={() =>
+                  void (state.phase === "recording" ? stop() : start(blurFaces))
+                }
+                aria-label={
+                  state.phase === "recording" ? "Parar e processar" : "Começar a gravar"
+                }
                 className="relative grid h-[78px] w-[78px] place-items-center rounded-full"
               >
                 <span className="absolute inset-0 rounded-full border-[2.5px] border-signal/85" />
@@ -318,7 +330,9 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
             )}
 
           {state.phase === "recording" && (
-            <span className="k-label text-[9px] text-faint">tela ativa · não vai apagar</span>
+            <span className="k-label text-[9px] text-faint">
+              tela ativa · não vai apagar
+            </span>
           )}
 
           {state.phase === "finishing" && (

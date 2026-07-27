@@ -78,7 +78,9 @@ export default async function Home({
         /* ── Visitante: nada é listado (privacidade por design) ──────────── */
         <>
           <section className="mt-[10dvh] max-w-xl">
-            <p className="k-label text-cyan">scan 3d pelo celular · sem hardware especial</p>
+            <p className="k-label text-cyan">
+              scan 3d pelo celular · sem hardware especial
+            </p>
             <h1 className="mt-4 font-display text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl">
               Filme o ambiente. Receba um mapa 3D que responde{" "}
               <span className="text-cyan">onde as coisas estão</span>.
@@ -129,8 +131,8 @@ export default async function Home({
             <div>
               <b className="block text-sm font-semibold">Privacidade por padrão</b>
               <p className="mt-1 text-[12.5px] leading-relaxed text-mist">
-                Nenhum scan é listado nesta página. Cada mapa existe apenas para quem tem o
-                link com token secreto. O vídeo bruto é apagado após 7 dias; o mapa 3D
+                Nenhum scan é listado nesta página. Cada mapa existe apenas para quem tem
+                o link com token secreto. O vídeo bruto é apagado após 7 dias; o mapa 3D
                 permanece.
               </p>
             </div>

@@ -25,7 +25,14 @@ function KeyholeMask({ id }: { id: string }) {
 export function LogoSymbol({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
-      <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="5.5" />
+      <circle
+        cx="50"
+        cy="50"
+        r="45"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="5.5"
+      />
       <polyline
         points="27,79 50,27 73,79"
         fill="none"
@@ -54,7 +61,11 @@ export function LogoWordmark({
       className={`inline-flex items-center whitespace-nowrap font-display font-bold tracking-[0.16em] ${className}`}
       aria-label={withTwins ? "Logikos Twins" : "Logikos"}
     >
-      <svg viewBox="20 16 76 82" className="mr-[0.1em] h-[0.9em] w-[0.8em]" aria-hidden="true">
+      <svg
+        viewBox="20 16 76 82"
+        className="mr-[0.1em] h-[0.9em] w-[0.8em]"
+        aria-hidden="true"
+      >
         <polyline
           points="58,22 30,90 86,90"
           fill="none"
@@ -63,7 +74,11 @@ export function LogoWordmark({
           strokeLinejoin="miter"
         />
       </svg>
-      <svg viewBox="0 0 100 100" className="mr-[0.14em] h-[0.8em] w-[0.8em]" aria-hidden="true">
+      <svg
+        viewBox="0 0 100 100"
+        className="mr-[0.14em] h-[0.8em] w-[0.8em]"
+        aria-hidden="true"
+      >
         <defs>
           <KeyholeMask id={maskId} />
         </defs>

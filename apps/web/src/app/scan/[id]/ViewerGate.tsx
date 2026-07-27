@@ -13,7 +13,9 @@ const ScanViewer = dynamic(
     ssr: false,
     loading: () => (
       <div className="grid-grego flex h-dvh items-center justify-center bg-ink">
-        <p className="animate-pulse font-mono text-xs tracking-wider text-mist">preparando o viewer…</p>
+        <p className="animate-pulse font-mono text-xs tracking-wider text-mist">
+          preparando o viewer…
+        </p>
       </div>
     ),
   },

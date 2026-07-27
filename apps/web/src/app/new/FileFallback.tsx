@@ -32,7 +32,13 @@ async function api<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function FileFallback({ reason, onBack }: { reason?: string; onBack?: () => void }) {
+export function FileFallback({
+  reason,
+  onBack,
+}: {
+  reason?: string;
+  onBack?: () => void;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -185,8 +191,8 @@ export function FileFallback({ reason, onBack }: { reason?: string; onBack?: () 
       )}
 
       <p className="mt-6 text-xs leading-relaxed text-mist">
-        <IconShield className="mr-1.5 -mt-0.5 inline h-3.5 w-3.5" />O vídeo bruto é apagado
-        após 7 dias; o mapa 3D e as fotos de evidência permanecem.
+        <IconShield className="mr-1.5 -mt-0.5 inline h-3.5 w-3.5" />O vídeo bruto é
+        apagado após 7 dias; o mapa 3D e as fotos de evidência permanecem.
       </p>
     </main>
   );
