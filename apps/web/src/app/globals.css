@@ -179,6 +179,22 @@ body {
   }
 }
 
+/* Shake seco do erro de credencial — steps(), 1×, termina em repouso (manual §10). */
+@keyframes shake {
+  0% {
+    transform: translateX(-5px);
+  }
+  33% {
+    transform: translateX(4px);
+  }
+  66% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
 /* Shimmer honesto da etapa ativa (a barra nunca inventa porcentagem). */
 @keyframes stage-slide {
   from {
