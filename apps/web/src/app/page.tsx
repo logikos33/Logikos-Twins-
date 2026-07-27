@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listScans } from "@/lib/services/gallery";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +19,16 @@ const STATUS_LABEL: Record<string, string> = {
  * Galeria de scans. Na D4 lista tudo (dev); a D7 põe a listagem completa atrás do
  * ADMIN_TOKEN — o acesso a um scan individual permanece pelo link com share_token.
  */
-export default async function Home() {
-  const scans = await listScans().catch(() => []);
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ admin?: string }>;
+}) {
+  // Galeria completa só com ADMIN_TOKEN (D7): sem ele, a home é o call-to-action —
+  // cada scan continua acessível pelo próprio link com share_token.
+  const { admin } = await searchParams;
+  const isAdmin = admin === env().ADMIN_TOKEN;
+  const scans = isAdmin ? await listScans().catch(() => []) : [];
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-6 py-12">
@@ -39,7 +48,12 @@ export default async function Home() {
         </Link>
       </header>
 
-      {scans.length === 0 ? (
+      {!isAdmin ? (
+        <p className="text-sm text-neutral-500">
+          Cada scan tem um link próprio de compartilhamento — quem tem o link, vê o mapa.
+          A galeria completa é do painel do operador.
+        </p>
+      ) : scans.length === 0 ? (
         <p className="text-sm text-neutral-500">
           Nenhum scan ainda — toque em “Novo scan” e filme o primeiro ambiente.
         </p>
