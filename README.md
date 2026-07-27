@@ -35,6 +35,12 @@ make dev
 > serve; pela rede local é preciso HTTPS — use `mkcert` ou um túnel. Ver
 > [`docs/protocolo-captura.md`](./docs/protocolo-captura.md).
 
+O que a demo faz, de ponta a ponta: gravação na página com envio durante a captura →
+reconstrução 3D → viewer com medição (calibração manual **ou automática por marcador
+ArUco** — PDF em `/api/marker`), pins com foto-evidência, planta baixa com corte,
+**busca semântica** ("onde está a mesa?") que voa a câmera até o objeto, blur de rostos
+opcional (LGPD), retenção automática do vídeo bruto e painel `/admin?token=…` com custos.
+
 ---
 
 ## Como funciona

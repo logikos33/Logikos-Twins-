@@ -189,3 +189,25 @@ Ver `DECISIONS.md`.
 
 - Compositor do marcador: `np.floor` no lugar de `astype(int)` — a truncagem para
   zero engrossava o quadrado preto em dois lados e o detector rejeitava os bits.
+
+
+### D7 — Hardening e DX · 2026-07-26
+
+**Adicionado**
+
+- **Retenção**: job periódico apaga o vídeo bruto após `VIDEO_RETENTION_MINUTES`
+  (7 dias em produção; minutos no dev), marca `video_deleted_at`, preserva artefatos.
+  Decisão pura testada (idempotência; scan em processamento nunca perde o vídeo;
+  usa a chave real pós-normalização).
+- **Limite de uso**: `MAX_SCANS_PER_DAY` sem token → 429; `X-Admin-Token` passa.
+- **Painel `/admin`** (token na query; sem token → 404): scans, custo acumulado de
+  `metrics`, erros recentes, contagem do dia. Galeria `/` completa passa a exigir
+  `?admin=<token>`; o acesso a um scan continua pelo share_token.
+- Logs JSON de ciclo de vida com `scan_id` (criação, retenção).
+- **PLUGIN-CHECKLIST.md**: a FASE PLUG-IN passo a passo, com o inventário completo
+  de `[TESTAR no plug-in]` e os itens de conta/billing/CORS-ETag/lifecycle.
+
+**Provado**
+
+- 10 uploads consecutivos sem intervenção (script) e retenção comprovada no compose
+  com TTL de 1 minuto — ver spec D7.
