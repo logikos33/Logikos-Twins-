@@ -59,6 +59,7 @@ graph TB
     RP --> WK
     WK -->|"6· GET vídeo"| S3
     WK -->|"7· PUT artefatos"| S3
+    WK -->|"7b· batch de detecções (?token=segredo)"| WEB
     RP -->|"8· webhook ?token="| WEB
     WEB --> DB
     VIEW -->|"9· GET /api/scans/[id] → presigned GETs"| WEB
@@ -178,6 +179,10 @@ graph LR
 ```
 
 É aqui que "nuvem de pontos bonita" vira **mapa que responde perguntas**.
+
+Os clusters vão do worker à API pela rota batch (autenticada pelo mesmo segredo do
+webhook) e vivem na tabela `detections`; a escala automática por ArUco (D6) viaja no
+retorno do job e sobrescreve a calibração manual quando o marcador foi visto.
 
 ---
 
