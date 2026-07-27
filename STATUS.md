@@ -147,6 +147,14 @@ make check
 - **10/10 uploads consecutivos sem intervenção** — o DoD do desenvolvimento.
 - `PLUGIN-CHECKLIST.md`: a FASE PLUG-IN passo a passo, para executar COM o Vitor.
 
+### Próximos passos possíveis
+
+1. **FASE PLUG-IN** (com o Vitor) — `PLUGIN-CHECKLIST.md`.
+2. **Redesign do front-end** — briefing completo para o designer em
+   [`docs/design/BRIEFING-FRONTEND.md`](./docs/design/BRIEFING-FRONTEND.md)
+   (telas, estados, contratos fixos vs campo livre, dados disponíveis).
+3. **D5.5** — integração do Recognition quando o repositório estiver à mão.
+
 ### Portão do plug-in: ABERTO
 
 `docker compose up` do zero → gravar/enviar → estados ao vivo → mapa navegável →
