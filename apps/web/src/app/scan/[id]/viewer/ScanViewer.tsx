@@ -1,13 +1,36 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ViewerEngine, type ViewerMode } from "./engine";
 import { calibrationFactor, distance, formatMeasurement } from "@/lib/viewer/scale";
 import type { ScaleInfo, Vec3 } from "@/lib/viewer/scale";
 import { nearestKeyframe, type PosesFile } from "@/lib/viewer/poses";
+import { LogoSymbol } from "@/components/Logo";
+import {
+  IconBack,
+  IconCube,
+  IconCut,
+  IconEye,
+  IconEyeOff,
+  IconFly,
+  IconLayers,
+  IconOrbit,
+  IconPin,
+  IconPlan,
+  IconRoute,
+  IconRuler,
+  IconSearch,
+  IconShare,
+  IconX,
+} from "@/components/icons";
 
 /**
  * O "controle do mapa" (spec D4). O React cuida da UI; a cena vive em ViewerEngine.
+ *
+ * Linguagem do HUD (docs/design/DESIGN-TOKENS §9): controles ancorados nas BORDAS,
+ * recolhíveis, nunca cobrindo o centro — o mapa É o produto (contrato nº 5). Botão
+ * "esconder interface" deixa só a nuvem. Toda medição/contagem em JetBrains Mono.
  *
  * Ferramentas: navegar (orbit/fly/top) · medir (com calibração) · anotar (pins com
  * foto do keyframe mais próximo) · camadas · corte por altura · replay do percurso.
@@ -30,31 +53,19 @@ type SemanticDetection = {
   worldPos: Vec3;
 };
 
-// Cor estável por classe: hash do rótulo → matiz. O viewer não conhece a lista de
-// classes (elas vêm dos dados — YOLOX hoje, Recognition amanhã).
+// Cor estável por classe: hash do rótulo → paleta categórica dos tokens (o viewer
+// não conhece a lista de classes — elas vêm dos dados; YOLOX hoje, Recognition
+// amanhã). O ciano fica fora da paleta de propósito: é o acento reservado da UI.
+const CLASS_PALETTE = [
+  0x5aa9ff, 0x3ddc97, 0xb78bfa, 0xff9f43, 0xffd166, 0xff7ab8, 0xf87171, 0xa3e635,
+] as const;
+
 function labelColor(label: string): number {
   let h = 0;
-  for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) % 360;
-  const c = 0.9;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const [r, g, b] =
-    h < 60
-      ? [c, x, 0]
-      : h < 120
-        ? [x, c, 0]
-        : h < 180
-          ? [0, c, x]
-          : h < 240
-            ? [0, x, c]
-            : h < 300
-              ? [x, 0, c]
-              : [c, 0, x];
-  return (
-    (Math.round((r * 0.8 + 0.2) * 255) << 16) |
-    (Math.round((g * 0.8 + 0.2) * 255) << 8) |
-    Math.round((b * 0.8 + 0.2) * 255)
-  );
+  for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) % 3600;
+  return CLASS_PALETTE[h % CLASS_PALETTE.length]!;
 }
+const cssColor = (n: number) => `#${n.toString(16).padStart(6, "0")}`;
 
 type Props = {
   scanId: string;
@@ -83,6 +94,14 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
     detections: true,
   });
 
+  // Painéis do HUD — um aberto por vez; tudo dismissível (o mapa é o produto).
+  const [hudHidden, setHudHidden] = useState(false);
+  const [camOpen, setCamOpen] = useState(false);
+  const [cutOpen, setCutOpen] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [searchFocus, setSearchFocus] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState(false);
+
   // Medição em andamento: até 2 pontos.
   const [measurePts, setMeasurePts] = useState<Vec3[]>([]);
   const [calibrating, setCalibrating] = useState(false);
@@ -99,6 +118,9 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [openDetection, setOpenDetection] = useState<SemanticDetection | null>(null);
+  // Resultados da última busca, para "próxima ›" (1 de N do cartão de evidência).
+  const [matches, setMatches] = useState<SemanticDetection[]>([]);
+  const [matchIdx, setMatchIdx] = useState(0);
 
   const posesRef = useRef<PosesFile | null>(null);
   // O callback de pick do engine vive fora do ciclo do React; a ferramenta ativa
@@ -273,19 +295,29 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
     setPinText("");
   }, [pendingPin, pinText, scanId, token]);
 
+  /** Voa até uma detecção e abre o cartão de evidência. */
+  const openEvidence = useCallback((list: SemanticDetection[], idx: number) => {
+    const det = list[idx];
+    if (!det) return;
+    setMatches(list);
+    setMatchIdx(idx);
+    setOpenDetection(det);
+    engineRef.current?.flyTo(det.worldPos);
+  }, []);
+
   /** A busca da tese: "onde está X?" → voa até o melhor cluster do rótulo. */
   const runSearch = useCallback(
     (query: string) => {
       const q = query.trim().toLowerCase();
       if (!q) return;
-      const matches = detections.filter((d) => d.label.toLowerCase().includes(q));
-      if (matches.length === 0) return;
-      const best = matches.reduce((a, b) => (b.score > a.score ? b : a));
-      setLabelFilter(best.label);
-      setOpenDetection(best);
-      engineRef.current?.flyTo(best.worldPos);
+      const found = detections
+        .filter((d) => d.label.toLowerCase().includes(q))
+        .sort((a, b) => b.score - a.score);
+      if (found.length === 0) return;
+      setLabelFilter(found[0]!.label);
+      openEvidence(found, 0);
     },
-    [detections],
+    [detections, openEvidence],
   );
 
   const shareLink = useCallback(() => {
@@ -294,166 +326,446 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
       void navigator.share({ title: "Mapa 3D — Logikos Twins", url });
     } else {
       void navigator.clipboard.writeText(url);
-      alert("Link copiado!");
+      setShareFeedback(true);
+      setTimeout(() => setShareFeedback(false), 1800);
     }
   }, [scanId, token]);
+
+  const closeSheets = useCallback(() => {
+    setCamOpen(false);
+    setCutOpen(false);
+    setLayersOpen(false);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // UI
   // ---------------------------------------------------------------------------
 
-  const btn = (active: boolean) =>
-    `rounded-full px-3 py-2 text-xs font-medium transition ${
-      active ? "bg-white text-neutral-950" : "bg-neutral-800/80 text-neutral-200"
+  const uniqueLabels = [...new Set(detections.map((d) => d.label))];
+  const countByLabel = (label: string) => detections.filter((d) => d.label === label).length;
+
+  const scaleChip =
+    !scale || scale.method === "none"
+      ? { text: "escala — definir", dot: "bg-warning" }
+      : {
+          text: `escala ✓ ${scale.method === "aruco" ? "aruco" : "manual"}`,
+          dot: "bg-success",
+        };
+
+  const stkBtn = (active: boolean) =>
+    `grid h-(--tap) w-(--tap) place-items-center rounded-[14px] border backdrop-blur-md transition ${
+      active
+        ? "border-cyan bg-graphite/80 text-cyan"
+        : "border-line bg-graphite/70 text-signal hover:border-line-strong"
     }`;
 
+  const hud = hudHidden ? "pointer-events-none opacity-0" : "opacity-100";
+
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-neutral-950">
+    <div className="relative h-dvh w-full overflow-hidden bg-ink">
       <div ref={containerRef} className="absolute inset-0" />
 
-      {/* Carregamento */}
+      {/* Carregamento — nunca tela preta (contrato §3.3) */}
       {!ready && !loadError && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-neutral-950">
-          <p className="text-sm text-neutral-300">Carregando o mapa…</p>
-          <div className="h-1.5 w-56 overflow-hidden rounded-full bg-neutral-800">
+        <div className="grid-grego absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-ink px-6">
+          <LogoSymbol className="h-14 w-14 animate-pulse text-signal" />
+          <p className="mt-2 font-display text-lg font-medium">
+            Carregando a nuvem de pontos…
+          </p>
+          <p className="font-mono text-[13px] text-cyan">{progress}%</p>
+          <div className="h-1 w-64 max-w-full overflow-hidden rounded-full bg-surface-2">
             <div
-              className="h-full bg-white transition-all"
+              className="h-full rounded-full bg-cyan transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-xs text-neutral-500">{progress}%</p>
+          <p className="text-xs text-mist">o mapa abre direto no navegador</p>
         </div>
       )}
       {loadError && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center p-6">
-          <div className="max-w-sm rounded-2xl bg-red-950/80 p-4 text-sm text-red-200">
-            {loadError}
+        <div className="grid-grego absolute inset-0 z-20 flex items-center justify-center p-6">
+          <div className="max-w-sm text-center">
+            <span className="mx-auto grid h-[70px] w-[70px] place-items-center rounded-full border-[1.5px] border-magenta/50">
+              <IconX className="h-7 w-7 text-magenta" />
+            </span>
+            <h2 className="mt-4 font-display text-lg font-medium">
+              Não foi possível carregar o mapa
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-mist">{loadError}</p>
+            <p className="mt-1 text-sm text-mist">
+              <b className="font-medium text-signal">O link continua válido</b> — tente de
+              novo.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-md bg-cyan px-6 py-3 font-semibold text-ink transition hover:bg-cyan-deep"
+            >
+              Tentar de novo
+            </button>
           </div>
         </div>
       )}
 
-      {/* Barra superior: ferramentas */}
-      <div className="absolute left-0 right-0 top-0 z-10 flex flex-wrap items-center gap-2 p-3">
-        <div className="flex gap-1 rounded-full bg-neutral-900/80 p-1 backdrop-blur">
-          <button
-            className={btn(tool === "navigate")}
-            onClick={() => setTool("navigate")}
-          >
-            Navegar
-          </button>
-          <button
-            className={btn(tool === "measure")}
-            onClick={() => {
+      {/* ── Topo: voltar · título · escala · compartilhar · esconder UI ── */}
+      <div
+        className={`absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-gradient-to-b from-ink/80 to-transparent p-2 pb-4 transition-opacity duration-300 ${hud}`}
+      >
+        <Link
+          href="/"
+          aria-label="Voltar"
+          className="grid h-(--tap) w-(--tap) flex-none place-items-center rounded-full bg-graphite/55 backdrop-blur-sm"
+        >
+          <IconBack className="h-[21px] w-[21px]" />
+        </Link>
+        <div className="min-w-0">
+          <b className="block truncate font-display text-[15px] font-medium">Mapa 3D</b>
+        </div>
+        <span className="flex-1" />
+        <button
+          onClick={() => {
+            if (!scale || scale.method === "none") {
               setTool("measure");
               setMeasurePts([]);
-            }}
-          >
-            Medir
-          </button>
-          <button className={btn(tool === "pin")} onClick={() => setTool("pin")}>
-            Anotar
-          </button>
-        </div>
-
-        <div className="flex gap-1 rounded-full bg-neutral-900/80 p-1 backdrop-blur">
-          <button className={btn(mode === "orbit")} onClick={() => setMode("orbit")}>
-            Órbita
-          </button>
-          <button className={btn(mode === "fly")} onClick={() => setMode("fly")}>
-            Voar
-          </button>
-          <button className={btn(mode === "top")} onClick={() => setMode("top")}>
-            Planta
-          </button>
-        </div>
-
-        <button
-          className={btn(replaying)}
-          onClick={() => {
-            const engine = engineRef.current;
-            if (!engine) return;
-            if (replaying) {
-              engine.stopReplay();
-            } else {
-              engine.startReplay();
             }
-            setReplaying(!replaying);
           }}
+          className="inline-flex h-[34px] flex-none items-center gap-1.5 rounded-full border border-line bg-graphite/60 px-3 font-mono text-[11px] whitespace-nowrap backdrop-blur-sm"
+          title={
+            !scale || scale.method === "none"
+              ? "Sem escala: meça algo conhecido e toque em “Esta distância eu conheço”."
+              : scale.method === "aruco"
+                ? "Escala automática pelo marcador ArUco impresso."
+                : "Escala definida por medida de referência."
+          }
         >
-          ▶ Percurso
+          <i className={`h-[7px] w-[7px] rounded-full ${scaleChip.dot}`} />
+          {scaleChip.text}
         </button>
-
-        <button className={btn(false)} onClick={shareLink}>
-          Compartilhar
+        <button
+          onClick={shareLink}
+          aria-label="Compartilhar"
+          className="grid h-(--tap) w-(--tap) flex-none place-items-center rounded-full bg-graphite/55 backdrop-blur-sm"
+        >
+          <IconShare className="h-[20px] w-[20px]" />
         </button>
+        <button
+          onClick={() => {
+            setHudHidden(true);
+            closeSheets();
+          }}
+          aria-label="Esconder interface"
+          className="grid h-(--tap) w-(--tap) flex-none place-items-center rounded-full bg-graphite/55 backdrop-blur-sm"
+        >
+          <IconEyeOff className="h-[20px] w-[20px]" />
+        </button>
+      </div>
 
-        {/* Busca semântica — só aparece quando o scan tem detecções */}
-        {detections.length > 0 && (
+      {shareFeedback && (
+        <p className="absolute top-16 left-1/2 z-30 -translate-x-1/2 rounded-[10px] border border-line-strong border-l-[3px] border-l-cyan bg-surface-2 px-4 py-2.5 text-[13px]">
+          Link copiado. Quem receber vê o mapa direto no navegador.
+        </p>
+      )}
+
+      {/* restaurar interface */}
+      {hudHidden && (
+        <button
+          onClick={() => setHudHidden(false)}
+          aria-label="Mostrar interface"
+          className="absolute right-2.5 bottom-[calc(env(safe-area-inset-bottom,0px)+12px)] z-10 grid h-(--tap) w-(--tap) place-items-center rounded-full bg-graphite/60 text-mist"
+        >
+          <IconEye className="h-5 w-5" />
+        </button>
+      )}
+
+      {/* ── Busca semântica (só quando o scan tem detecções) ── */}
+      {detections.length > 0 && (
+        <div
+          className={`absolute top-[68px] left-2.5 z-10 w-[min(270px,72vw)] transition-opacity duration-300 ${hud}`}
+        >
           <form
-            className="flex items-center gap-1 rounded-full bg-neutral-900/80 py-1 pl-3 pr-1 backdrop-blur"
+            className={`flex h-(--tap) items-center gap-2 rounded-full border bg-graphite/80 pr-2 pl-3.5 backdrop-blur-md ${
+              searchFocus ? "border-cyan" : "border-line"
+            }`}
             onSubmit={(e) => {
               e.preventDefault();
               runSearch(search);
+              setSearchFocus(false);
             }}
           >
+            <IconSearch className="h-[17px] w-[17px] flex-none text-mist" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setSearchFocus(true)}
+              onBlur={() => setTimeout(() => setSearchFocus(false), 200)}
               placeholder="onde está…?"
-              className="w-28 bg-transparent text-xs outline-none placeholder:text-neutral-500"
+              aria-label="Buscar objeto no mapa"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-mist"
             />
-            <button
-              type="submit"
-              className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-neutral-950"
-            >
-              Buscar
-            </button>
           </form>
+          {searchFocus && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {uniqueLabels
+                .filter((l) => !search.trim() || l.includes(search.trim().toLowerCase()))
+                .map((label) => (
+                  <button
+                    key={label}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setSearch(label);
+                      runSearch(label);
+                      setSearchFocus(false);
+                    }}
+                    className="inline-flex h-[34px] items-center gap-1.5 rounded-full border border-line bg-graphite/90 px-3 text-[13px] backdrop-blur-sm hover:border-line-strong"
+                  >
+                    <i
+                      className="h-[7px] w-[7px] rotate-45 rounded-[2px]"
+                      style={{ backgroundColor: cssColor(labelColor(label)) }}
+                    />
+                    {label}
+                    <b className="font-mono text-[11px] font-normal text-mist">
+                      {countByLabel(label)}
+                    </b>
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* dica do modo voar */}
+      {mode === "fly" && (
+        <p
+          className={`absolute top-[68px] left-1/2 z-10 hidden -translate-x-1/2 rounded-full border border-line bg-graphite/80 px-3 py-1.5 font-mono text-[11px] whitespace-nowrap text-mist backdrop-blur-sm transition-opacity sm:block ${hud}`}
+        >
+          voar: WASD + QE · arraste para olhar
+        </p>
+      )}
+
+      {/* ── Pilha direita: modos de câmera + corte por altura ── */}
+      <div
+        className={`absolute top-[68px] right-2.5 z-10 flex flex-col items-end gap-2 transition-opacity duration-300 ${hud}`}
+      >
+        <button
+          aria-label="Modo de câmera"
+          onClick={() => {
+            setCamOpen((v) => !v);
+            setCutOpen(false);
+          }}
+          className={stkBtn(camOpen)}
+        >
+          <IconCube className="h-5 w-5" />
+        </button>
+        {camOpen && (
+          <div className="flex flex-col gap-1 rounded-2xl border border-line bg-graphite/95 p-1.5 backdrop-blur-md">
+            {(
+              [
+                ["orbit", "Órbita", IconOrbit],
+                ["fly", "Voar", IconFly],
+                ["top", "Planta", IconPlan],
+              ] as const
+            ).map(([m, label, Icon]) => (
+              <button
+                key={m}
+                onClick={() => {
+                  setMode(m);
+                  setCamOpen(false);
+                }}
+                className={`flex h-10 items-center gap-2.5 rounded-[10px] px-3 text-[13px] transition ${
+                  mode === m ? "bg-cyan font-semibold text-ink" : "text-mist hover:text-signal"
+                }`}
+              >
+                <Icon className="h-[18px] w-[18px]" />
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          aria-label="Corte por altura"
+          onClick={() => {
+            setCutOpen((v) => !v);
+            setCamOpen(false);
+          }}
+          className={stkBtn(cutOpen || clip < 0.999)}
+        >
+          <IconCut className="h-5 w-5" />
+        </button>
+        {cutOpen && (
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-graphite/95 px-2 py-3 backdrop-blur-md">
+            <span className="font-mono text-[9px] tracking-wider text-mist">teto</span>
+            <input
+              type="range"
+              min={0.05}
+              max={1}
+              step={0.01}
+              value={clip}
+              onChange={(e) => setClip(Number(e.target.value))}
+              aria-label="Altura do corte"
+              className="h-[150px] w-7 cursor-grab accent-cyan"
+              style={{ writingMode: "vertical-lr", direction: "rtl" }}
+            />
+            <span className="font-mono text-[9px] tracking-wider text-mist">chão</span>
+            <span className="font-mono text-[11px] text-cyan">
+              {clip >= 0.999 ? "sem corte" : `${Math.round(clip * 100)}%`}
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Detecção aberta (via busca ou filtro) */}
-      {openDetection && (
-        <div className="absolute bottom-24 right-3 z-10 w-64 rounded-2xl bg-neutral-900/95 p-3 backdrop-blur">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium">{openDetection.label}</p>
-              <p className="text-xs text-neutral-400">
-                confiança {(openDetection.score * 100).toFixed(0)}%
-              </p>
-            </div>
-            <button
-              className="text-xs text-neutral-400"
-              onClick={() => setOpenDetection(null)}
+      {/* ── Pilha esquerda: camadas + replay do percurso ── */}
+      <div
+        className={`absolute bottom-[calc(env(safe-area-inset-bottom,0px)+14px)] left-2.5 z-10 flex flex-col gap-2 transition-opacity duration-300 ${hud}`}
+      >
+        <button
+          aria-label="Camadas"
+          onClick={() => setLayersOpen((v) => !v)}
+          className={stkBtn(layersOpen)}
+        >
+          <IconLayers className="h-5 w-5" />
+        </button>
+        <button
+          aria-label="Replay do percurso"
+          onClick={() => {
+            const engine = engineRef.current;
+            if (!engine) return;
+            if (replaying) engine.stopReplay();
+            else engine.startReplay();
+            setReplaying(!replaying);
+          }}
+          className={stkBtn(replaying)}
+        >
+          <IconRoute className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* sheet de camadas — máx. ~45%, dismissível (contrato nº 5) */}
+      {layersOpen && (
+        <div className="absolute inset-x-0 bottom-0 z-20 max-h-[45%] overflow-auto rounded-t-3xl border-t border-line-strong bg-graphite px-5 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] shadow-sheet sm:right-4 sm:bottom-4 sm:left-auto sm:w-[340px] sm:rounded-3xl sm:border">
+          <button
+            aria-label="Fechar camadas"
+            onClick={() => setLayersOpen(false)}
+            className="mx-auto mb-3 block h-6 w-full"
+          >
+            <i className="mx-auto block h-1 w-9 rounded-full bg-surface-2" />
+          </button>
+          <h3 className="font-display text-[17px] font-medium">Camadas</h3>
+          {(
+            [
+              ["cloud", "Nuvem de pontos"],
+              ["trajectory", "Trajeto da câmera"],
+              ["pins", "Pins de anotação"],
+              ["detections", "Detecções"],
+            ] as const
+          ).map(([key, label]) => (
+            <label
+              key={key}
+              className="flex min-h-(--tap) cursor-pointer items-center justify-between text-sm"
             >
-              ✕
-            </button>
-          </div>
+              {label}
+              <span className="relative h-[30px] w-[50px] flex-none">
+                <input
+                  type="checkbox"
+                  checked={layers[key]}
+                  onChange={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
+                  className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+                <span className="absolute inset-0 rounded-full border border-line-strong bg-surface-2 transition peer-checked:border-cyan peer-checked:bg-cyan/20" />
+                <span className="absolute top-[3px] left-[3px] h-[22px] w-[22px] rounded-full bg-mist transition-all peer-checked:left-[23px] peer-checked:bg-cyan" />
+              </span>
+            </label>
+          ))}
+          {uniqueLabels.length > 0 && (
+            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-line pt-3">
+              {uniqueLabels.map((label) => (
+                <span key={label} className="flex items-center gap-2 text-[13px] text-mist">
+                  <i
+                    className="h-2 w-2 rotate-45 rounded-[2px]"
+                    style={{ backgroundColor: cssColor(labelColor(label)) }}
+                  />
+                  {label}
+                  <b className="ml-auto font-mono text-[11px] font-normal">
+                    {countByLabel(label)}
+                  </b>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Cartão de evidência (busca/detecção) ── */}
+      {openDetection && (
+        <div className="absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+124px)] z-[15] flex gap-3 rounded-lg border border-line bg-graphite/95 p-2.5 shadow-card backdrop-blur-md sm:top-[120px] sm:right-4 sm:bottom-auto sm:left-auto sm:w-[300px] sm:flex-col">
           {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada dinâmica */}
           <img
             alt={`Evidência: ${openDetection.label}`}
             src={`/api/scans/${scanId}/keyframes/${openDetection.frameIdx}?token=${encodeURIComponent(token)}`}
-            className="mt-2 w-full rounded-lg"
+            className="h-[74px] w-[104px] flex-none rounded-[10px] border border-line object-cover sm:h-auto sm:w-full"
           />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <p className="flex items-center gap-2 pr-8 text-[15px] font-semibold">
+              <i
+                className="h-[9px] w-[9px] flex-none rotate-45 rounded-[2px]"
+                style={{ backgroundColor: cssColor(labelColor(openDetection.label)) }}
+              />
+              <span className="truncate">
+                {openDetection.label}
+                {matches.length > 1 && (
+                  <span className="font-normal text-mist">
+                    {" "}
+                    · {matchIdx + 1} de {matches.length}
+                  </span>
+                )}
+              </span>
+            </p>
+            <p className="mt-0.5 font-mono text-[11px] text-mist">
+              confiança{" "}
+              <b className="font-medium text-cyan">
+                {(openDetection.score * 100).toFixed(0)}%
+              </b>{" "}
+              · quadro {openDetection.frameIdx}
+            </p>
+            {matches.length > 1 && (
+              <div className="mt-auto flex gap-1.5 pt-1.5">
+                <button
+                  onClick={() =>
+                    openEvidence(matches, (matchIdx + 1) % matches.length)
+                  }
+                  className="h-[34px] rounded-lg border border-line-strong px-3 font-mono text-xs transition hover:border-cyan hover:text-cyan"
+                >
+                  próxima ›
+                </button>
+              </div>
+            )}
+          </div>
+          <button
+            aria-label="Fechar"
+            onClick={() => {
+              setOpenDetection(null);
+              setMatches([]);
+            }}
+            className="absolute top-1.5 right-1.5 grid h-9 w-9 place-items-center rounded-lg text-mist hover:text-signal"
+          >
+            <IconX className="h-4 w-4" />
+          </button>
         </div>
       )}
 
-      {/* Medição ativa */}
-      {tool === "measure" && (
-        <div className="absolute left-1/2 top-16 z-10 -translate-x-1/2 rounded-2xl bg-neutral-900/90 px-4 py-3 text-sm backdrop-blur">
+      {/* ── Medição ativa ── */}
+      {tool === "measure" && !hudHidden && (
+        <div className="absolute top-[68px] left-1/2 z-10 max-w-[92vw] -translate-x-1/2 rounded-lg border border-cyan-deep/60 bg-graphite/95 px-4 py-3 text-sm backdrop-blur-md">
           {measurePts.length < 2 ? (
-            <p className="text-neutral-300">
-              Toque em {measurePts.length === 0 ? "dois pontos" : "mais um ponto"} da
-              nuvem
+            <p className="text-mist">
+              Toque em {measurePts.length === 0 ? "dois pontos" : "mais um ponto"} da nuvem
             </p>
           ) : (
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-lg">
-                {formatMeasurement(measureDistance!, scale)}
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-mono text-lg text-signal">
+                <b className="text-cyan">{formatMeasurement(measureDistance!, scale)}</b>
               </span>
               {(!scale || scale.method === "none") && !calibrating && (
                 <button
-                  className="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-950"
+                  className="rounded-[10px] bg-cyan px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
                   onClick={() => setCalibrating(true)}
                 >
                   Esta distância eu conheço
@@ -467,18 +779,18 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
                     placeholder="metros reais"
                     value={calibValue}
                     onChange={(e) => setCalibValue(e.target.value)}
-                    className="w-24 rounded-lg bg-neutral-800 px-2 py-1 text-sm outline-none"
+                    className="w-24 rounded-[10px] border border-line bg-surface-2 px-2.5 py-1.5 font-mono text-sm outline-none focus:border-cyan"
                   />
                   <button
-                    className="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-950"
+                    className="rounded-[10px] bg-cyan px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
                     onClick={() => void saveCalibration()}
                   >
-                    Calibrar
+                    Aplicar
                   </button>
                 </span>
               )}
               <button
-                className="text-xs text-neutral-400 underline"
+                className="min-h-9 font-mono text-xs text-mist underline decoration-dotted underline-offset-2"
                 onClick={() => setMeasurePts([])}
               >
                 limpar
@@ -488,24 +800,24 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         </div>
       )}
 
-      {/* Pin em criação */}
+      {/* ── Pin em criação ── */}
       {pendingPin && (
-        <div className="absolute left-1/2 top-16 z-10 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-neutral-900/90 px-4 py-3 text-sm backdrop-blur">
+        <div className="absolute top-[68px] left-1/2 z-10 flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-lg border border-line bg-graphite/95 px-3.5 py-3 text-sm backdrop-blur-md">
           <input
             autoFocus
             placeholder="o que há aqui?"
             value={pinText}
             onChange={(e) => setPinText(e.target.value)}
-            className="w-44 rounded-lg bg-neutral-800 px-2 py-1 text-sm outline-none"
+            className="w-44 rounded-[10px] border border-line bg-surface-2 px-2.5 py-1.5 text-sm outline-none focus:border-cyan"
           />
           <button
-            className="rounded-full bg-white px-3 py-1 text-xs font-medium text-neutral-950"
+            className="rounded-[10px] bg-cyan px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
             onClick={() => void savePin()}
           >
-            Fixar pin
+            Salvar pin
           </button>
           <button
-            className="text-xs text-neutral-400 underline"
+            className="min-h-9 font-mono text-xs text-mist underline decoration-dotted underline-offset-2"
             onClick={() => setPendingPin(null)}
           >
             cancelar
@@ -513,96 +825,128 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         </div>
       )}
 
-      {/* Pin aberto: texto + foto-evidência */}
+      {/* ── Pin aberto: texto + foto-evidência ── */}
       {openPin && (
-        <div className="absolute bottom-24 left-1/2 z-10 w-72 -translate-x-1/2 rounded-2xl bg-neutral-900/95 p-3 backdrop-blur">
+        <div className="absolute bottom-[calc(env(safe-area-inset-bottom,0px)+124px)] left-1/2 z-[15] w-[min(300px,92vw)] -translate-x-1/2 rounded-lg border border-line bg-graphite/95 p-3 shadow-card backdrop-blur-md">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm">{openPin.data?.text ?? "Sem descrição"}</p>
-            <button className="text-xs text-neutral-400" onClick={() => setOpenPin(null)}>
-              ✕
+            <p className="text-sm font-medium">{openPin.data?.text ?? "Sem descrição"}</p>
+            <button
+              aria-label="Fechar"
+              className="grid h-9 w-9 flex-none place-items-center rounded-lg text-mist hover:text-signal"
+              onClick={() => setOpenPin(null)}
+            >
+              <IconX className="h-4 w-4" />
             </button>
           </div>
           {openPin.data?.keyframe != null && (
-            // eslint-disable-next-line @next/next/no-img-element -- URL assinada dinâmica; next/image não otimiza storage externo
-            <img
-              alt="Foto do local anotado"
-              src={`/api/scans/${scanId}/keyframes/${openPin.data.keyframe}?token=${encodeURIComponent(token)}`}
-              className="mt-2 w-full rounded-lg"
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada dinâmica; next/image não otimiza storage externo */}
+              <img
+                alt="Foto do local anotado"
+                src={`/api/scans/${scanId}/keyframes/${openPin.data.keyframe}?token=${encodeURIComponent(token)}`}
+                className="mt-2 w-full rounded-[10px] border border-line"
+              />
+              <p className="mt-1.5 font-mono text-[10px] text-faint">
+                foto do keyframe mais próximo
+              </p>
+            </>
           )}
         </div>
       )}
 
-      {/* Rodapé: camadas, corte, lista de pins */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 flex flex-wrap items-center gap-3 p-3">
-        <div className="flex gap-1 rounded-full bg-neutral-900/80 p-1 backdrop-blur">
-          {(
-            [
-              ["cloud", "Nuvem"],
-              ["trajectory", "Trajeto"],
-              ["pins", "Pins"],
-              ["detections", "Detecções"],
-            ] as const
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              className={btn(layers[key])}
-              onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <label className="flex items-center gap-2 rounded-full bg-neutral-900/80 px-3 py-2 backdrop-blur">
-          <span className="text-xs text-neutral-300">Corte</span>
-          <input
-            type="range"
-            min={0.05}
-            max={1}
-            step={0.01}
-            value={clip}
-            onChange={(e) => setClip(Number(e.target.value))}
-            className="w-28"
-          />
-        </label>
-
-        {/* Filtro por classe detectada */}
-        {detections.length > 0 && (
-          <div className="flex max-w-full gap-1 overflow-x-auto rounded-full bg-neutral-900/80 p-1 backdrop-blur">
-            {[...new Set(detections.map((d) => d.label))].map((label) => (
-              <button
-                key={label}
-                className={btn(labelFilter === label)}
-                onClick={() => setLabelFilter(labelFilter === label ? null : label)}
-              >
-                <span
-                  className="mr-1 inline-block h-2 w-2 rounded-full"
-                  style={{
-                    backgroundColor: `#${labelColor(label).toString(16).padStart(6, "0")}`,
-                  }}
-                />
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-
+      {/* ── Chips: classes detectadas + pins (roláveis, acima do dock) ── */}
+      <div
+        className={`absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+76px)] z-10 flex flex-col gap-1.5 transition-opacity duration-300 ${hud}`}
+      >
         {annotations.filter((a) => a.type === "pin").length > 0 && (
-          <div className="flex max-w-full gap-1 overflow-x-auto rounded-full bg-neutral-900/80 p-1 backdrop-blur">
+          <div className="flex gap-1.5 overflow-x-auto px-16 [-webkit-mask-image:linear-gradient(90deg,transparent,#000_56px,#000_calc(100%-16px),transparent)] [scrollbar-width:none]">
             {annotations
               .filter((a) => a.type === "pin")
               .map((a) => (
                 <button
                   key={a.id}
-                  className={btn(openPin?.id === a.id)}
                   onClick={() => setOpenPin(openPin?.id === a.id ? null : a)}
+                  className={`inline-flex h-9 flex-none items-center gap-1.5 rounded-full border px-3 text-[13px] backdrop-blur-sm transition ${
+                    openPin?.id === a.id
+                      ? "border-cyan bg-graphite/90 text-cyan"
+                      : "border-line bg-graphite/80 text-signal"
+                  }`}
                 >
-                  📍 {a.data?.text?.slice(0, 16) ?? "pin"}
+                  <IconPin className="h-3.5 w-3.5" />
+                  {a.data?.text?.slice(0, 16) ?? "pin"}
                 </button>
               ))}
           </div>
         )}
+        {detections.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto px-16 [-webkit-mask-image:linear-gradient(90deg,transparent,#000_56px,#000_calc(100%-16px),transparent)] [scrollbar-width:none]">
+            <button
+              onClick={() => setLabelFilter(null)}
+              className={`inline-flex h-9 flex-none items-center gap-1.5 rounded-full border px-3 text-[13px] backdrop-blur-sm transition ${
+                labelFilter === null
+                  ? "border-cyan bg-graphite/90 text-cyan"
+                  : "border-line bg-graphite/80 text-signal"
+              }`}
+            >
+              todas{" "}
+              <b className="font-mono text-[11px] font-normal text-mist">
+                {detections.length}
+              </b>
+            </button>
+            {uniqueLabels.map((label) => (
+              <button
+                key={label}
+                onClick={() => setLabelFilter(labelFilter === label ? null : label)}
+                style={{ color: labelFilter === label ? cssColor(labelColor(label)) : undefined }}
+                className={`inline-flex h-9 flex-none items-center gap-1.5 rounded-full border px-3 text-[13px] backdrop-blur-sm transition ${
+                  labelFilter === label
+                    ? "bg-graphite/90"
+                    : "border-line bg-graphite/80 text-signal"
+                }`}
+              >
+                <i
+                  className="h-2 w-2 flex-none rotate-45 rounded-[2px]"
+                  style={{ backgroundColor: cssColor(labelColor(label)) }}
+                />
+                {label}
+                <b className="font-mono text-[11px] font-normal text-mist">
+                  {countByLabel(label)}
+                </b>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Dock de ferramentas (centro, alcance do polegar) ── */}
+      <div
+        className={`absolute bottom-[calc(env(safe-area-inset-bottom,0px)+14px)] left-1/2 z-10 flex -translate-x-1/2 rounded-full border border-line bg-graphite/85 p-1 backdrop-blur-md transition-opacity duration-300 ${hud}`}
+        role="tablist"
+        aria-label="Ferramentas"
+      >
+        {(
+          [
+            ["navigate", "navegar", IconOrbit],
+            ["measure", "medir", IconRuler],
+            ["pin", "anotar", IconPin],
+          ] as const
+        ).map(([t, label, Icon]) => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tool === t}
+            onClick={() => {
+              setTool(t);
+              if (t === "measure") setMeasurePts([]);
+            }}
+            className={`flex h-[52px] w-[66px] flex-col items-center justify-center gap-0.5 rounded-full transition ${
+              tool === t ? "bg-cyan text-ink" : "text-mist hover:text-signal"
+            }`}
+          >
+            <Icon className="h-5 w-5" />
+            <span className="font-mono text-[9px] tracking-wider uppercase">{label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
