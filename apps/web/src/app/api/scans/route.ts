@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createScan, UnsupportedMimeError } from "@/lib/services/scans";
+import { db } from "@/lib/db";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +34,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Limite diário (D7): teto de abuso sem login. O ADMIN_TOKEN passa por cima.
+  const isAdmin = req.headers.get("x-admin-token") === env().ADMIN_TOKEN;
+  if (!isAdmin) {
+    const dayStart = new Date();
+    dayStart.setUTCHours(0, 0, 0, 0);
+    const today = await db.scan.count({ where: { createdAt: { gte: dayStart } } });
+    if (today >= env().MAX_SCANS_PER_DAY) {
+      return NextResponse.json(
+        {
+          error: `Limite de ${env().MAX_SCANS_PER_DAY} scans por dia atingido. Tente amanhã.`,
+        },
+        { status: 429 },
+      );
+    }
+  }
+
   try {
     const created = await createScan(parsed.data);
+    console.warn(JSON.stringify({ event: "scan.created", scan_id: created.scanId }));
     return NextResponse.json(created, { status: 201 });
   } catch (err) {
     if (err instanceof UnsupportedMimeError) {

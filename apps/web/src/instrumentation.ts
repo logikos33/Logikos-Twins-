@@ -11,6 +11,7 @@ export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   const { reconcileStuckScans } = await import("@/lib/services/processing");
+  const { runRetention } = await import("@/lib/services/retention");
 
   const INTERVAL_MS = 60_000;
   setInterval(() => {
@@ -22,5 +23,16 @@ export async function register(): Promise<void> {
   }, INTERVAL_MS).unref();
   // unref(): o interval não pode segurar o processo vivo num shutdown.
 
-  console.warn("reconciliação de jobs ativa (60 s)");
+  // Retenção (D7, LGPD): a promessa "vídeo apagado após N" é ESTE job. A cada 5 min
+  // é sobra — o prazo é de dias; no dev (TTL em minutos) dá para ver acontecer.
+  const RETENTION_INTERVAL_MS = 5 * 60_000;
+  setInterval(() => {
+    runRetention()
+      .then((n) => {
+        if (n > 0) console.warn(`retenção: ${n} vídeo(s) bruto(s) apagado(s)`);
+      })
+      .catch((err) => console.error("retenção falhou:", err));
+  }, RETENTION_INTERVAL_MS).unref();
+
+  console.warn("reconciliação (60 s) e retenção (5 min) ativas");
 }

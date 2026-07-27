@@ -19,7 +19,7 @@
 | **D4** | Viewer "controle do mapa": medição, pins, trajetória | ✅ concluída |
 | **D5** | Detecções ancoradas em 3D (+ D5.5 Recognition) | ✅ concluída² |
 | **D6** | Escala automática por ArUco + blur de rostos | ✅ concluída |
-| **D7** | Retenção, painel admin, limites, logs | ⏳ em andamento |
+| **D7** | Retenção, painel admin, limites, logs | ✅ concluída |
 | **PLUG-IN** | Contas, GPU real, deploy | 🔒 **só com o Vitor presente** |
 
 ¹ Um critério da D1 aguarda validação física: gravar 60 s **de um celular de verdade**
@@ -138,11 +138,19 @@ make check
   testado com foto real; falha de blur é fatal por decisão (privacidade não degrada
   em silêncio).
 
-## O que falta para a D7
+## O que a D7 deixou pronto — e o fechamento do desenvolvimento
 
-- Retenção: job periódico apaga vídeos brutos além do prazo (TTL em minutos no dev);
-  artefatos ficam; `video_deleted_at` marcado.
-- Painel `/admin` (ADMIN_TOKEN): scans, custo acumulado de `metrics`, erros; galeria
-  completa passa a exigir o token.
-- Limite `MAX_SCANS_PER_DAY` sem token; logs JSON na web; `PLUGIN-CHECKLIST.md`;
-  revisão final do README.
+- **Retenção provada ao vivo**: 18 vídeos brutos apagados num tick (TTL de 1 min no
+  teste), artefatos preservados, logs JSON com scan_id.
+- Limite diário (429 + bypass por ADMIN_TOKEN), painel `/admin` (sem token → 404),
+  galeria protegida, logs de ciclo de vida.
+- **10/10 uploads consecutivos sem intervenção** — o DoD do desenvolvimento.
+- `PLUGIN-CHECKLIST.md`: a FASE PLUG-IN passo a passo, para executar COM o Vitor.
+
+### Portão do plug-in: ABERTO
+
+`docker compose up` do zero → gravar/enviar → estados ao vivo → mapa navegável →
+medir (manual e ArUco) → pin com foto → detecções e busca → compartilhar → admin.
+Gates de licença/vulnerabilidade/spec verdes; **nenhuma credencial real usada em
+lugar nenhum**. Specs D0–D7 fechadas com critérios marcados; a FASE PLUG-IN espera
+o Vitor (PLUGIN-CHECKLIST.md).
