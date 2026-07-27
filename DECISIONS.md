@@ -152,3 +152,23 @@ assume gravar/erro como "micro-detalhe" do produto — [extensão do manual], va
 pendente com o Vitor (q2). Cores de classe de detecção: hash do rótulo → paleta
 categórica de 8 tons dos tokens (mantém "cor estável por classe" sem colidir com o
 ciano de UI).
+
+---
+
+## [2026-07-27] Deploy de teste no Railway a partir da sessão Cowork (limites do sandbox)
+
+**Plano:** mesclar o design e subir no Railway direto desta sessão.
+
+**Realidade (medida):** o sandbox da sessão agendada (1) só permite git em repositórios
+vinculados à sessão — o proxy interno ignora PATs e não há `add_repo` disponível; e
+(2) bloqueia a API do Railway (`backboard.railway.com`, tunnel error). O repositório
+chegou por .zip enviado no chat; o design foi integrado e validado localmente
+(build + lint + 42 testes + screenshots).
+
+**Decisão:** entregar a branch `design/logikos-twins` como bundle/patches para push
+pelo Vitor; deploy orquestrado pelo conector oficial do Railway (roda fora do
+sandbox) ou pelo runbook `docs/deploy-railway.md`. Para o fake-runpod dispensar
+volume montado, os artefatos prontos da cena sintética (4,6 MB, sem os NPZs do modo
+local-worker) foram commitados em `fake-runpod/fixtures/` — vale só para a branch de
+teste; a regra "fixtures fora do git" continua para `main` (regenerável via
+`make fixture`).
