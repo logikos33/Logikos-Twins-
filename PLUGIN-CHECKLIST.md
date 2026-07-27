@@ -17,18 +17,18 @@
 - [ ] **RunPod** — carregar o mínimo; configurar spend limit.
 - [ ] **Railway** — plano Hobby; limite de uso.
 
-## 2. Storage (R2)
+## 2. Storage (R2) — ✅ VALIDADO em 2026-07-27
 
-- [ ] Criar bucket `logikos-twins` + chave de API (escopo só nesse bucket).
-- [ ] **CORS**: permitir `PUT`/`GET` da origem do app **e expor o header `ETag`** —
-      sem `Access-Control-Expose-Headers: ETag` a gravação ao vivo FALHA
-      ("parte sem ETag na resposta"). Registrado em DECISIONS.md (2026-07-26).
-- [ ] **Lifecycle**: expirar `videos/` em 7 dias (cinto duplo com a retenção da app) e
-      abortar multipart incompleto em 1 dia.
-- [ ] O bucket fica FECHADO (sem leitura pública): todo acesso é por URL assinada.
-      (No dev o prefixo `scans/` é público por conveniência — não replicar.)
-- [ ] Envs: `S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com`,
-      `S3_PUBLIC_ENDPOINT` idem, chaves, `S3_FORCE_PATH_STYLE=false`.
+- [x] Bucket `logikos-twins` + chave de API — PUT/GET/DELETE e multipart de 2 partes
+      validados por script (ETag por parte + ETag composto `-2` + bytes íntegros).
+- [x] **CORS com ETag exposto** — validado com PUT real + Origin:
+      `Allow-Origin: http://localhost:3000` e `Expose-Headers: ETag` na resposta.
+      (Nota de método: `Expose-Headers` aparece na resposta REAL, não no preflight.)
+- [x] **Lifecycle 7 dias** — configurado pelo Vitor no dashboard; a chave de objeto
+      não tem permissão de LER a config via API (AccessDenied — esperado). Conferir
+      visualmente na primeira semana que os `videos/` de teste expiram.
+- [x] Bucket fechado (sem leitura pública); acesso só por URL assinada.
+- [x] Envs preenchidos no `.env` local (`S3_FORCE_PATH_STYLE=false`, endpoint R2).
 
 ## 3. Pesos no network volume (RunPod)
 
