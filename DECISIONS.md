@@ -121,3 +121,14 @@ do plug-in** — adicionado ao PLUGIN-CHECKLIST (D7). Sem isso, a gravação ao 
 que o plano pedia; 2.7.x ficaria ABAIXO do que o motor foi testado). Compatibilidade do
 LingBot-Map com 2.9.1 marcada `[TESTAR no plug-in]` — é exatamente o tipo de validação
 que a F0 existe para fazer.
+
+---
+
+## [2026-07-27] Cap de custo TOTAL do projeto: US$ 30/mês (decisão do Vitor)
+
+**Plano (§9.2):** sugeria hard cap de US$ 50/mês.
+
+**Decisão do Vitor no início da FASE PLUG-IN:** teto TOTAL de **US$ 30/mês**, composto:
+RunPod ~US$ 15 (spend limit configurado no console), Railway hard limit US$ 10, R2
+dentro do free tier. Substitui a sugestão antiga. Qualquer decisão que ameace esse teto
+(worker "active", GPU mais cara, storage acima do free tier) volta ao Vitor antes.
