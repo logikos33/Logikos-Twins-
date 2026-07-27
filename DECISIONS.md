@@ -132,3 +132,23 @@ que a F0 existe para fazer.
 RunPod ~US$ 15 (spend limit configurado no console), Railway hard limit US$ 10, R2
 dentro do free tier. Substitui a sugestão antiga. Qualquer decisão que ameace esse teto
 (worker "active", GPU mais cara, storage acima do free tier) volta ao Vitor antes.
+
+---
+
+## [2026-07-27] Design da marca aplicado a partir do manual (sessão de design agendada)
+
+**Plano:** identidade visual pendente; UI utilitária em neutros (D4/D7).
+
+**Realidade:** o Manual da Marca LOGIKOS (board Miro) foi lido na íntegra pela sessão de
+design de 27/07 — paleta nomeada, geometria SVG oficial do logo e os woff2 variáveis
+das três famílias foram extraídos do próprio manual. Entregáveis em `docs/design/`
+(DESIGN-TOKENS, MOTION-SPEC, RELATORIO-DESIGN, com extensões marcadas e perguntas
+pendentes q1–q8).
+
+**Decisão:** aplicar o design como camada de APRESENTAÇÃO na branch
+`design/logikos-twins` — rotas, payloads e serviços intactos (contrato nº 2 do
+briefing). Fontes via `next/font/local` (build segue offline). Magenta `#FF2E63`
+assume gravar/erro como "micro-detalhe" do produto — [extensão do manual], validação
+pendente com o Vitor (q2). Cores de classe de detecção: hash do rótulo → paleta
+categórica de 8 tons dos tokens (mantém "cor estável por classe" sem colidir com o
+ciano de UI).
