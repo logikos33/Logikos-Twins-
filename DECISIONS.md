@@ -132,3 +132,24 @@ que a F0 existe para fazer.
 RunPod ~US$ 15 (spend limit configurado no console), Railway hard limit US$ 10, R2
 dentro do free tier. Substitui a sugestão antiga. Qualquer decisão que ameace esse teto
 (worker "active", GPU mais cara, storage acima do free tier) volta ao Vitor antes.
+
+---
+
+## [2026-07-27] Gateway S3 do RunPod corta partes bem antes do limite documentado
+
+**Plano/docs oficiais (storage/s3-api):** "Multipart uploads required for files
+exceeding 500MB; individual parts capped at 500MB".
+
+**Realidade medida** (datacenter US-MO-2, volume `jow25i1co4`): parte de 256 MB →
+**413 Content Too Large** do gateway na frente da API — não é o limite da própria API
+S3, é um proxy que corta antes. Sondagem binária achou o teto funcional: **128 MB
+passa, 256 MB não**. Consequência colateral: a sessão de multipart ficou inválida
+depois do 413 (a próxima tentativa veio como `NoSuchUpload`), e um multipart
+abandonado ficou no volume até ser abortado manualmente.
+
+**Decisão:** `PART_SIZE` em `scripts/populate_volume.py` reduzido para **100 MB**
+(margem abaixo do teto medido, já que ele pode variar por DC/momento — não é uma
+constante documentada, é um comportamento observado). O script agora aborta o
+multipart automaticamente em qualquer falha (antes deixava pendurado) e usa backoff
+crescente (5/10/20/30s) em vez de fixo. C-04 aplicado: a doc do fornecedor não é
+fonte de verdade quando o gateway na frente diverge dela.
