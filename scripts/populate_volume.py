@@ -8,7 +8,7 @@ NÃO funciona (docs storage/s3-api). Preencher no .env:
     RUNPOD_VOLUME_ID=…      (já preenchido)
     RUNPOD_VOLUME_DC=US-MO-2
 
-Verificação de integridade SEM re-download: multipart com partes de 256 MB, MD5 por
+Verificação de integridade SEM re-download: multipart com partes de 100 MB, MD5 por
 parte conferido no ETag de cada UploadPart, e o ETag composto final conferido contra
 o valor calculado localmente (md5 dos md5s + "-N"). SHA-256 local de cada arquivo é
 registrado abaixo e conferido antes do envio.
@@ -32,7 +32,14 @@ EXPECTED_SHA256 = {
     "yunet.onnx": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
 }
 
-PART_SIZE = 256 * 1024 * 1024  # ≤ 500 MB por parte (limite da API S3 do RunPod)
+# A doc do RunPod (storage/s3-api) promete até 500 MB por parte, mas o GATEWAY na
+# frente da API corta bem antes: sondado empiricamente em 2026-07-27 no datacenter
+# US-MO-2 — 256 MB → 413 Content Too Large, 128 MB → OK. Usamos 100 MB para deixar
+# margem (o teto pode variar por DC/momento) sem multiplicar demais o número de partes.
+PART_SIZE = 100 * 1024 * 1024
+
+MAX_ATTEMPTS = 5
+RETRY_BACKOFF_S = (5, 10, 20, 30)  # cresce a cada tentativa; a última repete
 
 
 def load_env() -> dict[str, str]:
@@ -66,36 +73,57 @@ def upload(s3: object, bucket: str, local: Path, key: str) -> None:
     else:
         mpu = s3.create_multipart_upload(Bucket=bucket, Key=key)  # type: ignore[attr-defined]
         uid = mpu["UploadId"]
-        parts, md5s = [], []
-        with local.open("rb") as f:
-            n = 0
-            while True:
-                blob = f.read(PART_SIZE)
-                if not blob:
-                    break
-                n += 1
-                md5 = hashlib.md5(blob).hexdigest()
-                for attempt in range(3):
-                    try:
-                        r = s3.upload_part(  # type: ignore[attr-defined]
-                            Bucket=bucket, Key=key, UploadId=uid, PartNumber=n, Body=blob
-                        )
+        # Se der errado a partir daqui, abortamos a sessão em vez de deixá-la
+        # pendurada — um multipart abandonado ocupa espaço no volume de 50 GB até
+        # alguém limpar manualmente (foi o que aconteceu na primeira tentativa,
+        # quando o 413 do gateway invalidou a sessão e a próxima parte veio com
+        # NoSuchUpload).
+        try:
+            parts, md5s = [], []
+            with local.open("rb") as f:
+                n = 0
+                while True:
+                    blob = f.read(PART_SIZE)
+                    if not blob:
                         break
-                    except Exception as exc:
-                        if attempt == 2:
-                            raise
-                        print(f"    parte {n} falhou ({exc}); tentando de novo…")
-                        time.sleep(5)
-                got = r["ETag"].strip('"')
-                assert got == md5, f"parte {n}: ETag {got} != md5 {md5}"
-                parts.append({"PartNumber": n, "ETag": r["ETag"]})
-                md5s.append(bytes.fromhex(md5))
-                done = n * PART_SIZE if n * PART_SIZE < size else size
-                mbps = done / 1024 / 1024 / max(time.monotonic() - t0, 0.001)
-                print(f"    parte {n} ok ({done // (1024 * 1024)} MB, {mbps:.1f} MB/s)")
-        s3.complete_multipart_upload(  # type: ignore[attr-defined]
-            Bucket=bucket, Key=key, UploadId=uid, MultipartUpload={"Parts": parts}
-        )
+                    n += 1
+                    md5 = hashlib.md5(blob).hexdigest()
+                    for attempt in range(MAX_ATTEMPTS):
+                        try:
+                            r = s3.upload_part(  # type: ignore[attr-defined]
+                                Bucket=bucket,
+                                Key=key,
+                                UploadId=uid,
+                                PartNumber=n,
+                                Body=blob,
+                            )
+                            break
+                        except Exception as exc:
+                            if attempt == MAX_ATTEMPTS - 1:
+                                raise
+                            delay = RETRY_BACKOFF_S[min(attempt, len(RETRY_BACKOFF_S) - 1)]
+                            print(
+                                f"    parte {n} falhou ({exc}); tentando de novo em {delay}s…"
+                            )
+                            time.sleep(delay)
+                    got = r["ETag"].strip('"')
+                    assert got == md5, f"parte {n}: ETag {got} != md5 {md5}"
+                    parts.append({"PartNumber": n, "ETag": r["ETag"]})
+                    md5s.append(bytes.fromhex(md5))
+                    done = n * PART_SIZE if n * PART_SIZE < size else size
+                    mbps = done / 1024 / 1024 / max(time.monotonic() - t0, 0.001)
+                    print(f"    parte {n} ok ({done // (1024 * 1024)} MB, {mbps:.1f} MB/s)")
+            s3.complete_multipart_upload(  # type: ignore[attr-defined]
+                Bucket=bucket, Key=key, UploadId=uid, MultipartUpload={"Parts": parts}
+            )
+        except Exception:
+            print(f"  → abortando multipart {uid[:12]}… para não deixar sessão pendurada")
+            try:
+                s3.abort_multipart_upload(Bucket=bucket, Key=key, UploadId=uid)  # type: ignore[attr-defined]
+            except Exception as abort_exc:
+                print(f"  ⚠ abort também falhou ({abort_exc}) — cheque manualmente no console")
+            raise
+
         expected = hashlib.md5(b"".join(md5s)).hexdigest() + f"-{len(parts)}"
         head = s3.head_object(Bucket=bucket, Key=key)  # type: ignore[attr-defined]
         got = head["ETag"].strip('"')
