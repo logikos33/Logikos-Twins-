@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PartBuffer } from "@/lib/capture/partBuffer";
 import { UploadQueue } from "@/lib/capture/uploadQueue";
+import { IconBack, IconFile, IconShield, IconUpFile, IconX } from "@/components/icons";
 
 /**
  * Fallback de arquivo: desktop, vídeos de drone (N0) e navegadores sem MediaRecorder.
@@ -31,15 +32,23 @@ async function api<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function FileFallback({ reason }: { reason?: string }) {
+export function FileFallback({
+  reason,
+  onBack,
+}: {
+  reason?: string;
+  onBack?: () => void;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState({ sent: 0, total: 0 });
+  const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleFile(file: File) {
     setPhase("uploading");
+    setFileName(file.name);
     setError(null);
 
     try {
@@ -94,16 +103,27 @@ export function FileFallback({ reason }: { reason?: string }) {
     }
   }
 
+  const pct = progress.total ? Math.round((progress.sent / progress.total) * 100) : 0;
+
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-6 py-16">
-      <div>
-        <h1 className="text-2xl font-semibold">Enviar vídeo</h1>
-        {reason && <p className="mt-2 text-sm text-amber-400">{reason}</p>}
-        <p className="mt-2 text-sm text-neutral-400">
-          Para vídeos de drone ou gravados fora da página. MP4, WebM ou MOV; até 3 minutos
-          e 300 MB. O vídeo bruto é apagado após 7 dias; o mapa 3D permanece.
-        </p>
-      </div>
+    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-5 py-10 sm:px-6">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="mb-3 inline-flex min-h-(--tap) items-center gap-1.5 self-start pr-3 text-sm text-mist transition hover:text-signal"
+        >
+          <IconBack className="h-5 w-5" />
+          câmera
+        </button>
+      )}
+
+      <h1 className="font-display text-2xl font-bold">Enviar arquivo de vídeo</h1>
+      {reason && <p className="mt-2 text-sm text-warning">{reason}</p>}
+      <p className="mt-2 mb-5 text-sm leading-relaxed text-mist">
+        Para <b className="font-medium text-signal">desktop, drone</b> ou navegador sem
+        câmera. Mesmo pipeline da captura ao vivo: o arquivo sobe em partes e o
+        processamento dispara sozinho.
+      </p>
 
       <input
         ref={inputRef}
@@ -119,42 +139,61 @@ export function FileFallback({ reason }: { reason?: string }) {
       {phase === "idle" && (
         <button
           onClick={() => inputRef.current?.click()}
-          className="rounded-full bg-white px-6 py-3 font-medium text-neutral-950 transition hover:bg-neutral-200"
+          className="flex flex-col items-center gap-3 rounded-lg border-[1.5px] border-dashed border-line-strong px-5 py-9 text-center transition hover:border-cyan hover:bg-cyan/[0.03]"
         >
-          Escolher arquivo
+          <IconUpFile className="h-8 w-8 text-cyan" />
+          <span className="text-sm text-mist">
+            <b className="font-semibold text-signal">Toque para escolher o vídeo</b>
+            <span className="mt-1 block font-mono text-[11px] tracking-wide text-faint">
+              MP4 · WebM · MOV — até 3 min e 300 MB
+            </span>
+          </span>
         </button>
       )}
 
       {phase === "uploading" && (
-        <div>
-          <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
+        <div className="rounded-lg border border-line bg-graphite p-4">
+          <div className="flex items-center gap-2.5 font-mono text-[13px]">
+            <IconFile className="h-[18px] w-[18px] flex-none text-mist" />
+            <span className="truncate">{fileName ?? "vídeo"}</span>
+          </div>
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface-2">
             <div
-              className="h-full bg-white transition-all"
-              style={{
-                width: `${progress.total ? Math.round((progress.sent / progress.total) * 100) : 0}%`,
-              }}
+              className="h-full rounded-full bg-cyan transition-all"
+              style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Enviando… {progress.sent}/{progress.total} partes
-          </p>
+          <div className="mt-2 flex justify-between font-mono text-[11px] text-mist">
+            <span>
+              parte {Math.min(progress.sent + 1, progress.total)} de {progress.total}
+            </span>
+            <span>{pct}%</span>
+          </div>
         </div>
       )}
 
       {phase === "error" && (
-        <div className="rounded-xl bg-red-950/60 p-4 text-sm">
-          <p className="text-red-200">{error}</p>
+        <div className="rounded-lg border border-line border-l-[3px] border-l-magenta bg-graphite p-4 text-sm">
+          <p className="flex items-start gap-2 text-danger-soft">
+            <IconX className="mt-0.5 h-4 w-4 flex-none" />
+            {error}
+          </p>
           <button
             onClick={() => {
               setPhase("idle");
               if (inputRef.current) inputRef.current.value = "";
             }}
-            className="mt-3 rounded-full bg-white px-4 py-2 text-xs font-medium text-neutral-950"
+            className="mt-3 rounded-[10px] bg-cyan px-4 py-2 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
           >
             Tentar de novo
           </button>
         </div>
       )}
+
+      <p className="mt-6 text-xs leading-relaxed text-mist">
+        <IconShield className="mr-1.5 -mt-0.5 inline h-3.5 w-3.5" />O vídeo bruto é
+        apagado após 7 dias; o mapa 3D e as fotos de evidência permanecem.
+      </p>
     </main>
   );
 }

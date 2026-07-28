@@ -1,0 +1,84 @@
+{
+  "synthetic": true,
+  "room": {
+    "x": 6.0,
+    "y": 4.0,
+    "z": 3.0
+  },
+  "objects": {
+    "mesa": {
+      "center": [
+        1.5,
+        1.0,
+        0.4
+      ],
+      "size": [
+        1.2,
+        0.8,
+        0.8
+      ]
+    },
+    "armario": {
+      "center": [
+        5.2,
+        3.4,
+        1.0
+      ],
+      "size": [
+        0.8,
+        0.6,
+        2.0
+      ]
+    },
+    "caixa_chao": {
+      "center": [
+        3.0,
+        2.8,
+        0.25
+      ],
+      "size": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    }
+  },
+  "aruco": {
+    "dict": "DICT_4X4_50",
+    "id": 0,
+    "center": [
+      3.4,
+      1.5
+    ],
+    "side_scene_units": 0.55
+  },
+  "frames": 48,
+  "fps": 8,
+  "resolution": [
+    518,
+    388
+  ],
+  "keyframes": [
+    0,
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    28,
+    32,
+    36,
+    40,
+    44
+  ],
+  "points_raw": 286936,
+  "points_preview": 286936,
+  "cloud_preview_mb": 4.1,
+  "infer_s": 0.0,
+  "total_s": 0.0,
+  "versions": {
+    "fixture": "1.0",
+    "seed": 7
+  }
+}

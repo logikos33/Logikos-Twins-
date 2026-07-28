@@ -5,21 +5,69 @@
  * parte do tempo de tela é o viewer 3D, e uma moldura clara ao redor de uma nuvem de
  * pontos escurece a percepção de contraste da própria nuvem. A captura no celular
  * também fica melhor com a moldura escura ao redor do preview da câmera.
+ *
+ * Os valores vêm do Manual da Marca LOGIKOS (board Miro) traduzido para o produto —
+ * ver docs/design/DESIGN-TOKENS.md (racional, contraste WCAG AA verificado e o que é
+ * [extensão do manual]). Regra de proporção do manual: 70% preto · 20% branco-cinza ·
+ * 10% acento; o acento nunca vira fundo.
  */
 
-:root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+@theme {
+  /* ── Cores da marca [manual] ─────────────────────────────────────────── */
+  --color-ink: #0a0a0f; /* Preto Logikos — fundo base        */
+  --color-graphite: #14141c; /* Grafite — superfície 1            */
+  --color-signal: #f4f6f8; /* Branco Sinal — texto primário     */
+  --color-mist: #8a8f98; /* Cinza Névoa — texto secundário    */
+  --color-cyan: #00e5ff; /* Ciano Visão — acento de interação */
+  --color-cyan-deep: #0091ad; /* Ciano Profundo — hover/pressed    */
+  --color-magenta: #ff2e63; /* Magenta Glitch — gravar/erro (micro-detalhes) */
+
+  /* ── Extensões do manual (ver DESIGN-TOKENS §3–4) ────────────────────── */
+  --color-surface-2: #23242f; /* superfície elevada (sheets/inputs)       */
+  --color-faint: #5c6470; /* SÓ desabilitado/decoração (3,3:1)        */
+  --color-danger-soft: #ff5c85; /* texto de erro sobre superfícies (≥5,2:1) */
+  --color-success: #2ee6a3;
+  --color-warning: #ffb224;
+  --color-line: rgb(244 246 248 / 0.08);
+  --color-line-strong: rgb(244 246 248 / 0.16);
+
+  /* Classes de detecção: paleta categórica estável (hash do rótulo → índice).
+     O ciano fica de fora de propósito — é reservado à UI. */
+  --color-class-0: #5aa9ff;
+  --color-class-1: #3ddc97;
+  --color-class-2: #b78bfa;
+  --color-class-3: #ff9f43;
+  --color-class-4: #ffd166;
+  --color-class-5: #ff7ab8;
+  --color-class-6: #f87171;
+  --color-class-7: #a3e635;
+
+  /* ── Raios e sombras ─────────────────────────────────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-card: 0 1px 0 rgb(244 246 248 / 0.06) inset, 0 8px 24px rgb(0 0 0 / 0.45);
+  --shadow-sheet: 0 -1px 0 rgb(244 246 248 / 0.08) inset, 0 -12px 32px rgb(0 0 0 / 0.5);
+
+  /* ── Motion (manual §10 + extensão funcional — ver MOTION-SPEC) ──────── */
+  --ease-brand: steps(3, end);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+/* As famílias vêm do next/font/local (woff2 variáveis oficiais do manual, em
+   src/fonts/ — o build continua 100% offline). `inline` porque os valores
+   referenciam variáveis que o next/font define em tempo de execução. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+:root {
+  /* Alvo mínimo de toque (contrato nº 4 do briefing). */
+  --tap: 44px;
 }
 
 html {
@@ -27,10 +75,139 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-ink);
+  color: var(--color-signal);
   font-family: var(--font-sans);
   /* O viewer captura gestos de arraste; o "puxar para atualizar" do celular
      competiria com a órbita da câmera. */
   overscroll-behavior-y: none;
+}
+
+/* Foco visível em tudo que é interativo — anel ciano com offset escuro. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-ink),
+    0 0 0 4px var(--color-cyan);
+  border-radius: var(--radius-sm);
+}
+
+@layer components {
+  /* Textura "grid grego" do manual §8: diagonais no ângulo do Λ, Grafite sobre
+     Preto, quase invisível — capas, hero e telas de espera. */
+  .grid-grego {
+    background-image: repeating-linear-gradient(
+      66deg,
+      transparent 0 26px,
+      rgb(20 20 28 / 0.85) 26px 27px
+    );
+  }
+
+  /* Rótulo técnico: JetBrains Mono, uppercase, tracking largo (tagline do manual). */
+  .k-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+  }
+
+  /* Glitch de marca (manual §10): 0,4–0,6 s, steps(), termina em repouso,
+     NUNCA em loop. Usar só em entradas/reveals — logo, "Mapa pronto.". */
+  .glitch {
+    position: relative;
+  }
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .glitch.glitch-play::before {
+    color: var(--color-cyan);
+    animation: glitch-a 0.5s var(--ease-brand) 1;
+  }
+  .glitch.glitch-play::after {
+    color: var(--color-magenta);
+    animation: glitch-b 0.5s var(--ease-brand) 1;
+  }
+}
+
+@keyframes glitch-a {
+  0% {
+    opacity: 0.85;
+    transform: translate(-3px, -2px);
+    clip-path: inset(8% 0 56% 0);
+  }
+  60% {
+    opacity: 0.6;
+    transform: translate(2px, 1px);
+    clip-path: inset(62% 0 6% 0);
+  }
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+@keyframes glitch-b {
+  0% {
+    opacity: 0.85;
+    transform: translate(3px, 2px);
+    clip-path: inset(58% 0 10% 0);
+  }
+  60% {
+    opacity: 0.6;
+    transform: translate(-2px, -1px);
+    clip-path: inset(6% 0 68% 0);
+  }
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* Halo do botão de gravar — pulso barato (opacidade/escala, sem blur). */
+@keyframes rec-halo {
+  from {
+    transform: scale(0.86);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.14);
+    opacity: 0;
+  }
+}
+
+/* Shake seco do erro de credencial — steps(), 1×, termina em repouso (manual §10). */
+@keyframes shake {
+  0% {
+    transform: translateX(-5px);
+  }
+  33% {
+    transform: translateX(4px);
+  }
+  66% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* Shimmer honesto da etapa ativa (a barra nunca inventa porcentagem). */
+@keyframes stage-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(280%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch.glitch-play::before,
+  .glitch.glitch-play::after {
+    animation: none;
+  }
 }

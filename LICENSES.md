@@ -93,3 +93,7 @@ a obrigação de abrir o código. Não é uma questão de gosto por licenças.
 3. Se for copyleft forte, **não instale** — traga a questão.
 4. O gate da CI pega o caso conhecido; ele **não** substitui esta conferência, porque só
    conhece os nomes que já estão na lista.
+
+| Space Grotesk (fonte, woff2 variável) | SIL OFL 1.1 | UI — voz display do manual |
+| Inter (fonte, woff2 variável) | SIL OFL 1.1 | UI — corpo |
+| JetBrains Mono (fonte, woff2 variável) | SIL OFL 1.1 | UI — dados técnicos |

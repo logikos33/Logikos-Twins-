@@ -67,7 +67,7 @@ export class ViewerEngine {
     this.root.rotation.x = -Math.PI / 2;
     this.scene.add(this.root);
     this.root.add(this.trajectoryGroup, this.pinsGroup, this.detectionsGroup);
-    this.scene.background = new THREE.Color(0x0a0a0a);
+    this.scene.background = new THREE.Color(0x0a0a0f); // Preto Logikos [manual]
 
     this.resize();
     window.addEventListener("resize", this.resize);
@@ -143,13 +143,13 @@ export class ViewerEngine {
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
     const line = new THREE.Line(
       geo,
-      new THREE.LineBasicMaterial({ color: 0x4ea1ff, linewidth: 2 }),
+      new THREE.LineBasicMaterial({ color: 0x00e5ff, linewidth: 2 }), // Ciano Visão
     );
     this.trajectoryGroup.add(line);
 
     const marker = new THREE.Mesh(
       new THREE.SphereGeometry(this.bboxSize / 120, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0xffc83d }),
+      new THREE.MeshBasicMaterial({ color: 0xffb224 }), // âmbar dos tokens
     );
     marker.visible = false;
     this.replayMarker = marker;
@@ -228,7 +228,7 @@ export class ViewerEngine {
     for (const pin of pins) {
       const mesh = new THREE.Mesh(
         new THREE.SphereGeometry(this.bboxSize / 150, 12, 12),
-        new THREE.MeshBasicMaterial({ color: pin.color ?? 0xff5c5c }),
+        new THREE.MeshBasicMaterial({ color: pin.color ?? 0xf4f6f8 }), // Branco Sinal
       );
       mesh.position.set(pin.position.x, pin.position.y, pin.position.z);
       mesh.userData.pinId = pin.id;
@@ -289,7 +289,7 @@ export class ViewerEngine {
       new THREE.Vector3(a.x, a.y, a.z),
       new THREE.Vector3(b.x, b.y, b.z),
     ]);
-    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0x6ee7a0 }));
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0x00e5ff }));
     line.name = "measure-line";
     this.root.add(line);
   }
