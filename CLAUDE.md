@@ -5,9 +5,16 @@
 > decisão arquitetural sem ADR. Isso é gate, não sugestão.
 
 **Precedência quando os documentos discordam:**
-`PROMPT-EXECUCAO.md` → `plano-demo-handoff.md` → este arquivo.
+`docs/specs/` (a spec da etapa em curso) → `docs/adr/` → este arquivo.
 E acima de todos: **a realidade**. Se a API mudou, a flag não existe ou o limite é outro, a
 realidade vence — registre em `DECISIONS.md` (ou ADR, se for arquitetural) e siga.
+
+**Sobre `referencias/`:** os documentos originais de planejamento (prompt de execução,
+plano de handoff, briefing de design) vivem em `referencias/`, **fora do versionamento**
+— quem clona o repositório público não os tem, e não deve precisar deles: as decisões que
+importam já foram capturadas em `docs/adr/`, `docs/specs/` e `DECISIONS.md`. Se um desses
+documentos citar algo de `referencias/` por nome, trate como citação histórica (o que se
+sabia na hora), não como link vivo.
 
 ---
 
@@ -35,9 +42,15 @@ Motor de reconstrução: **LingBot-Map** (Robbyant/Ant Group, Apache-2.0), commi
    `--git-dir` apontando para fora, e confirme com `git rev-parse --show-toplevel` se
    estiver em dúvida sobre onde você está comitando.
 
-2. **`referencias/` nunca entra no git.** Discussões, pesquisas e apresentações vivem lá e
-   ficam fora do versionamento por regra. Versionado = código, `docs/` e os arquivos de
-   execução da raiz. Se aparecer um `.pptx`/`.pdf` na raiz, ele vai para `referencias/`.
+2. **`referencias/` nunca entra no git.** Discussões, pesquisas, apresentações e os
+   documentos originais de planejamento (`PROMPT-EXECUCAO.md`, `plano-demo-handoff.md`,
+   briefing de design) vivem lá e ficam fora do versionamento por regra — o repositório é
+   **público** desde 2026-07-27, e esses documentos carregam contexto de negócio/mercado
+   que não pertence a um checkout público (ver `DECISIONS.md` "Limpeza de versionamento").
+   Versionado = código, `docs/` e os arquivos de execução da raiz listados no `.gitignore`.
+   Se aparecer um `.pptx`/`.pdf`/documento de planejamento na raiz, ele vai para
+   `referencias/` — e se já foi commitado antes de perceber isso, purgar do **histórico**
+   também (não basta remover do HEAD; ver a entrada de `DECISIONS.md` sobre `filter-repo`).
 
 3. **Nada de AGPL ou copyleft forte. Em lugar nenhum.** Isso bane o stack **ultralytics**
    (YOLOv5/v8/v11) — o detector mais óbvio do mercado. Use **YOLOX** (Megvii, Apache-2.0).

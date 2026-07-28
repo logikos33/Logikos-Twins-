@@ -29,7 +29,8 @@ aparece. Se o Recognition já detecta extintor, o caso fica muito mais forte e a
 medida das classes disponíveis, mas um vídeo de 3 min conta **uma** história bem.
 
 **Default adotado.** Pessoas/EPI como fio condutor (classe `person` do COCO funciona sem
-ajuste, e é o módulo âncora da [cliente âncora]), com inventário como demonstração secundária de busca.
+ajuste, e é o módulo âncora do primeiro cliente), com inventário como demonstração
+secundária de busca.
 
 **Quando decidir.** Ao gravar o material comercial (pós-D7).
 

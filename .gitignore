@@ -1,5 +1,8 @@
 # ---------------------------------------------------------------------------
-# Referências do projeto (discussões, pesquisas, apresentações) — nunca versionar
+# Referências do projeto (discussões, pesquisas, apresentações, planejamento
+# original) — nunca versionar. Repositório é PÚBLICO desde 2026-07-27: estes
+# documentos carregam contexto de negócio/mercado que não pertence a um
+# checkout público (ver DECISIONS.md "Limpeza de versionamento").
 # ---------------------------------------------------------------------------
 /referencias/
 /*.pptx
@@ -7,6 +10,10 @@
 /*.xlsx
 /*.key
 /*.pdf
+# Documentos de planejamento nomeados — extensão .md não cai nos padrões acima.
+/PROMPT-EXECUCAO.md
+/plano-demo-handoff.md
+/docs/design/BRIEFING-FRONTEND.md
 
 # ---------------------------------------------------------------------------
 # Segredos

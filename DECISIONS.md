@@ -233,9 +233,9 @@ fora de escopo desta entrega — não decidida agora. As demais, decididas pelo 
   mock nunca chegou ao produto.
 - **q5 (rótulo "pessoa" / LGPD):** mantido **visível como hoje** — "pessoa" já é uma
   classe COCO detectada por padrão (`worker/pipeline/yolox_detector.py`), sem filtro.
-  Decisão consciente: esconder por padrão contradiria o módulo EPI/pessoas da [cliente âncora]
-  (âncora do produto — ver `project_cenario_[memoria-cliente-anonima]` na memória do projeto).
-  Privacidade continua a cargo do blur opcional por scan (D6), escolha do operador.
+  Decisão consciente: esconder por padrão contradiria o módulo EPI/pessoas do
+  primeiro cliente (âncora do produto). Privacidade continua a cargo do blur
+  opcional por scan (D6), escolha do operador.
 - **q6 (fallback de arquivo no desktop):** **promovido** a ação de peso igual ao
   botão de gravar, só em telas `md:` (desktop) — `CaptureClient.tsx`. O link discreto
   original permanece intocado em mobile (`md:hidden`); nada mudou no fluxo do celular
@@ -252,3 +252,38 @@ MinIO+fake-runpod sintético) **fica para depois** — o Vitor optou por aguarda
 worker real (P3–P5 da FASE PLUG-IN: imagem no GHCR, endpoint RunPod, validação F0)
 para que o primeiro deploy já processe vídeo de verdade, em vez de subir uma vitrine
 com a cena sintética primeiro.
+
+---
+
+## [2026-07-27] Limpeza de versionamento — repositório fica público, mas mais enxuto
+
+**Contexto:** o repositório foi tornado público no dia anterior para destravar o CI
+(minutos do GitHub Actions esgotados no plano privado). Decisão do Vitor: manter
+público, mas revisar o que está versionado — documentos de planejamento carregam
+contexto de negócio/mercado (posicionamento competitivo, nome de cliente âncora) que
+não pertence a um checkout público, mesmo sem serem "segredos" no sentido técnico.
+
+**Decisão:**
+
+1. `PROMPT-EXECUCAO.md`, `plano-demo-handoff.md` e `docs/design/BRIEFING-FRONTEND.md`
+   movidos para `referencias/` (fora do versionamento) — ver `CLAUDE.md` para a
+   convenção atualizada e a nova cadeia de precedência (`docs/specs/` → `docs/adr/` →
+   `CLAUDE.md`, sem depender mais desses documentos).
+2. README enxugado para visão técnica — removida a comparação competitiva
+   (Matterport/NavVis/Polycam) e a projeção de custo por scan (~US$0,10), que é uma
+   estimativa ainda não validada em produção (a validação é justamente o objetivo da
+   F0 do plug-in).
+3. Passe de sensibilidade no restante do repositório: nome do cliente âncora ("[cliente âncora]")
+   redigido para "cliente âncora do módulo EPI" em `OPEN-QUESTIONS.md` e `DECISIONS.md`
+   (2 ocorrências). Nenhum outro nome de cliente, e-mail, telefone ou CPF/CNPJ
+   encontrado em conteúdo versionado. Fontes woff2 embutidas (Space Grotesk, Inter,
+   JetBrains Mono) conferidas: SIL OFL 1.1, redistribuição explicitamente permitida —
+   sem problema de licença.
+4. `part1.bin`/`part2.bin` (8 MB de bytes aleatórios, sobra de um teste de multipart
+   que vazou para o commit da D2) marcados para purga junto — não são sensíveis, só
+   peso morto.
+
+**Próximo passo:** os 5 caminhos acima (3 documentos + 2 `.bin`) saem também do
+**histórico** via `git filter-repo` — remover só do HEAD não adianta, esses arquivos
+estão em ~20 commits desde a D0. Ver a entrada seguinte para o resultado da reescrita
+e a verificação de exposição residual via refs de PR.

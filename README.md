@@ -1,14 +1,13 @@
 # Logikos Twins
 
-**Filme um ambiente andando com o celular. Minutos depois, abra o mapa 3D navegável daquele
-lugar** — nuvem de pontos densa, trajetória da câmera, medição com escala real, anotações, e
-**detecções ancoradas em coordenadas 3D**.
+Reconstrução 3D a partir de vídeo de celular: grava-se um ambiente andando, e minutos
+depois há um mapa 3D navegável daquele lugar — nuvem de pontos densa, trajetória da
+câmera, medição com escala real, anotações e **detecções ancoradas em coordenadas 3D**
+(cruzando a reconstrução com um detector de objetos, plugável).
 
-O diferencial não é a nuvem de pontos. É a última parte: o mapa **responde perguntas** —
-*onde está o hidrante?*, *quantas pessoas sem capacete nesta ala?* — porque cruza a
-reconstrução com o **Recognition**, o detector da própria Logikos. Matterport e NavVis
-exigem hardware proprietário; Polycam e Scaniverse param na captura. Nenhum deles entrega
-"as detecções da SUA operação ancoradas no SEU mapa" a ~US$ 0,10 por scan.
+Pipeline: captura no navegador → upload direto ao storage (presigned, nunca passa pelo
+servidor web) → job de reconstrução numa GPU sob demanda (scale-to-zero) → viewer Three.js
+com medição, anotações e busca semântica sobre as detecções.
 
 ---
 
