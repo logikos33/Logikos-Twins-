@@ -49,6 +49,17 @@ Como usar os mocks: abrir no navegador (tudo autocontido, **fontes oficiais embu
 
 ## 5. Perguntas pendentes para o Vitor
 
+> **Atualização 2026-07-27 — q1–q7 respondidas pelo Vitor.** Decisões completas e o
+> racional de cada uma em `DECISIONS.md` (entrada "Revisão das perguntas q1–q7").
+> Resumo: q1 lockup ΛOGIKOS TWINS aprovado · q2 magenta em gravar/erro confirmado ·
+> q3 verde/âmbar promovidos a cores oficiais do manual (atualizar o board Miro é ação
+> separada, fora deste repositório) · q4 sem divergência real (o componente já usava
+> o limite certo, só o mock HTML estava desatualizado) · q5 rótulo "pessoa" mantido
+> visível (módulo EPI é âncora do produto) · q6 fallback de arquivo promovido no
+> desktop, mobile intocado · q7 auto-abertura do viewer condicionada à aba em
+> primeiro plano, com notificação por título — os três últimos implementados em
+> código (`CaptureClient.tsx`, `ScanStatusClient.tsx`). q8 segue fora de escopo.
+
 1. **q1** O lockup "ΛOGIKOS TWINS" (wordmark + sufixo mono ciano) está aprovado como sub-marca de produto? Alternativa: símbolo Λ-círculo + "Twins" em Space Grotesk.
 2. **q2** Confirma magenta como cor de gravar/erro no produto (decisão d2/e1)? Alternativa conservadora: gravar em magenta e erros em um vermelho dedicado (ex.: `#f87171`), liberando o magenta só para o glitch.
 3. **q3** Verde `#2EE6A3` e âmbar `#FFB224` podem entrar no manual (v1.1) como cores funcionais oficiais?
