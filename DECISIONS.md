@@ -172,3 +172,62 @@ volume montado, os artefatos prontos da cena sintética (4,6 MB, sem os NPZs do 
 local-worker) foram commitados em `fake-runpod/fixtures/` — vale só para a branch de
 teste; a regra "fixtures fora do git" continua para `main` (regenerável via
 `make fixture`).
+
+---
+
+## [2026-07-27] Repositório aberto ao público (fix do CI sem minutos)
+
+**Realidade:** o CI do PR #8 falhava em todos os 5 jobs em 2–10s, sem executar
+nenhum step, em 10 tentativas seguidas — assinatura de limite de minutos/gasto do
+GitHub Actions esgotado no plano privado (2.000 min/mês grátis, já consumidos pelas
+~10 execuções × 5 jobs das PRs #1–#8).
+
+**Decisão do Vitor:** tornar `logikos33/Logikos-Twins-` **público** — Actions fica
+ilimitado em repositório público. Verificação de segurança feita antes de confirmar
+a mudança: scan bruto de todos os 276 blobs já armazenados no objeto-database (todas
+as branches, `gitleaks` + grep de padrões de chave) — **nenhum segredo encontrado,
+nenhum `.env*` real jamais versionado**. Repositório aberto com segurança confirmada.
+
+---
+
+## [2026-07-27] Revisão das perguntas q1–q7 do relatório de design — decisões do Vitor
+
+O relatório (`docs/design/RELATORIO-DESIGN.md`) listou 8 perguntas da sessão autônoma
+de 27/07. A q8 (copy do e-mail de recuperação de senha) o próprio relatório marca como
+fora de escopo desta entrega — não decidida agora. As demais, decididas pelo Vitor:
+
+- **q1 (lockup do produto):** aprovado **ΛOGIKOS TWINS** (wordmark oficial + sufixo
+  "TWINS" em JetBrains Mono ciano) — mantido como já aplicado, nenhuma mudança de código.
+- **q2 (magenta em gravar/erro):** confirmado. O manual restringe magenta a
+  "glitch e micro-detalhes"; a extensão do produto trata gravação e erro como os
+  micro-detalhes críticos do fluxo — mantido como já aplicado.
+- **q3 (verde/âmbar como cores oficiais):** **aprovado** — `#2EE6A3` (sucesso) e
+  `#FFB224` (aviso) deixam de ser extensão local e passam a cores funcionais oficiais
+  do Manual da Marca LOGIKOS (v1.1). Ação pendente **fora deste repositório**: atualizar
+  o board Miro do manual com as duas cores — não é algo que o código resolve sozinho.
+- **q4 (limite de gravação):** **não havia divergência real** — o mock HTML dizia
+  "até 5 min", mas o componente React (`CaptureClient.tsx`) já usa
+  `maxMin = Math.floor(maxSeconds / 60)` com `maxSeconds={env().MAX_VIDEO_SECONDS}`
+  (180s = 3 min, o valor real testado desde a D1). Zero código alterado — o texto do
+  mock nunca chegou ao produto.
+- **q5 (rótulo "pessoa" / LGPD):** mantido **visível como hoje** — "pessoa" já é uma
+  classe COCO detectada por padrão (`worker/pipeline/yolox_detector.py`), sem filtro.
+  Decisão consciente: esconder por padrão contradiria o módulo EPI/pessoas da RVB
+  (âncora do produto — ver `project_cenario_rvb_multimodulo` na memória do projeto).
+  Privacidade continua a cargo do blur opcional por scan (D6), escolha do operador.
+- **q6 (fallback de arquivo no desktop):** **promovido** a ação de peso igual ao
+  botão de gravar, só em telas `md:` (desktop) — `CaptureClient.tsx`. O link discreto
+  original permanece intocado em mobile (`md:hidden`); nada mudou no fluxo do celular
+  (contrato nº 1 continua valendo — zero botão de upload como caminho principal ali).
+- **q7 (abertura do viewer ao terminar):** implementado **"auto-abrir só com a aba em
+  primeiro plano"** — `ScanStatusClient.tsx` agora checa `document.visibilityState`
+  antes de iniciar a revelação; em segundo plano, troca o título da aba para
+  "✓ Mapa pronto — Logikos Twins" e espera o `visibilitychange` antes de revelar,
+  restaurando o título original ao fim. Evita abrir uma cena WebGL pesada sem o
+  usuário olhando.
+
+**Decisão de fluxo:** deploy no Railway (runbook `docs/deploy-railway.md`, demo com
+MinIO+fake-runpod sintético) **fica para depois** — o Vitor optou por aguardar o
+worker real (P3–P5 da FASE PLUG-IN: imagem no GHCR, endpoint RunPod, validação F0)
+para que o primeiro deploy já processe vídeo de verdade, em vez de subir uma vitrine
+com a cena sintética primeiro.

@@ -15,6 +15,7 @@ import {
   IconPrint,
   IconShield,
   IconSteps,
+  IconUpFile,
   IconX,
 } from "@/components/icons";
 import { LogoSymbol } from "@/components/Logo";
@@ -350,12 +351,27 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
           )}
 
           {state.phase === "ready" && (
-            <button
-              onClick={() => setShowFallback(true)}
-              className="min-h-(--tap) px-3 text-xs text-mist underline decoration-dotted underline-offset-2"
-            >
-              ou envie um arquivo de vídeo (desktop / drone)
-            </button>
+            <>
+              {/* Mobile: link discreto — o fluxo do celular é gravar, nunca subir
+                  arquivo (contrato nº 1 / ADR-0008). */}
+              <button
+                onClick={() => setShowFallback(true)}
+                className="min-h-(--tap) px-3 text-xs text-mist underline decoration-dotted underline-offset-2 md:hidden"
+              >
+                ou envie um arquivo de vídeo (desktop / drone)
+              </button>
+
+              {/* Desktop: sem câmera de celular à mão, o upload é o caminho natural
+                  — vira ação de peso igual ao gravar, não um link escondido (q6,
+                  2026-07-27). O fluxo mobile acima fica intocado. */}
+              <button
+                onClick={() => setShowFallback(true)}
+                className="hidden min-h-(--tap) items-center gap-2 rounded-full border border-line-strong px-4 text-sm font-medium text-signal transition hover:border-cyan hover:text-cyan md:inline-flex"
+              >
+                <IconUpFile className="h-4 w-4" />
+                Enviar um arquivo de vídeo
+              </button>
+            </>
           )}
         </footer>
       </div>

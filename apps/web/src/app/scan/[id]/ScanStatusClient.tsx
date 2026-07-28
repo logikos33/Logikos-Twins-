@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ViewerGate } from "./ViewerGate";
 import { EduTheater } from "./EduTheater";
 import type { ScaleInfo } from "@/lib/viewer/scale";
@@ -112,11 +112,51 @@ export function ScanStatusClient({ scanId, token }: { scanId: string; token: str
     Boolean(scan.artifacts["cloud_preview_url"]) &&
     Boolean(scan.artifacts["poses_url"]);
 
+  // Guarda o título original da aba enquanto ela notifica em segundo plano — sem
+  // isto, uma segunda revelação (ex.: reabrir o efeito) grava "✓ Mapa pronto" por
+  // cima do próprio aviso.
+  const originalTitleRef = useRef<string | null>(null);
+
+  // Abrir sozinho o viewer com a aba em segundo plano jogaria uma experiência 3D
+  // pesada (WebGL, carregamento de PLY) para rodar sem ninguém olhando — decisão
+  // do produto (q7, 2026-07-27): só revela com a aba em primeiro plano; senão,
+  // avisa no título e espera o usuário voltar.
   useEffect(() => {
     if (!viewerReady || revealed) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const t = setTimeout(() => setRevealed(true), reduced ? 0 : 1400);
-    return () => clearTimeout(t);
+
+    function reveal() {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      return setTimeout(() => setRevealed(true), reduced ? 0 : 1400);
+    }
+
+    if (document.visibilityState === "visible") {
+      const t = reveal();
+      return () => clearTimeout(t);
+    }
+
+    originalTitleRef.current = document.title;
+    document.title = "✓ Mapa pronto — Logikos Twins";
+
+    let revealTimer: ReturnType<typeof setTimeout> | undefined;
+    function onVisible() {
+      if (document.visibilityState !== "visible") return;
+      if (originalTitleRef.current !== null) {
+        document.title = originalTitleRef.current;
+        originalTitleRef.current = null;
+      }
+      document.removeEventListener("visibilitychange", onVisible);
+      revealTimer = reveal();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      clearTimeout(revealTimer);
+      if (originalTitleRef.current !== null) {
+        document.title = originalTitleRef.current;
+        originalTitleRef.current = null;
+      }
+    };
   }, [viewerReady, revealed]);
 
   // Estado terminal com artefatos → o viewer assume a tela inteira.
