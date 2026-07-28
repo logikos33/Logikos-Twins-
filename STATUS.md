@@ -1,7 +1,7 @@
 # STATUS
 
 **Etapa atual:** D7
-**Última atualização:** 2026-07-26
+**Última atualização:** 2026-07-27
 
 > Este arquivo é por onde o Vitor acompanha. Uma etapa fechada é atualizada aqui no mesmo
 > commit em que fecha.
@@ -147,18 +147,44 @@ make check
 - **10/10 uploads consecutivos sem intervenção** — o DoD do desenvolvimento.
 - `PLUGIN-CHECKLIST.md`: a FASE PLUG-IN passo a passo, para executar COM o Vitor.
 
+## Identidade da marca aplicada (PR #8, mesclado 2026-07-27)
+
+O Manual da Marca LOGIKOS (Miro) foi aplicado ao produto como camada de
+apresentação — rotas, payloads e services **intactos** (verificado por diff:
+`src/lib`, `src/app/api`, `prisma` sem nenhuma linha tocada). Tokens `@theme`,
+fontes oficiais (`next/font/local`, offline), logo com geometria SVG do manual,
+todas as telas restilizadas, `/login` estático.
+
+As 8 perguntas em aberto do relatório de design (`docs/design/RELATORIO-DESIGN.md`)
+foram revisadas com o Vitor nesta sessão — q1–q7 decididas (q8 segue fora de
+escopo). Duas geraram mudança de código:
+
+- **q6** — fallback de arquivo promovido a ação de peso igual ao botão de gravar
+  no desktop (`md:`); mobile pixel-idêntico ao anterior.
+- **q7** — auto-abertura do viewer condicionada a `document.visibilityState`; em
+  segundo plano, o título da aba avisa e espera o usuário voltar. **Verificado
+  end-to-end no navegador**: scan real via API → `done` → aba oculta → título
+  mudou → `visibilitychange` → viewer abriu com o novo design e o título voltou.
+
+Racional completo de cada decisão em `DECISIONS.md` ("Revisão das perguntas
+q1–q7"). O deploy de teste no Railway deste PR (`docs/deploy-railway.md`, demo
+com MinIO+fake-runpod sintético) **foi propositalmente adiado** — decisão do
+Vitor de aguardar o worker real (P3–P5) para que o primeiro deploy já processe
+vídeo de verdade.
+
 ### Próximos passos possíveis
 
-1. **FASE PLUG-IN** (com o Vitor) — `PLUGIN-CHECKLIST.md`.
-2. **Redesign do front-end** — briefing completo para o designer em
-   [`docs/design/BRIEFING-FRONTEND.md`](./docs/design/BRIEFING-FRONTEND.md)
-   (telas, estados, contratos fixos vs campo livre, dados disponíveis).
-3. **D5.5** — integração do Recognition quando o repositório estiver à mão.
+1. **FASE PLUG-IN** (com o Vitor) — `PLUGIN-CHECKLIST.md`. P1 (R2) e P2 (volume
+   RunPod) concluídos; **P3–P5 em pausa** aguardando revisão conjunta de
+   credenciais do GHCR e config de scale-to-zero antes de criar o endpoint.
+2. **D5.5** — integração do Recognition quando o repositório estiver à mão.
+3. Atualizar o Manual da Marca (Miro) com verde/âmbar como cores funcionais
+   oficiais (q3) — ação fora deste repositório.
 
 ### Portão do plug-in: ABERTO
 
-`docker compose up` do zero → gravar/enviar → estados ao vivo → mapa navegável →
-medir (manual e ArUco) → pin com foto → detecções e busca → compartilhar → admin.
-Gates de licença/vulnerabilidade/spec verdes; **nenhuma credencial real usada em
-lugar nenhum**. Specs D0–D7 fechadas com critérios marcados; a FASE PLUG-IN espera
-o Vitor (PLUGIN-CHECKLIST.md).
+`docker compose up` do zero → gravar/enviar → estados ao vivo → mapa navegável
+com a identidade LOGIKOS → medir (manual e ArUco) → pin com foto → detecções e
+busca → compartilhar → admin. Gates de licença/vulnerabilidade/spec verdes;
+**nenhuma credencial real usada em lugar nenhum**. Specs D0–D7 fechadas com
+critérios marcados; a FASE PLUG-IN espera o Vitor (PLUGIN-CHECKLIST.md).
