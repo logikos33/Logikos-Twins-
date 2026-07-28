@@ -9,12 +9,14 @@
 
 - [ ] `make check` verde no último `main`.
 - [ ] Decidir o **domínio definitivo** (o slug técnico `logikos-twins` não muda).
-- [ ] Hard cap de gasto combinado (sugestão do plano: US$ 50/mês no total).
+- [x] Hard cap de gasto combinado: **US$ 30/mês no total** (RunPod ~15 + Railway
+      hard limit 10 + R2 free tier) — decisão do Vitor em 2026-07-27, substitui os
+      US$ 50 do plano original. Ver DECISIONS.md.
 
 ## 1. Contas (billing SEMPRE com alerta/limite mínimo antes de qualquer recurso)
 
 - [ ] **Cloudflare** (R2) — ativar alerta de billing.
-- [ ] **RunPod** — carregar o mínimo; configurar spend limit.
+- [x] **RunPod** — crédito carregado, spend limit US$ 15 configurado (Vitor, 2026-07-27).
 - [ ] **Railway** — plano Hobby; limite de uso.
 
 ## 2. Storage (R2) — ✅ VALIDADO em 2026-07-27
@@ -30,13 +32,23 @@
 - [x] Bucket fechado (sem leitura pública); acesso só por URL assinada.
 - [x] Envs preenchidos no `.env` local (`S3_FORCE_PATH_STYLE=false`, endpoint R2).
 
-## 3. Pesos no network volume (RunPod)
+## 3. Pesos no network volume (RunPod) — ✅ FECHADO em 2026-07-27
 
-- [ ] Volume 50 GB em US-East.
-- [ ] Subir via API S3-compatível do RunPod (sem abrir pod):
-      `models/lingbot-map.pt` (4,63 GB, HF `robbyant/lingbot-map`),
-      `models/yolox_s.onnx` (`scripts/fetch_yolox.py` — hash TOFU no script),
-      `models/yunet.onnx` (`scripts/fetch_yunet.py`).
+- [x] Volume 50 GB: **`jow25i1co4`**, datacenter **US-MO-2** (~US$ 3,50/mês). Escolha
+      medida na hora — único DC US que tem simultaneamente API S3 + volume + L4
+      disponível no momento (US-GA-2 não aceita volume; nenhum US-S3 tinha 4090
+      livre — não bloqueia, a F0 pode comparar com 4090 num pod community de outro DC).
+- [x] **S3 API key separada** criada (Settings → S3 API Keys — a API key normal NÃO
+      funciona nessa API), preenchida em `RUNPOD_S3_ACCESS_KEY`/`RUNPOD_S3_SECRET`.
+- [x] Subidos via `scripts/populate_volume.py`, com sha256 local conferido antes do
+      envio e ETag (por parte + composto) conferido depois — sem re-download:
+      - `models/lingbot-map.pt` — 4.417,7 MB, ETag `7c53ba2515be00093d4fdbd1a8083067-45`
+      - `models/yolox_s.onnx` — 34,2 MB, ETag `162fa8fdc3979a395018701b60ff02fe`
+      - `models/yunet.onnx` — 0,2 MB, ETag `4ae92eeb150c82ce15ac80738b3b8167`
+      Total 4,35 GB de 50 GB do volume. Nenhum multipart pendurado (conferido).
+- [x] Divergência registrada: o gateway S3 do RunPod aceita partes bem menores que
+      os 500 MB documentados — teto funcional medido em 128 MB; script usa 100 MB
+      com margem. Ver DECISIONS.md 2026-07-27.
 
 ## 4. Imagem e endpoint serverless
 
