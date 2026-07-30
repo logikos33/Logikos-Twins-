@@ -391,3 +391,43 @@ registrada em `PLUGIN-CHECKLIST.md` com o caminho exato de cliques.
 **`GHCR_USERNAME`/`GHCR_PULL_TOKEN`:** conferido — nunca existiram em `.env`,
 `.env.example` nem em nenhum arquivo rastreado do repositório. Nada a remover;
 o pull sem credencial só passa a funcionar de fato depois do passo manual acima.
+
+---
+
+## [2026-07-30] F0, 1ª tentativa: driver do host não suportava CUDA 12.8 — imagem base do worker não sobe em qualquer máquina
+
+**O que aconteceu:** o pod de validação foi criado com a MESMA imagem base do
+`worker/Dockerfile` (`nvidia/cuda:12.8.0-runtime-ubuntu22.04`), deliberadamente, para
+o F0 testar o que vai para produção. A máquina sorteada (4090, US-NC-1, Secure Cloud)
+tinha driver NVIDIA antigo demais, e o container entrou em **crash-loop desde o
+segundo zero**, reiniciando a cada ~16 s por ~14 min sem nunca executar o runbook:
+
+```
+nvidia-container-cli: requirement error: unsatisfied condition: cuda>=12.8,
+please update your driver to a newer version, or use an earlier cuda container
+```
+
+**Por que passou despercebido por 14 min:** o monitor observava (a) o `desiredStatus`
+do pod pela API e (b) o artefato de resultado no R2. O pod reportava `RUNNING` o tempo
+todo — do ponto de vista do RunPod ele *estava* rodando; quem morria e renascia era o
+container dentro dele. Ou seja: **o sinal que eu observava não cobria esse modo de
+falha**, e silêncio parecia progresso. O log do container (que o Vitor trouxe) era a
+única fonte que denunciava.
+
+**Correções:**
+
+1. **`allowedCudaVersions` na criação do pod** — o schema do RunPod tem exatamente
+   esse campo para não sortear máquina com driver incompatível. Não usá-lo foi o erro
+   de origem; ele passa a ser obrigatório em qualquer pod nosso com CUDA 12.8.
+2. **Monitor precisa observar o container, não só o pod.** Status `RUNNING` do pod não
+   é evidência de que o processo iniciou. Próxima tentativa acompanha o log do
+   container (ou um heartbeat que o próprio script escreve cedo) para detectar
+   crash-loop em segundos.
+
+**Custo:** ~14 min de 4090 Secure (US$ 0,69/h) ≈ **US$ 0,16** — dentro do orçamento
+aprovado do F0, mas gasto sem produzir medição.
+
+**Nota de rota:** o F0 já estava em Secure Cloud porque **4090 Community ficou
+indisponível** durante toda a janela (20 tentativas de criação ao longo de ~8 min,
+todas `SUPPLY_CONSTRAINT`). Diagnóstico confirmado com uma 3090 Community, que subiu
+de primeira e foi encerrada em seguida: não era bloqueio de conta, era falta de 4090.
