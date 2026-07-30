@@ -289,3 +289,70 @@ não pertence a um checkout público, mesmo sem serem "segredos" no sentido téc
 **histórico** via `git filter-repo` — remover só do HEAD não adianta, esses arquivos
 estão em ~20 commits desde a D0. Ver a entrada seguinte para o resultado da reescrita
 e a verificação de exposição residual via refs de PR.
+
+---
+
+## [2026-07-27] Reescrita de histórico: caminhos + token do cliente purgados; exposição residual via refs de PR (estrutural, não corrigível por force-push)
+
+**Contexto:** decorrência da entrada anterior ("Limpeza de versionamento"). Os 3
+documentos de planejamento e os 2 `.bin` de sobra saíam do HEAD desde o commit normal
+anterior, mas continuavam presentes em ~20 commits históricos — e a redação do
+nome/sigla do cliente âncora tinha sido feita como edição de conteúdo, não como
+purga de histórico, o que deixaria o termo original recuperável via `git log -p`.
+
+**Execução (3 passadas de `git filter-repo`, 2 force-push):**
+
+1. `--invert-paths` nos 5 caminhos (3 documentos + `part1.bin`/`part2.bin`) — remove os
+   arquivos inteiros de todos os commits. Force-push #1.
+2. `--replace-text` trocando o token do cliente por um marcador genérico em **conteúdo
+   de arquivo** — descoberto em seguida que isso NÃO cobre mensagens de commit (são
+   dois mecanismos distintos na ferramenta).
+3. `--replace-message` com a mesma regra, agora para **mensagens de commit** (2 delas,
+   escritas por mim nesta sessão, citavam o token ao descrever a própria redação).
+   Force-push #2, com o histórico já limpo nos dois eixos.
+
+**Verificação (antes de cada push):** scan bruto de blobs, `git log --all -p` e
+`git log --all --format=%B` para o token (0 ocorrências nos dois eixos), confirmação
+de que uma correspondência parcial não relacionada (substring dentro de um hash de
+integridade em `package-lock.json`) permaneceu intacta — a substituição foi por texto
+literal sensível a maiúsculas, não regex genérico, exatamente para não sobrescrever
+esse tipo de coincidência. `gitleaks` limpo (29 commits). Confirmado também **na API
+do GitHub** (não só localmente): a árvore de `main` remoto não lista mais os 5
+caminhos nem contém o token.
+
+**Exposição residual encontrada (e o motivo de nenhum force-push resolver sozinho):**
+o GitHub mantém uma ref própria por PR (`refs/pull/N/head`, uma por cada uma das
+PRs #1–#8, todas já fechadas/mescladas) que aponta para os commits **anteriores** à
+reescrita — essas refs não pertencem ao branch `main` e não são tocadas por
+`git push --force`. Verificado concretamente: o commit antigo da PR #1
+(`4640798f…`, pré-reescrita) ainda responde pela API do GitHub — a árvore desse
+commit lista os 2 documentos removidos, e `GET /repos/.../contents/PROMPT-EXECUCAO.md?ref=4640798f…`
+devolve o SHA e o tamanho do blob antigo. O mesmo mecanismo vale para o token do
+cliente nas versões antigas de `OPEN-QUESTIONS.md`/`DECISIONS.md`, presentes nos
+commits antigos das PRs que tocaram esses arquivos.
+
+**Por que isso não é corrigível localmente:** as `refs/pull/*` são geridas pelo
+GitHub, não por push de cliente — não existe comando git que as apague. Reescrever e
+forçar o `main` de novo não muda nada aqui, porque essas refs nunca apontaram para
+`main`.
+
+**Severidade avaliada como baixa:** não é uma credencial (nenhuma chave, senha ou
+token — isso já era o objetivo do `gitleaks`/scan de blobs, que continuam limpos).
+É um identificador de cliente e um texto de posicionamento de mercado, recuperável
+apenas por quem souber consultar a API do GitHub num SHA específico de um commit
+antigo — não aparece na navegação normal do repositório, no branch `main`, nem em
+busca padrão do GitHub (que indexa o branch default).
+
+**Opções (registradas para o Vitor decidir, sem escolher por ele):**
+
+- **Aceitar** — a exposição fica limitada ao mecanismo descrito acima; dado que não
+  é credencial e exige uma consulta deliberada e específica, o risco prático é baixo.
+  É a opção mais simples e não pende de terceiros.
+- **Solicitar ao suporte do GitHub** a remoção definitiva dos objetos/commits
+  correspondentes (processo formal de "remoção de dados sensíveis publicados",
+  aplicável a repositórios públicos) — é a única forma de purgar de fato as
+  `refs/pull/*`; exige abrir um chamado, identificar os SHAs antigos específicos
+  (listados nesta entrada/no histórico de comandos desta sessão) e aguardar o
+  processamento do lado do GitHub.
+
+Nenhuma das duas opções foi executada nesta sessão — fica como decisão em aberto.
