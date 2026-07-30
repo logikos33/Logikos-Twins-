@@ -273,11 +273,13 @@ não pertence a um checkout público, mesmo sem serem "segredos" no sentido téc
    (Matterport/NavVis/Polycam) e a projeção de custo por scan (~US$0,10), que é uma
    estimativa ainda não validada em produção (a validação é justamente o objetivo da
    F0 do plug-in).
-3. Passe de sensibilidade no restante do repositório: nome do cliente âncora ("[cliente âncora]")
+3. Passe de sensibilidade no restante do repositório: nome/sigla do cliente âncora
    redigido para "cliente âncora do módulo EPI" em `OPEN-QUESTIONS.md` e `DECISIONS.md`
-   (2 ocorrências). Nenhum outro nome de cliente, e-mail, telefone ou CPF/CNPJ
-   encontrado em conteúdo versionado. Fontes woff2 embutidas (Space Grotesk, Inter,
-   JetBrains Mono) conferidas: SIL OFL 1.1, redistribuição explicitamente permitida —
+   (2 ocorrências) — a sigla original não é repetida nem aqui, de propósito: um log
+   que documenta uma redação não deve reintroduzir o termo redigido. Nenhum outro nome
+   de cliente, e-mail, telefone ou CPF/CNPJ encontrado em conteúdo versionado. Fontes
+   woff2 embutidas (Space Grotesk, Inter, JetBrains Mono) conferidas: SIL OFL 1.1,
+   redistribuição explicitamente permitida —
    sem problema de licença.
 4. `part1.bin`/`part2.bin` (8 MB de bytes aleatórios, sobra de um teste de multipart
    que vazou para o commit da D2) marcados para purga junto — não são sensíveis, só
