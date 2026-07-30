@@ -116,7 +116,8 @@ retrabalho quando outra pessoa (ou outro agente) pega o projeto três semanas de
 - **[`DECISIONS.md`](./DECISIONS.md)** — divergências entre plano e realidade. A realidade vence.
 
 Gates bloqueantes na CI: lint, tipos, testes, build, **licença** (nada de AGPL no caminho
-servido) e **vulnerabilidades** (exceções explícitas e com prazo).
+servido), **vulnerabilidades** (exceções explícitas e com prazo) e **segredos**
+(`gitleaks` no histórico completo — repositório público, todo push é visível na hora).
 
 ---
 

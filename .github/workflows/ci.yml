@@ -97,6 +97,33 @@ jobs:
         run: npm run audit:gate
         working-directory: apps/web
 
+  secrets:
+    name: gates · segredos (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Histórico completo — gitleaks varre commits, não só o working tree.
+          # Repositório é PÚBLICO desde 2026-07-27 (ver DECISIONS.md): todo push
+          # fica visível na hora, então este gate roda ANTES de qualquer coisa
+          # chegar ao GHCR ou ao endpoint do RunPod.
+          fetch-depth: 0
+
+      - name: instalar gitleaks (versão pinada, checksum verificado)
+        env:
+          GITLEAKS_VERSION: 8.30.1
+        run: |
+          curl -sSLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          sha256sum --check --ignore-missing "gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+
+      # --redact: se algo vazar, o LOG do CI (público, é Actions de repo público)
+      # não pode virar um segundo vazamento do próprio segredo em texto plano.
+      - name: gitleaks — histórico completo do branch
+        run: gitleaks detect --source . --redact -v
+
   worker-image:
     name: worker · build da imagem (sem GPU)
     runs-on: ubuntu-latest
