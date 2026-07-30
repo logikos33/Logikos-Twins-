@@ -52,7 +52,16 @@
 
 ## 4. Imagem e endpoint serverless
 
-- [ ] `docker build worker/` e push para GHCR (imagem validada localmente: 19,1 GB).
+- [ ] Build + push via **GitHub Actions** (`.github/workflows/release-worker.yml`,
+      dispara em tag `v*`) — repositório público, Actions ilimitado, sem exigir
+      máquina local para um build de ~19 GB. Ver DECISIONS.md para tag/digest.
+- [ ] **Imagem do GHCR pública** — dispensa `GHCR_USERNAME`/`GHCR_PULL_TOKEN` no
+      endpoint (o código já é público pelo repo; não faz sentido a imagem ser
+      privada). ⚠️ **Não existe endpoint REST para isto** (confirmado na doc
+      oficial da Packages API) — é ação manual, única e **irreversível**
+      ("depois de público, não volta a privado"), na interface web:
+      `github.com/logikos33?tab=packages` → `logikos-twins-worker` → ⚙️ Settings
+      → Danger Zone → Change visibility → Public → confirmar digitando o nome.
 - [ ] Endpoint serverless: **começar com L4/A5000 (US$ 0,69/h)**; FlashBoot ON;
       0 workers ativos (scale-to-zero); máx 1 worker; `executionTimeout` 60 min;
       volume anexado em `/runpod-volume`.
