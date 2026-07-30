@@ -356,3 +356,38 @@ busca padrão do GitHub (que indexa o branch default).
   processamento do lado do GitHub.
 
 Nenhuma das duas opções foi executada nesta sessão — fica como decisão em aberto.
+
+---
+
+## [2026-07-30] Primeira imagem do worker publicada — GHCR via GitHub Actions
+
+**Plano/checklist original:** `docker build worker/` local + push manual para o GHCR.
+
+**Ajuste (repositório público desde 2026-07-27 → Actions ilimitado):** build e push
+saem da máquina local e vão para `.github/workflows/release-worker.yml`, disparado
+por tag `v*`. Motivo prático: a imagem carrega CUDA 12.8 + torch (~19 GB) — Actions
+resolve sem depender da máquina do Vitor estar ligada/com espaço livre.
+
+**Publicado:** tag `v0.1.0` → run `30502557432`, job `build-and-push`, conclusão
+`success`.
+
+```
+ghcr.io/logikos33/logikos-twins-worker:0.1.0
+ghcr.io/logikos33/logikos-twins-worker:latest
+digest: sha256:22c9978095f1c6dcab7a970542845a4e1a621ce87e7824a4fff16fa093ab03b5
+revisão (commit): 2932778...  (org.opencontainers.image.revision)
+```
+
+**Verificação:** log do próprio run (fonte confiável — GitHub Actions, não input
+manual). Verificação independente via API do GHCR **não foi possível nesta sessão**
+— o token local do `gh` não tem escopo `read:packages`, e adicioná-lo exige fluxo
+interativo (device code, navegador) que este ambiente não completa sozinho.
+
+**Visibilidade do pacote:** confirmado antes de escrever o workflow que **não existe
+endpoint REST** para mudar visibilidade de pacote (só GET/DELETE/restore na API
+oficial de Packages) — é ação manual e **irreversível** na interface web. Pendente,
+registrada em `PLUGIN-CHECKLIST.md` com o caminho exato de cliques.
+
+**`GHCR_USERNAME`/`GHCR_PULL_TOKEN`:** conferido — nunca existiram em `.env`,
+`.env.example` nem em nenhum arquivo rastreado do repositório. Nada a remover;
+o pull sem credencial só passa a funcionar de fato depois do passo manual acima.
