@@ -431,3 +431,64 @@ aprovado do F0, mas gasto sem produzir medição.
 indisponível** durante toda a janela (20 tentativas de criação ao longo de ~8 min,
 todas `SUPPLY_CONSTRAINT`). Diagnóstico confirmado com uma 3090 Community, que subiu
 de primeira e foi encerrada em seguida: não era bloqueio de conta, era falta de 4090.
+
+---
+
+## [2026-07-30] F0 revelou: `--no_render` NÃO dispensa o stack de visualização — a imagem de produção estava quebrada
+
+**Este é o achado que justifica a existência da F0.** A imagem `v0.1.0`, já publicada
+no GHCR e que iria para o endpoint serverless, **não conseguiria processar um único
+job** — o worker morreria antes de tocar a GPU.
+
+**O que a ADR-0007 supôs (e o plano §3.3 afirmava):**
+
+> "`--no_render` evita todo o stack de renderização (kaolin + extensões CUDA): os
+> imports de `rgbd_render` são feitos dentro da função de render (lazy), então o
+> worker do MVP não precisa de kaolin."
+
+**Medido na F0 (3ª tentativa, pod 4090):** a premissa está **meia certa** — e a metade
+errada é fatal. `rgbd_render`/kaolin realmente são lazy. Mas o `batch_demo.py`, que é
+o script que o nosso worker executa, faz na **linha 29, no topo do módulo**:
+
+```
+batch_demo.py:29         → from lingbot_map.vis.sky_segmentation import ...
+vis/__init__.py:31       → from lingbot_map.vis.point_cloud_viewer import PointCloudViewer
+point_cloud_viewer.py:28 → import viser
+                           ModuleNotFoundError: No module named 'viser'
+```
+
+Ou seja: **importar o `batch_demo.py` já exige o stack de visualização**, independente
+de `--no_render`. A flag controla o que roda, não o que é importado.
+
+**Causa raiz** (confirmada no `pyproject.toml` do motor, commit pinado): `viser` está no
+extra opcional `[vis]`, e nosso Dockerfile fazia `pip install .` — só as dependências
+base. O extra correto para quem usa `demo_render/` é `[demo]` (que puxa `[vis]`).
+
+**Correções aplicadas ao `worker/Dockerfile`:**
+
+1. `pip install ".[demo]"` no lugar de `pip install .` — traz viser (MIT), trimesh
+   (MIT), matplotlib (PSF), requests (Apache-2.0), onnxruntime (MIT). Licenças
+   conferidas no PyPI antes de adotar; nenhuma copyleft forte. `LICENSES.md` atualizado.
+2. `libgl1` + `libglib2.0-0` no apt. Motivo separado, também medido na F0: o motor
+   declara `opencv-python` (não-headless) e nosso requirements traz
+   `opencv-python-headless` — **os dois ficam instalados lado a lado** (com conflito de
+   numpy declarado pelo pip), e qual deles provê o `cv2` depende da ordem de resolução.
+   Se o não-headless vencer, falta `libGL.so.1` e o worker morre. As libs custam ~30 MB
+   e tornam a imagem imune a essa loteria, em vez de depender de sorte.
+
+**Sobre a ADR-0007:** a *decisão* (modo windowed + `--no_render`) permanece válida e não
+muda — continuamos sem kaolin, e a imagem segue menor por isso. O que estava errado era
+uma *consequência declarada*. ADRs são imutáveis por regra do projeto, então a correção
+fica registrada aqui e no comentário do Dockerfile, onde quem for mexer vai ler.
+
+**Números já colhidos (4090, Secure Cloud):**
+
+- `torch 2.9.1+cu128` → `torch.cuda.is_available() = True`. Isso **fecha um
+  `[TESTAR no plug-in]`** aberto desde a D3 (o plano pedia 2.8.0, que sumiu do índice).
+- Checkpoint de 4,6 GB do HF em **12–15 s** (rede de datacenter). Reforça que o valor do
+  network volume está no cold start, não em banda.
+- Instalação do torch: 104–131 s. Drivers vistos: 570.172.08 e 580.159.04.
+- Inferência: **ainda não medida** — as 3 tentativas morreram antes dela.
+
+**Custo acumulado da F0 até aqui:** ~22 min de 4090 Secure ≈ **US$ 0,25**. Barato para
+ter encontrado um defeito que só apareceria no primeiro job real de produção.

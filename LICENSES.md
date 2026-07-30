@@ -60,6 +60,20 @@ a obrigação de abrir o código. Não é uma questão de gosto por licenças.
 | onnxruntime | MIT |
 | torch | BSD-3-Clause |
 
+### Trazidas pelo extra `lingbot-map[demo]`
+
+O `batch_demo.py` importa `lingbot_map.vis` no topo do módulo, então o extra `[vis]`
+do motor é **obrigatório** mesmo rodando com `--no_render` (medido na F0, 2026-07-30 —
+ver `DECISIONS.md`). Licenças conferidas no PyPI antes de adotar:
+
+| Pacote | Licença |
+|---|---|
+| viser | MIT |
+| trimesh | MIT |
+| matplotlib | PSF (permissiva) |
+| requests | Apache-2.0 |
+| onnxruntime | MIT (já listado acima) |
+
 > **Nota sobre o OpenCV:** o pacote é Apache-2.0, mas **modelos distribuídos pelo OpenCV Zoo
 > têm licenças individuais**, que não se herdam do repositório. Isso é relevante na D6, para o
 > detector de rostos do blur — a verificação é pré-condição de adotar qualquer modelo de lá,
