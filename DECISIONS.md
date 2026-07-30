@@ -492,3 +492,61 @@ fica registrada aqui e no comentário do Dockerfile, onde quem for mexer vai ler
 
 **Custo acumulado da F0 até aqui:** ~22 min de 4090 Secure ≈ **US$ 0,25**. Barato para
 ter encontrado um defeito que só apareceria no primeiro job real de produção.
+
+---
+
+## [2026-07-30] F0 v4: inferência RODOU — e trouxe dois números que mudam decisões de arquitetura
+
+Com o Dockerfile corrigido (`.[demo]` + libgl1), a 4ª tentativa passou dos imports e
+**executou o motor na GPU pela primeira vez**. Confirmação de que a correção anterior
+era certeira: `imports OK: cv2 4.10.0, viser 1.0.30`.
+
+Duas descobertas novas, ambas impossíveis de ver sem GPU real:
+
+### 1. `nvcc` não existe na imagem — o flashinfer não compila
+
+```
+/bin/sh: 1: /usr/local/cuda/bin/nvcc: not found
+ninja: build stopped: subcommand failed.
+```
+
+O `flashinfer` compila seus kernels **em JIT, no primeiro uso**, e para isso precisa do
+`nvcc`. Nossa base é `nvidia/cuda:12.8.0-runtime`, que traz só as bibliotecas de runtime —
+o compilador está na variante `-devel`. O processamento continuou mesmo assim (as 4 cenas
+de exemplo completaram e o `batch_results.json` foi salvo), o que sugere fallback; mas
+estamos pagando GPU para tentar compilar e falhar em toda execução.
+
+Isto tem eco no plano §2, que já previa "network volume: checkpoint + **cache JIT do
+FlashInfer**" — ou seja, a arquitetura pretendida sempre foi ter o JIT funcionando e o
+cache persistido no volume, o que exige `nvcc` presente. Opções (a decidir): instalar
+`cuda-nvcc-12-8` via apt (~100 MB, bem menos que trocar para a imagem `-devel`) e apontar
+o cache para `/runpod-volume`; ou assumir o fallback `--use_sdpa` (documentado no plano
+§3.3) e remover o flashinfer, com imagem menor e cold start melhor, ao custo de
+desempenho de atenção. **Precisa medir os dois — é decisão de custo por scan.**
+
+### 2. VRAM medida: 20.884 MB de pico — bem acima dos ~13,3 GB do paper
+
+| | Paper / plano | **Medido (F0, 4090 24 GB)** |
+|---|---|---|
+| VRAM | ~13,3 GB | **~20,4 GB (87% da placa)** |
+
+Medido com `nvidia-smi memory.used` amostrado a cada 2 s durante a execução — isto inclui
+o que o caching allocator do PyTorch **reserva**, não só o que está em uso; ainda assim, é
+o número que precisa caber na placa. E isso foi com a **cena de exemplo** (4 cenas
+pequenas, 8 s de processamento): um vídeo de 2–3 min com `--window_size 128` tende a
+pressionar mais.
+
+**Consequência direta para o P4:** o plano manda "começar com L4/A5000 (24 GB)". Com pico
+medido de ~20,4 GB, a margem em 24 GB é de ~15% — apertado o bastante para um OOM
+derrubar job de cliente. Fica como decisão do Vitor (ver conversa): reduzir `window_size`,
+subir para 48 GB (L40S), ou validar com vídeo real antes de fixar.
+
+### Outros números (4090, driver 570.195.03, 24.564 MiB)
+
+- torch: 60 s de instalação · checkpoint 4,6 GB: 18 s · cenas de exemplo: 8 s (4/4)
+- `frames: 0` no meu resumo é **artefato da minha medição**, não falha: com
+  `--input_folder example` a saída é `batch_results.json` (batch de cenas), não
+  `frame_*.npz` por vídeo. O contador procurava o padrão errado.
+- `exit_code 4` com o processamento concluído — a investigar junto com o flashinfer.
+
+**Custo acumulado da F0:** ~30 min de 4090 Secure ≈ **US$ 0,34**.
