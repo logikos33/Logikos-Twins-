@@ -34,6 +34,10 @@ model Scan {
   // criptográfica — é a única barreira, então não pode ser adivinhável.
   shareToken String @unique @map("share_token")
 
+  // Validade do link (piloto, LGPD): vencido → 404, como token errado. null em
+  // linhas antigas = sem validade (legado); linhas novas sempre ganham prazo.
+  shareTokenExpiresAt DateTime? @map("share_token_expires_at") @db.Timestamptz()
+
   // --- vídeo de entrada ------------------------------------------------------
   videoKey   String? @map("video_key")
   // Extensão real do container gravado (mp4 no Safari, webm no Chrome Android).

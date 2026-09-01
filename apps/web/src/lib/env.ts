@@ -41,7 +41,9 @@ const serverSchema = z.object({
   ADMIN_TOKEN: z.string().min(8),
 
   MAX_VIDEO_MB: z.coerce.number().int().positive().default(300),
-  MAX_VIDEO_SECONDS: z.coerce.number().int().positive().default(180),
+  MAX_VIDEO_SECONDS: z.coerce.number().int().positive().default(120),
+  // Validade dos links novos (piloto): vencido → 404. Dias.
+  SHARE_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
   EXTRACT_FPS: z.coerce.number().int().positive().default(8),
   MAX_SCANS_PER_DAY: z.coerce.number().int().positive().default(20),
   // Retenção do vídeo BRUTO (artefatos 3D nunca são apagados). 7 dias em produção;

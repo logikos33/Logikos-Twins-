@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findById } from "@/lib/services/scans";
+import { findAuthorized } from "@/lib/services/scans";
 import { keys, presignGet } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +16,8 @@ export async function GET(
   const { id, idx } = await ctx.params;
   const token = req.nextUrl.searchParams.get("token") ?? "";
 
-  const scan = await findById(id).catch(() => null);
-  if (!scan || scan.shareToken !== token) {
+  const scan = await findAuthorized(id, token);
+  if (!scan) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }
 

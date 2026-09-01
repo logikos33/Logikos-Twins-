@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { completeUpload, findById, InvalidStateError } from "@/lib/services/scans";
+import { completeUpload, findAuthorized, InvalidStateError } from "@/lib/services/scans";
 import { dispatchJob, markDispatchFailed } from "@/lib/services/processing";
 import { env } from "@/lib/env";
 
@@ -41,8 +41,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     );
   }
 
-  const scan = await findById(id).catch(() => null);
-  if (!scan || scan.shareToken !== parsed.data.shareToken) {
+  const scan = await findAuthorized(id, parsed.data.shareToken);
+  if (!scan) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }
 

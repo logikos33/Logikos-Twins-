@@ -53,6 +53,7 @@ export async function createScan(params: {
     data: {
       title: params.title ?? null,
       shareToken,
+      shareTokenExpiresAt: shareTokenExpiry(),
       videoExt: ext,
       extractFps: env().EXTRACT_FPS,
       blurFaces: params.blurFaces ?? false,
@@ -144,17 +145,37 @@ export async function abortUpload(scan: Scan): Promise<Scan> {
   });
 }
 
-/**
- * Busca por share_token — o caminho de quem abre o link. Retorna null tanto para
- * token inexistente quanto para malformado: quem não tem o token não descobre nada.
- */
-export async function findByShareToken(token: string): Promise<Scan | null> {
-  if (!token || token.length > 64) return null;
-  return db.scan.findUnique({ where: { shareToken: token } });
-}
-
 export async function findById(id: string): Promise<Scan | null> {
   return db.scan.findUnique({ where: { id } });
+}
+
+/** Validade dos links novos (piloto): agora + SHARE_TOKEN_TTL_DAYS. */
+export function shareTokenExpiry(now: Date = new Date()): Date {
+  return new Date(now.getTime() + env().SHARE_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Decisão pura de autorização do link: token certo E não vencido.
+ * null em `shareTokenExpiresAt` = linha antiga, sem validade (legado).
+ */
+export function isShareTokenValid(
+  scan: Pick<Scan, "shareToken" | "shareTokenExpiresAt">,
+  token: string,
+  now: Date = new Date(),
+): boolean {
+  if (!token || scan.shareToken !== token) return false;
+  return scan.shareTokenExpiresAt === null || scan.shareTokenExpiresAt > now;
+}
+
+/**
+ * O ÚNICO caminho de autorização por link das rotas de scan. Token errado,
+ * scan inexistente e link vencido são indistinguíveis (→ 404 na rota): quem
+ * não tem um link válido não descobre nem que o scan existe.
+ */
+export async function findAuthorized(id: string, token: string): Promise<Scan | null> {
+  const scan = await findById(id).catch(() => null);
+  if (!scan || !isShareTokenValid(scan, token)) return null;
+  return scan;
 }
 
 /** Presigned GETs dos artefatos para o viewer (só o que existir em `outputs`). */
