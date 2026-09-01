@@ -20,9 +20,9 @@
 
 ## Marcos
 
-- [x] **Bloco 0 — inventário** (este arquivo; issues #9–#19)
-- [ ] **Bloco 1 — motor residente** ← PRÓXIMO · issue #9 · worktree `piloto/bloco1`
-- [ ] **Bloco 2 — imagem v0.1.1 + pesos R2 + volume + endpoint** · issue #10
+- [x] **Bloco 0 — inventário** (issues #9–#19; PR #20) · main ficou vermelha por advisories npm pré-existentes → consertada no PR #22 (issue #21)
+- [x] **Bloco 1 — motor residente** · issue #9 · `worker/engine/lingbot.py` (singleton, sem viser), blur ANTES do motor, proveniência completa, 60 testes — decisões em `DECISIONS.md [2026-08-31]`
+- [ ] **Bloco 2 — imagem v0.1.1 + pesos R2 + volume + endpoint** · issue #10 ← PRÓXIMO
 - [ ] **Bloco 3 — F0** · issue #11 · sintético destravado; `F0-real: PENDENTE (aguardando vídeos)`
 - [ ] **Bloco 4 — front mobile** · issue #12 · camada A parcial; camada B BLOQUEADA (export)
 - [ ] **Bloco 5 — Railway staging** · issue #13

@@ -56,15 +56,27 @@ a obrigação de abrir o código. Não é uma questão de gosto por licenças.
 | boto3 / botocore | Apache-2.0 |
 | numpy | BSD-3-Clause |
 | opencv-python-headless | Apache-2.0 (OpenCV 4.5+) |
-| open3d | MIT |
 | onnxruntime | MIT |
 | torch | BSD-3-Clause |
+| Pillow | MIT-CMU (HPND, permissiva) |
+| huggingface_hub | Apache-2.0 |
+| einops | MIT |
+| safetensors | Apache-2.0 |
+| scipy | BSD-3-Clause |
+| tqdm | MPL-2.0 + MIT (dual; copyleft fraco por arquivo, sem obrigação sobre o nosso código) |
 
-### Trazidas pelo extra `lingbot-map[demo]`
+`open3d` saiu no bloco 1 do piloto: nunca foi importado pelo worker (o voxel
+downsample é numpy puro) — só inflava a imagem.
 
-O `batch_demo.py` importa `lingbot_map.vis` no topo do módulo, então o extra `[vis]`
-do motor é **obrigatório** mesmo rodando com `--no_render` (medido na F0, 2026-07-30 —
-ver `DECISIONS.md`). Licenças conferidas no PyPI antes de adotar:
+### Trazidas pelo extra `lingbot-map[demo]` — FORA desde o bloco 1 do piloto
+
+O bloco 1 (2026-08-31) substituiu o `batch_demo.py` (subprocess) pelo motor
+residente (`worker/engine/lingbot.py`), que usa só a API pública do pacote —
+o extra `[vis]`/`[demo]` **não entra mais na imagem**. As deps base do motor
+(Pillow, huggingface_hub, einops, safetensors, scipy, tqdm) estão na tabela do
+worker acima; a instalação é `pip install --no-deps` + declaração explícita
+(o pyproject do motor declara `opencv-python` NÃO-headless, que conflita com o
+nosso). Histórico da fase subprocess (licenças conferidas no PyPI à época):
 
 | Pacote | Licença |
 |---|---|
