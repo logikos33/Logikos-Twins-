@@ -72,6 +72,15 @@ export async function createScan(params: {
   return { scanId: scan.id, shareToken, uploadId, videoKey };
 }
 
+/**
+ * Teto de partes derivado de MAX_VIDEO_MB (partes de 5 MiB + 1 curta final):
+ * um cap ESTATELESS por scan — quem tem o token não consegue subir além do
+ * limite do produto, independentemente de rate limit (bloco 6 do piloto).
+ */
+export function maxUploadParts(maxVideoMb: number = env().MAX_VIDEO_MB): number {
+  return Math.ceil((maxVideoMb * 1024 * 1024) / (5 * 1024 * 1024)) + 1;
+}
+
 /** Assina a parte N do multipart da gravação em andamento. */
 export async function presignPart(scan: Scan, partNumber: number): Promise<string> {
   if (!scan.videoKey || !scan.uploadId) {

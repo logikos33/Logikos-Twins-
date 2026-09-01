@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { findById, presignPart, InvalidStateError } from "@/lib/services/scans";
+import {
+  findAuthorized,
+  maxUploadParts,
+  presignPart,
+  InvalidStateError,
+} from "@/lib/services/scans";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +35,18 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     );
   }
 
-  const scan = await findById(id).catch(() => null);
-  // Token errado e scan inexistente respondem IGUAL: quem não tem o token não
-  // descobre nem que o id existe.
-  if (!scan || scan.shareToken !== parsed.data.shareToken) {
+  // Token errado, scan inexistente e link vencido respondem IGUAL (404).
+  const scan = await findAuthorized(id, parsed.data.shareToken);
+  if (!scan) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
+  }
+
+  const cap = maxUploadParts();
+  if (parsed.data.partNumber > cap) {
+    return NextResponse.json(
+      { error: `parte ${parsed.data.partNumber} excede o teto do produto (${cap} partes)` },
+      { status: 413 },
+    );
   }
 
   try {

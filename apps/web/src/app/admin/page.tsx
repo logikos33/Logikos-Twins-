@@ -126,9 +126,24 @@ export default async function AdminPage({
                       {s.videoDeletedAt ? "apagado (retenção)" : s.videoKey ? "ok" : "—"}
                     </td>
                     <td className="px-3 py-2.5 font-mono">
-                      {typeof m["cost_usd_est"] === "number"
-                        ? `$${(m["cost_usd_est"] as number).toFixed(3)}`
-                        : "—"}
+                      {typeof m["cost_usd_est"] === "number" ? (
+                        <span
+                          className={
+                            (m["cost_usd_est"] as number) >= env().COST_ALERT_USD
+                              ? "font-semibold text-danger"
+                              : undefined
+                          }
+                          title={
+                            (m["cost_usd_est"] as number) >= env().COST_ALERT_USD
+                              ? `acima do limiar de $${env().COST_ALERT_USD}`
+                              : undefined
+                          }
+                        >
+                          ${(m["cost_usd_est"] as number).toFixed(3)}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-3 py-2.5">
                       <Link
