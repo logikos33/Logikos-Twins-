@@ -21,18 +21,28 @@ log = logging.getLogger("worker.blur")
 
 MODEL_PATH_DEFAULT = "/models/yunet.onnx"
 
+# Cache por (modelo, w, h): criar o FaceDetectorYN custa ~0,2 s, e o blur
+# pré-motor roda em CENTENAS de frames do mesmo tamanho — medido no smoke do
+# bloco 2: 28,8 s p/ 100 frames criando por chamada (issue #25).
+_DETECTOR_CACHE: dict[tuple[str, int, int], object] = {}
+
 
 def _detector(width: int, height: int):  # type: ignore[no-untyped-def] # cv2 sem stubs úteis
     import cv2
 
     model = os.environ.get("YUNET_MODEL_PATH", MODEL_PATH_DEFAULT)
-    if not Path(model).exists():
-        raise FileNotFoundError(
-            f"modelo YuNet ausente em {model} — rode scripts/fetch_yunet.py"
+    key = (model, width, height)
+    det = _DETECTOR_CACHE.get(key)
+    if det is None:
+        if not Path(model).exists():
+            raise FileNotFoundError(
+                f"modelo YuNet ausente em {model} — rode scripts/fetch_yunet.py"
+            )
+        det = cv2.FaceDetectorYN.create(
+            model, "", (width, height), score_threshold=0.6, nms_threshold=0.3
         )
-    return cv2.FaceDetectorYN.create(
-        model, "", (width, height), score_threshold=0.6, nms_threshold=0.3
-    )
+        _DETECTOR_CACHE[key] = det
+    return det
 
 
 def blur_faces_in_image(image_bgr: np.ndarray) -> tuple[np.ndarray, int]:
