@@ -24,6 +24,8 @@
 - #17 FEITA (PR #32): admin por cookie httpOnly via `/admin/login?token=…` 1× — **o link antigo `/admin?token=` deixou de funcionar**.
 - #18 FEITA (PR #33): build da imagem revalidado toda segunda 06:00 UTC + dispatch.
 
+**ROTAÇÃO R2: CONFIRMADA ponta a ponta — inclusive o COMPLETED.** O job `conf-principal` rodou quando US-KS-2 voltou (~1,6 h de fila a custo zero): exec 107,9 s, artefatos SUBIDOS ao R2 com as chaves novas do template. Bônus medido: **blur_s 4,71 s**/100 frames com o fix ≤640 px (era 28,8 no v0.1.1; projeção p/ 120 s de vídeo: ~56 s → job completo ~5,5 min, meta de 10 min com folga). VRAM 13.406,9 MB — idêntica ao byte pela 15ª execução.
+
 **ROTAÇÃO R2: CONFIRMADA ponta a ponta.** Web→R2 (create/presign/PUT 200+ETag, chaves do Railway) ✓; worker→R2 (chaves do template) ✓ provado por eliminação — 4 jobs no reserva passaram por `ensure_weights` (download R2 + sha), download do vídeo e blur ANTES de morrer no init da GPU. Um `COMPLETED` cosmético fecha quando US-KS-2 voltar (job `conf-principal` deixado na fila do principal, custo zero até rodar).
 
 **Endpoint RESERVA: REPROVADO nesta forma (2026-09-01).** 4 falhas idênticas em 4 hosts distintos ("FlashInfer requires GPUs with sm75 or higher" = CUDA invisível ao torch) com gpuTypeIds modernos + allowedCudaVersions + minCudaVersion TODOS confirmados por GET — o filtro não segura os hosts do pool sem volume (suspeita: community cloud). Congelado com `workersMax=0` (custo zero; apagar se não houver 2ª investigação). **Runbook vigente para DC seco:** recriar o volume no DC vivo (provado: EU-RO-1→US-KS-2 em minutos — criar volume, PATCH `networkVolumeId`+`dataCenterIds`, 1º cold start repopula do R2 sozinho). O fail-fast do PR #34 tornará o sintoma legível na próxima tag.
