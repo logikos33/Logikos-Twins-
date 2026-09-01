@@ -35,6 +35,7 @@
 | **Entregar a pasta do export do Claude Design** → commitar em `design/piloto-mobile/` (ou informar o caminho aqui; o Code commita) | Bloco 4 camada visual + contrato v1.1 (os 46 plugs do v1 só existem no export) |
 | Depositar `pilot/inputs/*.mp4` + `pilot/inputs/medidas.json` (3 distâncias reais/vídeo) | F0 real (bloco 3) — sintético segue sem isso |
 | Ligar alerta de saldo baixo / auto-pay no RunPod (saldo atual US$ 22,03 — OK p/ a rodada) | Nada; proteção |
+| **Rotacionar a credencial S3 do R2** (o PATCH da REST do RunPod ecoou o env do template no log local desta sessão — exposição só em transcript local, risco baixo) | Nada; higiene |
 | Testar no próprio celular (iOS Safari + Android Chrome) e preencher a tabela de escala | Aceites 8 e escala ≤5% (fim da rodada) |
 | ~~Tornar imagem GHCR pública~~ | **JÁ É PÚBLICA** — riscado |
 
@@ -43,9 +44,9 @@
 | Recurso | Id | Config |
 |---|---|---|
 | Imagem | `ghcr.io/logikos33/logikos-twins-worker:0.1.1` | digest `sha256:c94e7588f0e4…`; tags `0.1.1` + `d7e52b7f…` (sha) + `latest`; pública |
-| Network volume | `laub40xwuj` (`piloto-weights`) | 15 GB, EU-RO-1, nasce VAZIO (ensure_weights popula do R2) |
+| Network volume | `upp3c2jg6i` (`piloto-weights-us-ks-2`) | 15 GB, **US-KS-2** (EU-RO-1 e US-TX-3 tinham capacidade ZERO p/ 48 GB — provado por sonda; volume original apagado) |
 | Template | `cbzibv5o40` (`piloto-lingbot-v0.1.1`) | imagem POR DIGEST; segredos S3/webhook no env do template (fora de repo/log; REST não expõe Secrets API) |
-| Endpoint | `mfnx103w05drr5` (`piloto-lingbot`) | max workers 1 · idle 5 s · exec timeout 1.200 s · FlashBoot · minCuda 12.8 (lição F0 v1) · GPUs L40S/6000Ada/L40 · DC EU-RO-1 |
+| Endpoint | `mfnx103w05drr5` (`piloto-lingbot`) | max workers 1 · idle 5 s · exec timeout 1.200 s · FlashBoot · cuda allowed 12.8/12.9/13.0 · GPUs L40S/6000Ada/L40/A40/A6000 · DC US-KS-2 · **API de jobs: api.runpod.ai + User-Agent obrigatório** |
 
 ### Previsão ANTES do smoke (bloco 2.6 → entrada do bloco 3)
 
@@ -63,6 +64,20 @@
 - **GHCR:** `ghcr.io/logikos33/logikos-twins-worker` público, tags `0.1.0`/`latest` — **v0.1.0 quebrada p/ produção**.
 - **HF `robbyant/lingbot-map`:** público; `lingbot-map.pt` = 4.632.303.465 bytes (~4,63 GB) ✓; há também `-long.pt`, `-stage1.pt`, `skyseg_batch.onnx`.
 - **GitHub:** default branch `main`; issues #9–#19 abertas nesta rodada (antes: 0).
+
+## F0 sintética — PREVISÃO escrita antes do disparo (2026-09-01)
+
+Base: smokes de 100 frames (VRAM 13.406,9 MB determinística, infer 0,11 s/frame, imagem v0.1.2 com blur cacheado).
+
+| Vídeo | Frames | VRAM prevista | Tempo previsto (exec) | Custo previsto |
+|---|---|---|---|---|
+| smoke-4 (10 s, imagem nova, cold) | 100 | 13,4 GB | 50–70 s + cold 2–5 min (pull v0.1.2 + re-download .pt) | ≤ US$ 0,25 |
+| 60 s | 600 | 14,5–16 GB | 3–5 min | ≤ US$ 0,25 |
+| 90 s | 900 | 15–17 GB | 4–7 min | ≤ US$ 0,35 |
+| 120 s | 1.200 | **16–18 GB** | 6–9 min (meta ≤ 10 min upload→link) | ≤ US$ 0,45 |
+
+Limiar da decisão de GPU (D-): pico ≤ 19 GB no vídeo de 120 s → endpoint desce p/ 24 GB (4090). Componentes da previsão: 13,4 GB medidos + ~2,7 GB de frames de entrada na GPU (1.200 × 2,4 MB) + crescimento dos tokens special (~0,3–1 GB). Teto de custo da F0: US$ 3 (gastos até aqui: ~US$ 0,35).
+`F0-real: PENDENTE (aguardando vídeos)` — re-execução: os mesmos comandos com `pilot/inputs/*.mp4` no lugar dos sintéticos.
 
 ## Inventário (bloco 0) — o que já existe × o que falta
 
