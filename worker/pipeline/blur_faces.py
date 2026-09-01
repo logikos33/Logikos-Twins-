@@ -61,6 +61,32 @@ def blur_faces_in_image(image_bgr: np.ndarray) -> tuple[np.ndarray, int]:
     return out, len(faces)
 
 
+def blur_frames_dir(frames_dir: Path) -> int:
+    """Borra rostos em TODOS os frames extraídos, in-place — ANTES do motor.
+
+    É daqui que nasce a cor da nuvem e os keyframes: borrar neste ponto cobre
+    tudo de uma vez (bloco 1 do piloto). q=95: estes JPEGs são entrada do
+    modelo, não artefato de exibição — não degradar além do necessário.
+    """
+    import cv2
+
+    targets = sorted(frames_dir.glob("frame_*.jpg"))
+    if not targets:
+        raise FileNotFoundError(f"nenhum frame para borrar em {frames_dir}")
+
+    total = 0
+    for path in targets:
+        img = cv2.imread(str(path))
+        if img is None:
+            raise RuntimeError(f"frame ilegível: {path}")
+        blurred, n = blur_faces_in_image(img)
+        if n > 0:
+            cv2.imwrite(str(path), blurred, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            total += n
+    log.info("blur pré-motor: %d rosto(s) em %d frame(s)", total, len(targets))
+    return total
+
+
 def blur_keyframes(artifacts_dir: Path) -> int:
     """Borra rostos em todos os keyframes + thumb, in-place. Devolve total de rostos."""
     import cv2

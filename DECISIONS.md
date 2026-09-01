@@ -584,3 +584,46 @@ Inventário completo antes de construir (issues #9–#19; estado vivo em `docs/p
 volumes** (o volume de pesos citado por `populate_volume.py` sumiu — repopular antes de
 qualquer job) · saldo US$ 22,03 · US$ 0/h. HF `robbyant/lingbot-map` público com
 `lingbot-map.pt` de 4.632.303.465 bytes.
+
+## [2026-08-31] Bloco 1 do piloto: motor residente — o subprocess morreu, o blur mudou de lado
+
+`worker/engine/lingbot.py`: singleton de processo que carrega o checkpoint UMA vez e
+expõe `run(frames_dir, cfg)`, espelhando o caminho do `demo.py` do pin (carga → cast do
+aggregator p/ bf16 → `inference_streaming`/`windowed` → pose_enc → extrinsic/intrinsic)
+usando SÓ a API pública do pacote — o extra `[vis]/[demo]` sai da imagem no bloco 2.
+
+**Decisões com consequência:**
+
+1. **world_points por DESPROJEÇÃO de depth+pose** (`enable_point=False`), não pelo point
+   head — é o default do viewer oficial do motor, garante geometria consistente com a
+   pose e poupa VRAM. Reversível por config (`enable_point=True`). `world_points_conf`
+   passa a ser `depth_conf`; a F0 valida se a régua do filtro (conf ≥ 1,5) segue certa.
+2. **`images` no NPZ sai uint8 0–255.** O `batch_demo.py` grava float [0,1], e
+   `npz_to_artifacts.load_frame` faz `.astype(np.uint8)` — ou seja, o caminho real
+   produziria nuvem e keyframes PRETOS. Nunca foi notado porque o modo real nunca rodou
+   o pipeline completo (a F0 v4 parou nos NPZs de exemplo). A fixture sintética, que
+   grava uint8 "como o motor grava", MENTIA sobre o motor — landmine clássico deste
+   projeto. Teste `test_imagem_float_01_vira_uint8_e_nao_preto` cobre.
+3. **Blur ANTES do motor.** O worker agora extrai os frames (ffmpeg, fps do job) e o
+   YuNet roda sobre eles antes da inferência — a cor da nuvem nasce de pixel já borrado.
+   Antes o blur rodava DEPOIS, só nos keyframes/thumb (`handler.py` antigo :73-77): a
+   nuvem ficava com os rostos nítidos em cor. Falha de blur segue fatal (D6).
+4. **Blur vira PADRÃO no worker** (`params.blur_faces` default True). A web ainda manda
+   o valor explícito por scan (schema Prisma default false) — o flip do produto é do
+   bloco 6, com migration própria.
+5. **`torch.compile` fica fora do bloco 1**: o maquinário de compile+warmup do pin vive
+   em `demo.py` na raiz do repo do motor, FORA do pacote instalado. A F0 mede o baseline
+   sem ele; se o ganho justificar, copia-se o warmup com atribuição (registrar aqui).
+6. **open3d removido** do requirements: nunca foi importado (voxel é numpy puro).
+7. **Gates novos falham antes de passar** (provado com sabotagem): import de
+   `lingbot_map.vis`/`viser`/`open3d`/`kaolin`/`ultralytics` em linha de import do
+   caminho servido; volta do subprocess no `infer.py`; e import de `engine.lingbot` em
+   subprocess com `torch`/`lingbot_map`/`viser` BLOQUEADOS via sys.modules.
+
+**Proveniência completa no job:** meta.json leva `worker_commit`, `image_sha`,
+`weights_sha256` (sha do checkpoint, calculado 1× por processo), `engine_flags`; metrics
+levam `peak_vram_mb`, `n_keyframes`, `engine_mode`, `keyframe_interval` e
+`stage_timings` por etapa (download/normalize/extract/blur/infer/convert/upload).
+
+**Regras de segurança do RoPE codificadas:** `keyframe_interval` efetivo =
+`max(cfg, ceil(n/320))`; windowed automático acima de 3.000 frames. 60 testes (41+19).

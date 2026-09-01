@@ -189,7 +189,7 @@ def convert(
     conf_min: float = CONF_MIN_DEFAULT,
     target_points: int = TARGET_POINTS_DEFAULT,
     keyframe_every: int = 4,
-    versions: dict[str, str] | None = None,
+    versions: dict[str, Any] | None = None,
 ) -> Artifacts:
     """Converte o diretório de NPZs nos artefatos finais, em out_dir."""
     t0 = time.monotonic()
