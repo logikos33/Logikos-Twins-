@@ -7,45 +7,21 @@
   ],
   "exceptions": [
     {
-      "package": "next",
-      "advisory": "GHSA-f88m-g3jw-g9cj (sharp/libvips), postcss XSS",
-      "reason": "Avisos transitivos internos do Next 16.2.12 (sharp e postcss). A única correção oferecida pelo npm é regredir para next@9.3.3, o que é inviável. sharp só é exercitado pelo otimizador de imagens do Next, que este produto não usa para conteúdo de terceiros — as imagens servidas são keyframes gerados pelo nosso próprio worker.",
+      "package": "deepmerge-ts",
+      "advisory": "Stack exhaustion ao mesclar grafos de objetos recursivos",
+      "reason": "Transitiva de @prisma/config (loader de configuração da CLI do Prisma), usada em tempo de build/generate, não no runtime servido. Já estamos no prisma 7.10.0 (última da major); a única 'correção' que o npm oferece é regredir para prisma 6.12.0 — major para trás, inviável. A entrada mesclada vem do nosso próprio prisma.config, não de terceiros.",
       "expires": "2026-10-31"
     },
     {
-      "package": "sharp",
-      "advisory": "CVE-2026-33327, CVE-2026-33328, CVE-2026-35590, CVE-2026-35591",
-      "reason": "Transitiva de next@16.2.12; sem versão corrigida disponível sem regredir o Next. Superfície limitada ao pipeline de imagem do Next, que não processa upload de usuário (o vídeo vai direto ao bucket e os keyframes vêm do nosso worker).",
-      "expires": "2026-10-31"
-    },
-    {
-      "package": "postcss",
-      "advisory": "XSS via unescaped </style>; leitura arbitrária de arquivo",
-      "reason": "Transitiva de next@16.2.12, usada em tempo de build, não em runtime de requisição.",
+      "package": "@prisma/config",
+      "advisory": "via deepmerge-ts (stack exhaustion)",
+      "reason": "Idem acima — mesma cadeia, ferramenta de build do Prisma fora do caminho servido.",
       "expires": "2026-10-31"
     },
     {
       "package": "prisma",
-      "advisory": "via @prisma/dev → find-my-way, valibot",
-      "reason": "Já estamos na versão mais recente publicada (7.9.0); o npm aponta como 'correção' a 7.8.0, que é ANTERIOR — o dado do aviso está defasado. @prisma/dev é ferramenta de desenvolvimento e não vai para o runtime servido.",
-      "expires": "2026-10-31"
-    },
-    {
-      "package": "@prisma/dev",
-      "advisory": "find-my-way DDoS via HTTP2; valibot",
-      "reason": "Idem acima — ferramenta de desenvolvimento do Prisma, fora do caminho servido.",
-      "expires": "2026-10-31"
-    },
-    {
-      "package": "valibot",
-      "advisory": "GHSA-5qjj-4xww-7phc",
-      "reason": "Transitiva de @prisma/dev (ferramenta). Este projeto valida com Zod, não com valibot.",
-      "expires": "2026-10-31"
-    },
-    {
-      "package": "find-my-way",
-      "advisory": "DDoS com HTTP2",
-      "reason": "Transitiva de @prisma/dev (ferramenta), fora do caminho servido.",
+      "advisory": "via @prisma/config → deepmerge-ts",
+      "reason": "Idem acima — a CLI (prisma generate/migrate) roda em build e deploy, não atende requisição.",
       "expires": "2026-10-31"
     }
   ]
