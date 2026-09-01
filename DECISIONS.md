@@ -627,3 +627,33 @@ levam `peak_vram_mb`, `n_keyframes`, `engine_mode`, `keyframe_interval` e
 
 **Regras de segurança do RoPE codificadas:** `keyframe_interval` efetivo =
 `max(cfg, ceil(n/320))`; windowed automático acima de 3.000 frames. 60 testes (41+19).
+
+## [2026-08-31] Bloco 2 do piloto: nvcc resolvido por AOT, R2 vira fonte da verdade dos pesos
+
+**nvcc (pendência da F0 v4) — decidido SEM imagem devel:** base segue
+`cuda:12.8.0-runtime`; entra `flashinfer-python==0.6.9` pinado + wheel AOT
+`flashinfer-jit-cache==0.6.9+cu128` do índice oficial (kernels pré-compilados,
+abi3). Zero JIT no cold start, zero nvcc, zero cache para gerenciar no volume.
+Fallback operacional se o motor implicar com a versão: `ENGINE_USE_SDPA=1`
+(flag pronta na EngineConfig). A alternativa devel (+~3 GB) não foi medida —
+só se o smoke da F0 derrubar o AOT.
+
+**Pesos: R2 é a fonte da verdade, o volume é cache.**
+- Upload feito HOJE do checkout local (sha conferido contra os congelados antes
+  de subir; tamanho conferido por HEAD depois): `models/lingbot-map/ee665103…/`
+  (4.632.303.465 bytes) + `models/yolox_s/c5c2d13e…/` + `models/yunet/8f2383e4…/`
+  no bucket do projeto. Script registrado em `scripts/upload_weights_r2.py`.
+- `engine/weights.py: ensure_weights()` no cold start: ausente/corrompido →
+  baixa do R2 e VERIFICA sha256; divergência é fatal. Caminho quente = marker
+  `.sha256ok` + stat (verificação plena de 4,6 GB só quando falta marker).
+- Consequência: o volume novo nasce VAZIO e o 1º cold start o popula de dentro
+  do datacenter (R2→RunPod, egress zero da Cloudflare) — o upload de 4,6 GB
+  Mac→gateway s3api do RunPod (lento, teto de 128 MB/parte) sai do caminho.
+  `populate_volume.py` vira fallback manual.
+
+**Miudezas com motivo:** `version.py` no lugar de `python -m worker --version`
+(o layout da imagem é flat em /app, não um pacote `worker`); libgl1/libglib
+removidas (sem opencv não-headless, ninguém pede libGL); `latest` + semver +
+**sha longo do commit** como tags da imagem; `WORKER_COMMIT`/`IMAGE_SHA`
+gravados no build (o digest real fica no registry; image_sha = sha do git da
+tag). LICENSES.md ganhou FFmpeg, base CUDA e flashinfer (fecha a issue #15).

@@ -41,6 +41,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{version}}
+            type=sha,format=long,prefix=
             type=raw,value=latest
 
       - name: build + push
@@ -51,6 +52,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            WORKER_COMMIT=${{ github.sha }}
 
       - name: digest publicado
         run: echo "digest = ${{ steps.push.outputs.digest }}"

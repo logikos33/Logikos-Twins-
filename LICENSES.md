@@ -64,6 +64,7 @@ a obrigação de abrir o código. Não é uma questão de gosto por licenças.
 | safetensors | Apache-2.0 |
 | scipy | BSD-3-Clause |
 | tqdm | MPL-2.0 + MIT (dual; copyleft fraco por arquivo, sem obrigação sobre o nosso código) |
+| flashinfer-python + flashinfer-jit-cache | Apache-2.0 (kernels AOT do índice oficial flashinfer.ai, cu128) |
 
 `open3d` saiu no bloco 1 do piloto: nunca foi importado pelo worker (o voxel
 downsample é numpy puro) — só inflava a imagem.
@@ -102,6 +103,15 @@ nosso). Histórico da fase subprocess (licenças conferidas no PyPI à época):
 
 ---
 
+## Sistema e imagem base (worker)
+
+| Componente | Licença | Nota |
+|---|---|---|
+| FFmpeg (apt, ubuntu 22.04) | LGPL-2.1+ (build da distro; componentes GPL não são linkados por nós) | usado por subprocess CLI (normalize + extração de frames) — sem linkagem com o nosso código, sem obrigação sobre ele |
+| Imagem base `nvidia/cuda:12.8.0-runtime` | EULA NVIDIA (CUDA Toolkit) + Ubuntu | uso e redistribuição em container permitidos pelo EULA do CUDA runtime; não redistribuímos o toolkit fora da imagem |
+
+---
+
 ## Modelos e pesos
 
 | Artefato | Origem | Licença |
@@ -120,6 +130,12 @@ nosso). Histórico da fase subprocess (licenças conferidas no PyPI à época):
 4. O gate da CI pega o caso conhecido; ele **não** substitui esta conferência, porque só
    conhece os nomes que já estão na lista.
 
+---
+
+## Fontes (apps/web)
+
+| Fonte | Licença | Uso |
+|---|---|---|
 | Space Grotesk (fonte, woff2 variável) | SIL OFL 1.1 | UI — voz display do manual |
 | Inter (fonte, woff2 variável) | SIL OFL 1.1 | UI — corpo |
 | JetBrains Mono (fonte, woff2 variável) | SIL OFL 1.1 | UI — dados técnicos |
