@@ -242,6 +242,17 @@ class LingbotEngine:
         if not model_file.exists():
             raise FileNotFoundError(f"checkpoint ausente: {model_file}")
 
+        # Falha RÁPIDA e legível quando o host não expõe a GPU (driver < CUDA
+        # 12.8): sem isto o sintoma é o críptico "FlashInfer requires GPUs with
+        # sm75 or higher" — visto 2× num host ruim em 2026-09-01. A causa se
+        # corrige no ENDPOINT (allowedCudaVersions), não no código.
+        if os.environ.get("WORKER_MODE", "real") == "real" and not torch.cuda.is_available():
+            raise RuntimeError(
+                "GPU indisponível no worker (torch.cuda.is_available()=False) — "
+                "provável driver do host < CUDA 12.8; conferir allowedCudaVersions "
+                "do endpoint e reciclar o worker (workersMax 0→1)"
+            )
+
         # sha256 uma vez por processo: identifica os pesos na proveniência e
         # denuncia volume corrompido antes de gastar GPU.
         self.weights_sha256 = sha256_of(model_file)
