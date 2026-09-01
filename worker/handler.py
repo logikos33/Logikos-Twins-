@@ -215,5 +215,14 @@ if __name__ == "__main__":
     # No RunPod, o SDK gerencia o loop de jobs. Import adiado: o modo local-worker
     # importa `handler` diretamente e não precisa do SDK.
     import runpod
+    from pipeline import infer
+
+    if infer.is_real_mode():
+        # Cold start: R2 é a fonte da verdade, o volume é cache (bloco 2).
+        # Falha aqui DEVE derrubar o worker — servir sem pesos verificados não é opção.
+        from engine import weights
+
+        status = weights.ensure_weights()
+        log.info(f"pesos prontos: {status}")
 
     runpod.serverless.start({"handler": handler})
