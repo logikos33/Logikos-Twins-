@@ -22,7 +22,7 @@
 
 - [x] **Bloco 0 — inventário** (issues #9–#19; PR #20) · main ficou vermelha por advisories npm pré-existentes → consertada no PR #22 (issue #21)
 - [x] **Bloco 1 — motor residente** · issue #9 · `worker/engine/lingbot.py` (singleton, sem viser), blur ANTES do motor, proveniência completa, 60 testes — decisões em `DECISIONS.md [2026-08-31]`
-- [~] **Bloco 2 — imagem v0.1.1 + pesos R2 + volume + endpoint** · issue #10 · pesos NO R2 ✔ (3 objetos `models/<nome>/<sha256>/`, tamanhos conferidos) · código: Dockerfile runtime+FlashInfer AOT 0.6.9+cu128 (nvcc morto), `ensure_weights()` (R2=verdade, volume=cache, marker sha256ok), `version.py`, tag sha no workflow · APÓS MERGE: tag `v0.1.1` → build → criar volume `piloto-weights` + endpoint `piloto-lingbot` via API
+- [x] **Bloco 2 — imagem v0.1.1 + pesos R2 + volume + endpoint** · issue #10 · PR #24 · pesos NO R2 ✔ (3 objetos `models/<nome>/<sha256>/`, tamanhos conferidos) · código: Dockerfile runtime+FlashInfer AOT 0.6.9+cu128 (nvcc morto), `ensure_weights()` (R2=verdade, volume=cache, marker sha256ok), `version.py`, tag sha no workflow · APÓS MERGE: tag `v0.1.1` → build → criar volume `piloto-weights` + endpoint `piloto-lingbot` via API
 - [ ] **Bloco 3 — F0** · issue #11 · sintético destravado; `F0-real: PENDENTE (aguardando vídeos)`
 - [ ] **Bloco 4 — front mobile** · issue #12 · camada A parcial; camada B BLOQUEADA (export)
 - [ ] **Bloco 5 — Railway staging** · issue #13
@@ -37,6 +37,25 @@
 | Ligar alerta de saldo baixo / auto-pay no RunPod (saldo atual US$ 22,03 — OK p/ a rodada) | Nada; proteção |
 | Testar no próprio celular (iOS Safari + Android Chrome) e preencher a tabela de escala | Aceites 8 e escala ≤5% (fim da rodada) |
 | ~~Tornar imagem GHCR pública~~ | **JÁ É PÚBLICA** — riscado |
+
+## Infra do piloto (criada 2026-09-01 via API — TUDO com prefixo piloto-)
+
+| Recurso | Id | Config |
+|---|---|---|
+| Imagem | `ghcr.io/logikos33/logikos-twins-worker:0.1.1` | digest `sha256:c94e7588f0e4…`; tags `0.1.1` + `d7e52b7f…` (sha) + `latest`; pública |
+| Network volume | `laub40xwuj` (`piloto-weights`) | 15 GB, EU-RO-1, nasce VAZIO (ensure_weights popula do R2) |
+| Template | `cbzibv5o40` (`piloto-lingbot-v0.1.1`) | imagem POR DIGEST; segredos S3/webhook no env do template (fora de repo/log; REST não expõe Secrets API) |
+| Endpoint | `mfnx103w05drr5` (`piloto-lingbot`) | max workers 1 · idle 5 s · exec timeout 1.200 s · FlashBoot · minCuda 12.8 (lição F0 v1) · GPUs L40S/6000Ada/L40 · DC EU-RO-1 |
+
+### Previsão ANTES do smoke (bloco 2.6 → entrada do bloco 3)
+
+| Métrica | Previsto | Limiar de aceite |
+|---|---|---|
+| 1º cold start (pull imagem + pesos R2→volume + sha + load) | 4–8 min | só informativo (1ª vez; cold start "de regime" é com FlashBoot+volume quente ≤ 120 s) |
+| Inferência smoke (10 s × 10 fps = 100 frames, L40S) | 30–90 s | terminar < timeout |
+| Pico VRAM (100 frames) | 8–14 GB | ≤ 19 GB (o teste que decide 24 vs 48 GB é o de 1.200 frames, bloco 3) |
+| Custo do smoke | ≤ US$ 0,60 | teto US$ 1; teto da F0 inteira US$ 3 |
+| Proveniência | completa, zero "unknown" exceto APP_URL ausente | qualquer "unknown" em commit/sha = falha |
 
 ## Recursos vivos (verificado 2026-08-31 por API)
 
