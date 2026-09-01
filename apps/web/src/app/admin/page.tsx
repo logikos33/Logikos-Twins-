@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { LogoSymbol } from "@/components/Logo";
 
@@ -23,13 +24,11 @@ const STATUS_DOT: Record<string, string> = {
  *
  * Sem token válido → 404, não 403: a existência do painel não se anuncia.
  */
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ token?: string }>;
-}) {
-  const { token } = await searchParams;
-  if (token !== env().ADMIN_TOKEN) notFound();
+export default async function AdminPage() {
+  // Cookie httpOnly em vez de token na query (issue #17): entrar 1× por
+  // /admin/login?token=…; daqui em diante a URL do painel fica limpa.
+  const jar = await cookies();
+  if (jar.get("admin_token")?.value !== env().ADMIN_TOKEN) notFound();
 
   const scans = await db.scan.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
 
