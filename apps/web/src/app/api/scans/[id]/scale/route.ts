@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { findById } from "@/lib/services/scans";
+import { findAuthorized } from "@/lib/services/scans";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +33,8 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
     );
   }
 
-  const scan = await findById(id).catch(() => null);
-  if (!scan || scan.shareToken !== parsed.data.shareToken) {
+  const scan = await findAuthorized(id, parsed.data.shareToken);
+  if (!scan) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }
 
