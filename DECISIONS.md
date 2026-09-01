@@ -550,3 +550,37 @@ subir para 48 GB (L40S), ou validar com vídeo real antes de fixar.
 - `exit_code 4` com o processamento concluído — a investigar junto com o flashinfer.
 
 **Custo acumulado da F0:** ~30 min de 4090 Secure ≈ **US$ 0,34**.
+
+## [2026-08-31] Rodada do piloto mobile — inventário (bloco 0): três premissas do prompt caíram, pin fica, trabalho sai do iCloud
+
+Inventário completo antes de construir (issues #9–#19; estado vivo em `docs/piloto/ESTADO.md`).
+
+**Premissas do prompt de execução que a realidade derrubou:**
+
+1. **"Imagem v0.1.0 privada no GHCR"** — é **pública** (pull anônimo lista `0.1.0`/`latest`).
+   O bloco de infra serverless não está bloqueado em ação humana. A imagem segue quebrada
+   para produção (o fix `8758237` é posterior à tag) — v0.1.1 resolve.
+2. **"`8758237` corrige o nvcc"** — corrige o extra `[demo]`+libgl1. O nvcc segue em aberto
+   (entrada de 2026-07-30 acima: `cuda-nvcc-12-8` vs `--use_sdpa`, decidir medindo).
+3. **"Pin do motor anterior aos fixes de 24/04 e 28/06"** — o pin `1f480aeb` é de
+   **2026-07-23**; o fix real de KV cache (SDPA) é `b8231a4f` de **2026-07-02**, já incluso.
+   Nessas duas datas não há commit de KV/FlashInfer/SDPA no repo do motor. **Decisão: pin
+   fica** (reversível subindo o `ARG ENGINE_COMMIT`). Achado colateral: o repo do motor tem
+   **zero menções a FlashInfer** — validar no bloco 1 se `flashinfer-python` (sem pin,
+   `worker/Dockerfile:53`) é mesmo necessária (issue #19). Upstream de 2026-08-31 removeu
+   `lingbot-map-long` do README — não contar com o checkpoint `-long` sem validar.
+
+**Decisões operacionais desta rodada:**
+
+- **Trabalho em `~/twins-piloto/`** (clone local com origin no GitHub, worktrees por bloco)
+  — o checkout em `Documents` sofre eviction do iCloud (lição do projeto irmão). Reversível
+  apagando o clone.
+- **`torch 2.9.1+cu128` mantido** — a F0 v4 rodou inferência com ela; o prompt citava
+  2.8.0 desatualizado.
+- **Registro de decisões continua neste arquivo** (log cronológico da casa), não em
+  `docs/piloto/DECISOES.md` como o prompt pedia — um ledger só.
+
+**Estado vivo verificado por API (2026-08-31):** RunPod 0 pods · 0 endpoints · **0 network
+volumes** (o volume de pesos citado por `populate_volume.py` sumiu — repopular antes de
+qualquer job) · saldo US$ 22,03 · US$ 0/h. HF `robbyant/lingbot-map` público com
+`lingbot-map.pt` de 4.632.303.465 bytes.
