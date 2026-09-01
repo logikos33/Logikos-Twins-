@@ -657,3 +657,44 @@ removidas (sem opencv não-headless, ninguém pede libGL); `latest` + semver +
 **sha longo do commit** como tags da imagem; `WORKER_COMMIT`/`IMAGE_SHA`
 gravados no build (o digest real fica no registry; image_sha = sha do git da
 tag). LICENSES.md ganhou FFmpeg, base CUDA e flashinfer (fecha a issue #15).
+
+## [2026-09-01] Bloco 2 provado com GPU real: 3 smokes verdes, capacidade é por DC, motor residente confirmado na prática
+
+**O caminho até o primeiro job verde** (tudo a US$ 0 até funcionar — gate de infra):
+1. `/run` serverless vive em **api.runpod.ai** (não `.io`) e o Cloudflare exige
+   **User-Agent de browser** (Bearer puro → 403). O RUNPOD_BASE_URL do staging
+   será `https://api.runpod.ai`.
+2. Endpoint com volume em EU-RO-1 ficou 16 min IN_QUEUE com **zero workers**
+   (nem initializing). Prova de causa por sonda: endpoint descartável SEM volume,
+   mesma imagem/template → worker em 46 s. **Capacidade de GPU é por DC, e o
+   volume prende o endpoint ao DC.** US-TX-3 idem (zero); **US-KS-2 nasceu em
+   30 s** → volume final `upp3c2jg6i` (piloto-weights-us-ks-2); o de EU-RO-1
+   foi desanexado e apagado (conta com 1 volume, provado por nova consulta).
+3. `minCudaVersion` não aceita null via PATCH — ficou 12.8 + allowedCudaVersions
+   [12.8, 12.9, 13.0], que é o que o torch cu128 exige de driver.
+
+**Os 3 smokes (vídeo 10 s × 10 fps = 100 frames, blur ON):**
+
+| | cold | delay | exec | peak VRAM | infer | blur |
+|---|---|---|---|---|---|---|
+| smoke-1 (volume vazio → bootstrap R2) | 1º do endpoint | 227,5 s | 92,5 s | 13.406,9 MB | 11,2 s | 28,8 s |
+| smoke-2 (regime, FlashBoot) | não | **0,45 s** | 54,0 s | 13.406,9 MB | 10,9 s | 17,6 s |
+| smoke-3 (após DELETAR o .pt do volume) | não | 0,39 s | 62,3 s | 13.406,9 MB | 10,8 s | 26,9 s |
+
+- Proveniência no meta.json **sem nenhum unknown**: worker_commit=image_sha=
+  `d7e52b7f`, engine_commit=pin, weights_sha256=`ee665103…`, engine_flags
+  completos com `use_sdpa: false` → **FlashInfer AOT funcionou sem nvcc**.
+- Bootstrap provado por **nova consulta ao volume** (3 modelos + 3 markers num
+  volume que nasceu vazio).
+- O smoke-3 revelou o esperado-mas-nunca-provado: **o worker quente nem nota a
+  deleção do checkpoint** — o modelo vive na RAM do singleton; `ensure_weights`
+  é do startup. A prova do RE-bootstrap fecha no primeiro cold start da imagem
+  v0.1.2 (o `lingbot-map.pt` segue deliberadamente ausente do volume até lá).
+- VRAM idêntica ao byte nos 3 smokes — inferência determinística no tamanho.
+- Custo acumulado: ~US$ 0,35 (teto da F0: US$ 3).
+
+**Achados que viraram trabalho:** blur criava um FaceDetectorYN POR FRAME
+(28,8 s/100 frames — issue #25, PR #26, entra na v0.1.2). O PATCH de endpoint
+da REST **ecoa o env do template com segredos** — as chaves S3 do R2 tocaram o
+log local desta sessão → AÇÃO-VITOR (higiene, baixa urgência): rotacionar a
+credencial R2 do bucket; daqui em diante toda resposta de PATCH é filtrada.
