@@ -3,6 +3,21 @@
 > **Âncora de reentrância.** Sessão nova: leia este arquivo primeiro e continue do primeiro marco aberto.
 > Atualizado: 2026-08-31 · rodada 1 · base = `origin/main` @ `2e10a80`.
 
+## Fechamento da rodada 1 (2026-09-01)
+
+**Provado hoje:** motor residente (v0.1.1→v0.1.3) · pesos R2→volume com sha e re-bootstrap por deleção · endpoint serverless real com 12 jobs/0 falhas · F0 sintética 60/90/120 s com previsões batidas · staging no ar com proveniência · blur antes do motor com prova mecânica · **custo total da rodada: US$ 1,08** (saldo 22,03→20,96; US$ 0,001/h em regime = storage do volume) · zero workers ao sair (nova consulta).
+
+| Recurso vivo (produto do piloto) | Id |
+|---|---|
+| Endpoint `piloto-lingbot` (scale-to-zero, max 1, 1.200 s, FlashBoot, 48 GB) | `mfnx103w05drr5` |
+| Volume `piloto-weights-us-ks-2` (cache; R2 é a verdade) | `upp3c2jg6i` |
+| Template `piloto-lingbot-v0.1.1` → imagem v0.1.3 por digest | `cbzibv5o40` |
+| Staging | https://logikos-twins-production.up.railway.app (projeto Railway `Logikos-twins`, serviços `Logikos-Twins-` + `piloto-postgres`) |
+
+**Operacional aprendido:** trocar template com fila ativa = job amarrado à versão antiga (purge-queue resolve); worker preso pós-update = `workersMax 0→1`; `api.runpod.ai` + User-Agent obrigatórios; PORT=3000 explícito no Railway (healthcheck passa na porta injetada e o domínio apontava p/ 3000).
+
+**Próximo passo da rodada 2:** export do Design → contrato v1.1 + telas (bloco 4B) · F0-real + escala ≤5% · teste no celular físico (aceite 8) · v0.1.3 já contém todos os fixes.
+
 ## Divergências prompt × realidade (bloco 0 — provadas)
 
 | O prompt dizia | O repo/mundo diz | Decisão |
@@ -23,10 +38,10 @@
 - [x] **Bloco 0 — inventário** (issues #9–#19; PR #20) · main ficou vermelha por advisories npm pré-existentes → consertada no PR #22 (issue #21)
 - [x] **Bloco 1 — motor residente** · issue #9 · `worker/engine/lingbot.py` (singleton, sem viser), blur ANTES do motor, proveniência completa, 60 testes — decisões em `DECISIONS.md [2026-08-31]`
 - [x] **Bloco 2 — imagem v0.1.1 + pesos R2 + volume + endpoint** · issue #10 · PR #24 · pesos NO R2 ✔ (3 objetos `models/<nome>/<sha256>/`, tamanhos conferidos) · código: Dockerfile runtime+FlashInfer AOT 0.6.9+cu128 (nvcc morto), `ensure_weights()` (R2=verdade, volume=cache, marker sha256ok), `version.py`, tag sha no workflow · APÓS MERGE: tag `v0.1.1` → build → criar volume `piloto-weights` + endpoint `piloto-lingbot` via API
-- [ ] **Bloco 3 — F0** · issue #11 · sintético destravado; `F0-real: PENDENTE (aguardando vídeos)`
-- [ ] **Bloco 4 — front mobile** · issue #12 · camada A parcial; camada B BLOQUEADA (export)
-- [ ] **Bloco 5 — Railway staging** · issue #13
-- [ ] **Bloco 6 — endurecimento + handoff** · issue #14
+- [x] **Bloco 3 — F0 sintética** · issue #11 · previsto×medido em `DECISIONS.md [2026-09-01]`; decisão GPU: cabe em 24 GB (15,4 ≤ 19) mas FICA em 48 GB (4090 sem capacidade em US-KS-2 — provado por sonda cancelada) · `F0-real: PENDENTE (aguardando vídeos)` — re-execução: mesmos comandos com `pilot/inputs/*.mp4`
+- [~] **Bloco 4 — front mobile** · issue #12 · 4a FEITO (PR #27: validade 7d unificada, PWA, 120 s); contrato v1.1 + telas BLOQUEADOS no export do Design
+- [x] **Bloco 5 — Railway staging** · issue #13 · NO AR: https://logikos-twins-production.up.railway.app (`/livez` devolve o commit; serviço já existia FALHANDO todo push — rootDirectory era a causa); confiabilidade: 3 seguidos 53–55 s upload→link + simultâneos com fila provada (par-B esperou ~200 s), 12 jobs/0 falhas
+- [x] **Bloco 6 — endurecimento (código)** · issue #14 · PR: cap de partes por MAX_VIDEO_MB (413), alerta custo ≥ COST_ALERT_USD no admin (custo/job já existia), `verify_blur.py` (rodado: 0 rostos/26 imgs); TTL do bruto = VIDEO_RETENTION_MINUTES (D7, já implementado); exclusão de scan: NÃO existe fluxo de delete (arquivar entra com o export/admin novo)
 
 ## AÇÕES-VITOR
 
