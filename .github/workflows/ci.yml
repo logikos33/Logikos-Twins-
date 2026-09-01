@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Revalidação SEMANAL do build da imagem (issue #18): PRs que não tocam
+  # worker/ não o rebuildam, e o mundo externo (índices pip, base image, wheel
+  # do flashinfer) muda por baixo — a agenda pega a quebra antes do release.
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
 
 # Um push novo cancela a execução anterior do mesmo branch — não faz sentido pagar
 # por CI de um commit que já foi substituído.
@@ -137,7 +143,10 @@ jobs:
       - name: detectar mudanças no worker
         id: changes
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Agenda/manual: builda SEMPRE — é o propósito da revalidação.
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
             base="${{ github.event.pull_request.base.sha }}"
             if git diff --name-only "$base"...HEAD | grep -q '^worker/'; then
               echo "changed=true" >> "$GITHUB_OUTPUT"
