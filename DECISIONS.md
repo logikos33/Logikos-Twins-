@@ -698,3 +698,27 @@ tag). LICENSES.md ganhou FFmpeg, base CUDA e flashinfer (fecha a issue #15).
 da REST **ecoa o env do template com segredos** — as chaves S3 do R2 tocaram o
 log local desta sessão → AÇÃO-VITOR (higiene, baixa urgência): rotacionar a
 credencial R2 do bucket; daqui em diante toda resposta de PATCH é filtrada.
+
+## [2026-09-01] F0 sintética completa: previsões bateram, pico 15,4 GB no vídeo de 120 s — GPU de 24 GB cabe
+
+**Previsto ANTES × medido** (testsrc2 1080p→10 fps, blur ON, worker quente v0.1.2, US-KS-2):
+
+| Vídeo | Frames | VRAM prevista | VRAM medida | exec | infer | blur | n_kf |
+|---|---|---|---|---|---|---|---|
+| 60 s | 600 | 14,5–16 GB | **14.320,9 MB** | 220 s | 58,6 s | 60,2 s | 156 ✓ |
+| 90 s | 900 | 15–17 GB | **14.868,9 MB** | 353 s | 85,8 s | 80,3 s | 231 ✓ |
+| 120 s | 1.200 | 16–18 GB | **15.417,7 MB** | 654 s | 118,4 s | **321,9 s** | 306 ✓ |
+
+- Crescimento de VRAM linear (~1,1 MB/frame) e DETERMINÍSTICO; inferência 0,10 s/frame.
+- **Decisão de GPU: pico 15,4 GB ≤ 19 GB → endpoint desce para 24 GB (4090)**, com
+  ~36% de margem. Condicionada à capacidade de 4090 em US-KS-2 (sonda em andamento;
+  sem capacidade → fica 48 GB e a margem é conforto, não custo).
+- **O 120 s estourou a meta de 10 min POR CAUSA DO BLUR**: 321,9 s (0,27 s/frame) num
+  worker novo de CPU fraca — 3× o custo por frame dos jobs 60/90 (mesma imagem). O
+  YuNet rodava no 1080p inteiro; fix na v0.1.3 (issue #29/PR #30): detecção ≤640 px
+  com caixas escaladas, borrão na resolução cheia. Sem o blur, o job de 120 s fecha
+  em ~5,5 min.
+- Hipótese dos 20,9 GB da F0 v4 (batch_demo, julho): CONFIRMADA por eliminação — o
+  caminho residente com desprojeção (sem point head, sem stack de render) mede 15,4 GB
+  no dobro de frames do exemplo da época. O conserto mudou o número; registro fecha.
+- `F0-real: PENDENTE (aguardando vídeos)` — mesmos comandos, `pilot/inputs/*.mp4`.
