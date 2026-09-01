@@ -3,6 +3,29 @@
 > **Âncora de reentrância.** Sessão nova: leia este arquivo primeiro e continue do primeiro marco aberto.
 > Atualizado: 2026-08-31 · rodada 1 · base = `origin/main` @ `2e10a80`.
 
+## Rodada 2 — em andamento (2026-09-01)
+
+**Teste no celular (iOS Safari): CAUSA-RAIZ PROVADA.** "Parte 1 falhou: TypeError: Load failed" = o R2 responde literalmente **"CORS not configured for this bucket"** ao preflight — o PUT presignado do navegador não passa (a validação de julho não sobreviveu no bucket). A chave S3 atual não tem permissão bucket-level (PutBucketCors → AccessDenied). **AÇÃO-VITOR (30 s, destrava o celular):** painel Cloudflare → R2 → bucket `logikos-twins` → Settings → CORS policy → colar:
+
+```json
+[{
+  "AllowedOrigins": ["https://logikos-twins-production.up.railway.app", "http://localhost:3000"],
+  "AllowedMethods": ["PUT", "GET", "HEAD"],
+  "AllowedHeaders": ["*"],
+  "ExposeHeaders": ["ETag"],
+  "MaxAgeSeconds": 3600
+}]
+```
+
+**Fatos da mensagem da rodada 2 × repo/mundo:**
+- Export do Design "em design/piloto-mobile/": **NÃO está no git nem no disco** (main sem commits novos; mdfind vazio) — bloco 4 segue bloqueado nisso.
+- `pilot/inputs/`: ausente — F0-real segue pendente.
+- Rotação R2: chave do `.env` local ainda VÁLIDA; cadeia web→R2 do staging confirmada (create/presign/PUT 200 + ETag); a confirmação do env do TEMPLATE (worker) roda agora no endpoint reserva.
+- #17 FEITA (PR #32): admin por cookie httpOnly via `/admin/login?token=…` 1× — **o link antigo `/admin?token=` deixou de funcionar**.
+- #18 FEITA (PR #33): build da imagem revalidado toda segunda 06:00 UTC + dispatch.
+
+**Endpoint RESERVA criado (runbook de indisponibilidade de DC):** `piloto-lingbot-reserva` = `fwxjig9ccyvv41` — mesmo template, SEM volume (ensure_weights baixa do R2 pro disco do container a cada cold, +1–2 min), 7 tipos de GPU (48+24 GB — pico medido 15,4 GB cabe), todos os DCs. **Uso:** US-KS-2 seco (workers `throttled`/zero com fila parada) → `railway variables --service Logikos-Twins- --set "RUNPOD_ENDPOINT_ID=fwxjig9ccyvv41"` (redeploy ~3 min); voltar ao principal (`mfnx103w05drr5`) quando o DC voltar. O principal também ganhou os tipos de 24 GB no pool. **Demo:** `workersMax 2` só na janela — `PATCH rest.runpod.io/v1/endpoints/<id> {"workersMax": 2}` antes, `1` depois.
+
 ## Fechamento da rodada 1 (2026-09-01)
 
 **Provado hoje:** motor residente (v0.1.1→v0.1.3) · pesos R2→volume com sha e re-bootstrap por deleção · endpoint serverless real com 12 jobs/0 falhas · F0 sintética 60/90/120 s com previsões batidas · staging no ar com proveniência · blur antes do motor com prova mecânica · **custo total da rodada: US$ 1,08** (saldo 22,03→20,96; US$ 0,001/h em regime = storage do volume) · zero workers ao sair (nova consulta).
