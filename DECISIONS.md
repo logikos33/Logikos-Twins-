@@ -786,3 +786,38 @@ credencial R2 do bucket; daqui em diante toda resposta de PATCH é filtrada.
 - PROVA 150 MB pelo proxy em produção: 18×8 MB, 32,3 s, 37,2 Mbps, memória pico
   0,18 GB — sem complete (GPU US$ 0), lixo limpo.
 - `/diag` público e zero-coleta para o print do Vitor.
+
+## [2026-09-03] Scan preso em "Carregando": o congelamento do scaler tem TRÊS camadas — escada de destrave completa
+
+Sintoma: scan `963fda68` (upload de iPhone pelo fallback novo — o caminho da
+rodada 4 FUNCIONOU: título de arquivo, durationS 10,4 s por metadata) preso
+`queued` por 14 h. A tela/API estava sã: polling do dono devolvia 200 `queued`
+— hipótese de regressão do #53 descartada COM dado; era o runner.
+
+O diagnóstico da rodada 3 estava INCOMPLETO. Três fenômenos distintos, todos
+com a mesma cara de "fila parada":
+1. **Scaler congelado pós-idle** (health TODO zero, nem `throttled`): recorre
+   mesmo com config certa, após horas sem job. Os logs do endpoint provam:
+   última linha = job anterior `Finished`; nenhuma tentativa de provisionar
+   depois. Recycle `workersMax 0→1` às vezes basta (rodada 3) — hoje NÃO bastou.
+2. **Job version-bound**: job enfileirado antes de um `saveEndpoint` não é
+   consumido pelo worker da versão nova. purge-queue + cancel/retry (rotas do
+   #45) gera job novo na versão atual.
+3. **Worker zumbi**: `running: 1` no health mas `inProgress: 0` e a fila parada
+   — container vivo que não polla. Matar com `workersMin/Max=0`, esperar zerar,
+   pedir de novo.
+
+**Escada de destrave (nesta ordem, parar quando andar):**
+recycle max 0→1 → purge + cancel/retry → `workersMin=1` (força provisionar;
+lembrar de VOLTAR a 0!) → se `running` sem consumir: kill total (min/max=0),
+container novo, purge + retry de novo.
+
+Resultado de hoje: done em ~9 min após o kill do zumbi — 104 frames, 2 M
+pontos, 10 detecções YOLOX, US$ 0,118, VRAM 22 GB (518×518 — vídeo vertical
+usa mais VRAM que o sintético 518×294; anotar para a régua de capacidade).
+`workersMin` devolvido a 0 ao final (automatizado no vigia).
+
+**Implicação de produto:** enquanto o piloto depender deste endpoint, "primeiro
+job do dia" pode precisar da escada. Warm-up pré-demo (ESTADO rodada 3) deixa
+de ser recomendação e vira RITO. Candidato a task: watchdog no servidor —
+scan `queued` >10 min + health zerado → alertar (ou executar a escada via API).
