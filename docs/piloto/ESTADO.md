@@ -3,6 +3,27 @@
 > **Âncora de reentrância.** Sessão nova: leia este arquivo primeiro e continue do primeiro marco aberto.
 > Atualizado: 2026-08-31 · rodada 1 · base = `origin/main` @ `2e10a80`.
 
+## Camada B — conversão das telas (2026-09-02, em curso)
+
+**Infra:** export commitado (2113680) e push destravado (script do Vitor: issues #40/#41, comentário na #12) · `watchPatterns=["apps/web/**"]` no serviço (provado por GET + deploy SKIPPED no push de design/) · contrato **v1.2** = fusão fonte-única (PR #42; snapshot do export preservado) · harness do gate (plug-coverage + no-hardcode + @testing-library MIT).
+
+| Tela | PR | Estados | Plugs | Gate provado falhando |
+|---|---|---|---|---|
+| entry (/entry; troca de / no aceite) | **#43 ✔** | 5 | 4 (+plug POR ITEM testado com 2) | 3 vermelhos |
+| capture (/new, hook real) | **#44 ✔** | 8 | 5 na matriz | 2 vermelhos |
+| job (/scan/[id], orquestração intacta) | em CI | 7 | 5 (+recapture) · cancel/retry=#45 | 6 vermelhos |
+| viewer · shared · admin | próximas | — | — | — |
+
+**D- da Camada B:**
+- **Rotas reais × alvo** (routeMap no contrato): /p/:token etc. aguardam #38; telas vivem nas rotas existentes.
+- **Stages exibidos = status reais** (5 macro-etapas honestas; blur/extract dentro de "Reconstruindo") — o backend não streama etapa, e % inventada é proibida.
+- **errorCodes do export sem emissor real ficam pendentes nomeados** no contrato.
+- **Capture:** câmera abre no toque em "Permitir" (gesto + estado do contrato; antes abria no mount); produto preservado (instruções/blur/PDF/LGPD/desktop); spinner→progresso por partes.
+- **Pulso semântico:** único movimento contínuo permitido = ponto REC e shimmer da etapa ativa (indicadores de atividade ao vivo, steps/motion-reduce); resto corte seco.
+- **Splash de revelação com glitch MANTIDO** (momento-uau do MOTION-SPEC §1; o veto do handoff é a UI operacional) + botão `job.map.open`.
+- **Job no /scan:** uploading sem bytes (o upload é do /new) e upload-paused-offline só renderizável em dev — a página de status não é a que envia.
+- **119 testes** web no ponto da tela 3.
+
 ## Bloco 4 — rodada do front (2026-09-02)
 
 **Divergência no topo:** o prompt dizia contrato v1 em `docs/piloto/ui-contract.json` e export em `design/piloto-mobile/` · **nenhum dos dois existia** (git e disco verificados) · segui o caminho previsto: contrato v1.1 nasceu do que tem fonte; Camada A completa; **Camada B BLOQUEADA no export** (issue #12 — os 46 plugs do v1 entram verbatim no commit dele).
