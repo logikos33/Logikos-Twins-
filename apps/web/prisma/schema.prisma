@@ -22,6 +22,7 @@ enum ScanStatus {
   postprocessing // NPZ→PLY, poses, keyframes
   done
   error
+  cancelled // cancelado pelo usuário (job.cancel) — terminal, retry permitido
 }
 
 model Project {

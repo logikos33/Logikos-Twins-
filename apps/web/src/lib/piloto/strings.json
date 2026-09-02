@@ -445,7 +445,11 @@
     "projectCopied": "copiado ✓",
     "projectRevoke": "Revogar",
     "projectRevoked": "revogado",
-    "projectEmpty": "Nenhum projeto ainda. Crie o primeiro e envie o link ao cliente."
+    "projectEmpty": "Nenhum projeto ainda. Crie o primeiro e envie o link ao cliente.",
+    "rerun": "reprocessar",
+    "rerunTitle": "Reprocessar este scan (vídeo precisa estar vivo)",
+    "rerunOk": "Scan {id} voltou para a fila.",
+    "rerunFail": "Não deu para reprocessar."
   },
   "devStates": {
     "title": "Estados — QA e cobertura do contrato",

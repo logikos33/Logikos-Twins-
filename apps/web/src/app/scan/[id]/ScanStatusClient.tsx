@@ -5,7 +5,6 @@ import { ViewerGate } from "./ViewerGate";
 import { JobBody, type JobStatus } from "./JobBody";
 import type { ScaleInfo } from "@/lib/viewer/scale";
 import { LogoSymbol } from "@/components/Logo";
-import { notImplemented } from "@/lib/piloto/plugs";
 import { t } from "@/lib/piloto/strings";
 
 /**
@@ -13,7 +12,7 @@ import { t } from "@/lib/piloto/strings";
  * glitch de marca (momento-uau do MOTION-SPEC §1 — mantido por decisão D-,
  * mesmo com o handoff do piloto vetando glitch em UI operacional: o splash não
  * é operação, é a revelação única) e viewer. O corpo visual vive em JobBody.
- * job.cancel/job.retry não têm rota no backend — notImplemented + issue.
+ * job.cancel/job.retry chamam as rotas reais (#45); o poll existente converge a UI.
  */
 
 type ScanInfo = {
@@ -25,8 +24,6 @@ type ScanInfo = {
   scale: ScaleInfo | null;
   artifacts: Record<string, string>;
 };
-
-const ISSUE_JOB_CONTROLS = 45; // rotas de cancelar/reprocessar job
 
 export function ScanStatusClient({
   scanId,
@@ -175,6 +172,24 @@ export function ScanStatusClient({
     );
   }
 
+  // #45: dispara e deixa o poll convergir; 409 (ex.: vídeo expirado) vira erro visível.
+  async function jobAction(rota: "cancel" | "retry") {
+    const res = await fetch(`/api/scans/${scanId}/${rota}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shareToken: token }),
+    }).catch(() => null);
+    if (res?.ok) {
+      const s = (await res.json()) as { status: ScanInfo["status"] };
+      setScan((cur) => (cur ? { ...cur, status: s.status } : cur));
+    } else if (res) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (body?.error) {
+        setScan((cur) => (cur ? { ...cur, error: body.error ?? null } : cur));
+      }
+    }
+  }
+
   function copyLink() {
     void navigator.clipboard?.writeText(window.location.href).catch(() => undefined);
     setCopied(true);
@@ -189,8 +204,8 @@ export function ScanStatusClient({
       rawError={scan.error}
       copied={copied}
       onCopyLink={copyLink}
-      onCancel={() => notImplemented("job.cancel", ISSUE_JOB_CONTROLS)({})}
-      onRetry={() => notImplemented("job.retry", ISSUE_JOB_CONTROLS)({})}
+      onCancel={() => void jobAction("cancel")}
+      onRetry={() => void jobAction("retry")}
     />
   );
 }

@@ -4,6 +4,7 @@ import * as storage from "@/lib/storage";
 import * as jobrunner from "@/lib/jobrunner";
 import type { Scan } from "@/generated/prisma/client";
 import type { JobOutput } from "@/lib/jobrunner";
+import { videoKeyOf } from "./retention";
 
 /**
  * Serviço de processamento — dispara o job e converge o estado.
@@ -142,4 +143,59 @@ export function isValidWebhookToken(token: string | null): boolean {
     diff |= token.charCodeAt(i) ^ expected.charCodeAt(i);
   }
   return diff === 0;
+}
+
+/** Estados a partir dos quais o usuário pode cancelar (tudo que ainda anda). */
+const CANCELLABLE = ["recording", "uploading", "uploaded", ...ACTIVE_STATES] as const;
+
+/**
+ * Cancela um scan (#45): terminal 'cancelled', job do runner cancelado best
+ * effort. Condicionado ao status atual — cancelar o que já terminou é no-op
+ * (retorna null) e um COMPLETED tardio não ressuscita o scan (applyJobResult
+ * só toca ACTIVE_STATES).
+ */
+export async function cancelScan(scan: Scan): Promise<Scan | null> {
+  const r = await db.scan.updateMany({
+    where: { id: scan.id, status: { in: [...CANCELLABLE] } },
+    data: { status: "cancelled", errorMsg: null },
+  });
+  if (r.count === 0) return null;
+
+  if (scan.runpodJobId) {
+    // Best effort: runner fora do ar não desfaz o cancelamento local.
+    await jobrunner.cancelJob(scan.runpodJobId).catch((err) => {
+      console.error(`cancel no runner (scan ${scan.id}) falhou:`, err);
+    });
+  }
+  if (scan.uploadId && (scan.status === "recording" || scan.status === "uploading")) {
+    await storage
+      .abortMultipart(scan.videoKey ?? "", scan.uploadId)
+      .catch(() => undefined);
+  }
+  return db.scan.findUniqueOrThrow({ where: { id: scan.id } });
+}
+
+/**
+ * Re-dispara o job de um scan terminal (#45). Exige o vídeo bruto ainda vivo —
+ * depois da retenção LGPD (7 dias) não há o que reprocessar.
+ * `admin` libera o rerun também de scans 'done'.
+ */
+export async function retryScan(
+  scan: Scan,
+  opts: { admin?: boolean } = {},
+): Promise<Scan | { blocked: "estado" | "video" }> {
+  const permitido = opts.admin ? ["error", "cancelled", "done"] : ["error", "cancelled"];
+  if (!permitido.includes(scan.status)) return { blocked: "estado" };
+  if (scan.videoDeletedAt || !videoKeyOf(scan)) return { blocked: "video" };
+
+  const reset = await db.scan.update({
+    where: { id: scan.id },
+    data: { status: "uploaded", errorMsg: null },
+  });
+  try {
+    return await dispatchJob(reset);
+  } catch (err) {
+    console.error(`retry do scan ${scan.id} falhou no disparo:`, err);
+    return markDispatchFailed(scan.id);
+  }
 }

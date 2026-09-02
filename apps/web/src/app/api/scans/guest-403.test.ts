@@ -29,6 +29,8 @@ import { POST as postUpload } from "./[id]/parts/upload/route";
 import { POST as postComplete } from "./[id]/complete/route";
 import { PUT as putScale } from "./[id]/scale/route";
 import { POST as postAnnotations } from "./[id]/annotations/route";
+import { POST as postCancel } from "./[id]/cancel/route";
+import { POST as postRetry } from "./[id]/retry/route";
 
 const ctx = { params: Promise.resolve({ id: "s1" }) };
 
@@ -82,6 +84,22 @@ describe("escrita com token de CONVIDADO → 403, por endpoint", () => {
         { shareToken: "guest", factor: 2, method: "reference_distance" },
         "PUT",
       ) as never,
+      ctx,
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it("POST /cancel (#45)", async () => {
+    const res = await postCancel(
+      jsonReq("http://x/api/scans/s1/cancel", { shareToken: "guest" }) as never,
+      ctx,
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it("POST /retry (#45)", async () => {
+    const res = await postRetry(
+      jsonReq("http://x/api/scans/s1/retry", { shareToken: "guest" }) as never,
       ctx,
     );
     expect(res.status).toBe(403);

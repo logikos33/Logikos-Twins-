@@ -69,6 +69,7 @@ const FILTRO_STATUS: Record<Filtro, (s: string) => boolean> = {
 export function AdminView(p: AdminViewProps) {
   const [filtro, setFiltro] = useState<Filtro>("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [rerunMsg, setRerunMsg] = useState<string | null>(null);
   const [view, setView] = useState<"jobs" | "projects">("jobs");
   const [projects, setProjects] = useState(p.projects);
   const [novoNome, setNovoNome] = useState("");
@@ -145,6 +146,19 @@ export function AdminView(p: AdminViewProps) {
     setTimeout(() => setCopiedId(null), 1500);
   }
 
+  // #45: reprocessa pelo cookie do painel; a resposta (ou o 409) vira aviso no topo.
+  async function rerun(r: AdminRow) {
+    const res = await fetch(`/api/admin/scans/${r.id}/rerun`, { method: "POST" }).catch(
+      () => null,
+    );
+    if (res?.ok) {
+      setRerunMsg(t("admin", "rerunOk").replace("{id}", r.id.slice(0, 8)));
+    } else {
+      const body = (await res?.json().catch(() => null)) as { error?: string } | null;
+      setRerunMsg(body?.error ?? t("admin", "rerunFail"));
+    }
+  }
+
   function copyProv(r: AdminRow) {
     void navigator.clipboard?.writeText(r.provenance).catch(() => undefined);
     setCopiedId(r.id);
@@ -172,6 +186,7 @@ export function AdminView(p: AdminViewProps) {
             .replace("{lim}", String(p.maxPerDay))
             .replace("{custo}", p.totalCost.toFixed(2))}
         </p>
+        {rerunMsg && <p className="mt-2 font-mono text-xs text-warning">{rerunMsg}</p>}
         <nav
           className="mt-4 flex gap-1 border-b border-line"
           aria-label={t("admin", "title")}
@@ -341,6 +356,13 @@ export function AdminView(p: AdminViewProps) {
                     >
                       {t("admin", "open")}
                     </a>
+                    <button
+                      data-plug="admin.job.rerun"
+                      onClick={() => void rerun(r)}
+                      className="text-warning underline decoration-dotted"
+                    >
+                      {t("admin", "rerun")}
+                    </button>
                   </span>
                 </div>
               </div>
@@ -402,6 +424,14 @@ export function AdminView(p: AdminViewProps) {
                       >
                         {t("admin", "open")}
                       </a>
+                      <button
+                        data-plug="admin.job.rerun"
+                        onClick={() => void rerun(r)}
+                        className="font-mono text-warning"
+                        title={t("admin", "rerunTitle")}
+                      >
+                        {t("admin", "rerun")}
+                      </button>
                     </td>
                   </tr>
                 ))}

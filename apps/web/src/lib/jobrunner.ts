@@ -83,3 +83,14 @@ export async function getJobStatus(jobId: string): Promise<JobStatus> {
   }
   return (await res.json()) as JobStatus;
 }
+
+/** Cancela um job no runner (best effort — cancelar job já terminado é no-op lá). */
+export async function cancelJob(jobId: string): Promise<void> {
+  const res = await fetch(`${baseUrl()}/cancel/${jobId}`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`cancel do job ${jobId}: HTTP ${res.status}`);
+  }
+}
