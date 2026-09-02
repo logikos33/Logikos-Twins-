@@ -1,7 +1,52 @@
 # ESTADO — Piloto mobile (motor residente → serverless real → captura pelo celular)
 
 > **Âncora de reentrância.** Sessão nova: leia este arquivo primeiro e continue do primeiro marco aberto.
-> Atualizado: 2026-09-03 · rodada 4 ("gravar no celular") · base = `origin/main` @ `ae82edf`.
+> Atualizado: 2026-09-04 · rodada 5 ("régua de capacidade") · base = `origin/main` @ `900e5f7`.
+
+## Rodada 5 — régua de capacidade (2026-09-04)
+
+**🔎 Divergências-achado:**
+1. O prompt dizia que o `errorCode` **`video-too-short` existia** no contrato. **Existia só a STRING** (`strings.json` `job.errors.video-too-short`); o errorCode NÃO estava em `errorCodes`. Adicionei nas duas cópias (PR #60). Segui o repo.
+2. O prompt supôs GPU de ~24 GB. **O endpoint não fixa uma GPU**: `gpuTypeIds` = RTX 6000 Ada (48 GB) · L40 (48) · L40S (48) · A40 (48) · RTX A6000 (48) · **RTX 4090 (24)** · **RTX A5000 (24)** — fonte: `GET https://rest.runpod.io/v1/endpoints/mfnx103w05drr5` (a GraphQL não expõe worker.gpuTypeId; 400). **O denominador varia de 24 a 48 GB por sorteio de máquina** — os 22 GB de pico ficam em **92 % de uma 4090/A5000** e 46 % de uma 48 GB. Isso é achado de produto, não detalhe: a MESMA gravação pode caber ou estourar dependendo de qual GPU o RunPod alocar.
+3. `costAlertUsd` estava em **env** (`COST_ALERT_USD`), não editável — o prompt pedia editável na Config; movi para `app_config` (persistido, aba Config).
+
+**Bloco 1 — curva de VRAM: MEDIÇÃO EM CURSO, resultado ainda não fechado.**
+Três vídeos sintéticos **verticais 1080×1920** (20 s/20 MB, 60 s/60 MB, 120 s/120 MB) foram criados, subiram inteiros pelo proxy (3, 8 e 15 partes; upload 5 s, 10 s e 16 s) e estão **enfileirados**. O que travou não foi o pipeline: **US-KS-2 está sem GPU livre há mais de 1 h** (health alterna `throttled: 1` ↔ tudo zero, `inQueue: 3`). Um daemon local (`scratchpad/daemon-curva.log`) segue colhendo os três e **devolve `workersMin` a 0 ao terminar**, com teto de 2 h.
+- ⚠️ **Achado operacional novo:** com a fila cheia e worker frio, o `dispatchJob` devolveu `error` transitório ("processamento não pôde ser iniciado") em 2 de 3 jobs; o **retry da rota #45 resolveu**. Isso reforça a issue #61 (watchdog geração 2).
+- 🔴 **Enquanto a curva não fecha, a régua honesta é o ponto real medido**: 10,4 s → 22,1 GB. Extrapolação linear ingênua daria >100 GB aos 60 s, o que é impossível — o motor é *streaming* com KV-cache limitado (`max_frames=88` no log do worker), então a VRAM deve saturar, não crescer linear. **Mas "deve" não é medição.** Até a curva fechar, **NÃO marcar demo com vídeo acima de ~30 s** e usar o teto de 120 s do contrato só depois do número.
+
+**Bloco 2 — mínimo de 20 s (PR #60, mergeado):** o contrato dizia 20 s e nada validava (o vídeo de 10,4 s do Vitor rodou e foi cobrado). Agora: cliente recusa por metadata **antes de subir** (`checkFileLimits → too-short`, `support.ts`) e o servidor responde **422 `video-too-short`** **antes** de completar o multipart (`complete/route.ts`). Casos 10/20/120/121 testados nos dois lados; sabotagem do guard = 1 vermelho. **Aberto:** no fluxo AO VIVO o usuário só descobre no fim — issue **#62** (desabilitar PARAR antes de 20 s).
+
+**Bloco 3 — custo (PR #60):** régua real medida = **US$ 0,118 por 10,4 s** de vídeo vertical → **US$ 0,0114 por segundo de vídeo**; fórmula: `custo ≈ 0,0114 × duração_s` (± o que a curva disser sobre saturação). Aos 120 s isso dá **~US$ 1,37**. `costAlertUsd` **0,75 → 2,00**, agora **persistido e editável** na aba Config. D-: 0,75 dispararia em quase todo scan real; alerta que sempre dispara é alerta que ninguém lê.
+
+**Bloco 4 — watchdog geração 1 (PR #60):** detecta e **só alerta**. Assinatura: scan `queued` >10 min **e** health com **zero em todas as colunas** (`throttled`/`running` nunca alertam — são espera legítima). Emite `watchdog.frozen_scaler` no log e grava em `app_config` → **banner vermelho no topo do admin**. **Zero ação automática** (freio do prompt): `workersMin` esquecido custa ~US$ 2,50/h — issue **#61** para a geração 2 com teto de tempo e reversão obrigatória.
+
+**Bloco 5 — warm-up é RITO, não recomendação:**
+> Com `idleTimeout: 5 s`, "aquecer 15 min antes" **não existe**: o worker morre 5 s depois do job. A única forma de ter GPU garantida na hora da demo é **manter `workersMin = 1` durante a janela** — e isso **custa**.
+
+| Passo | Quando | Comando/ação | Custo |
+|---|---|---|---|
+| 1. Acender | **45 min antes** | `saveEndpoint` com `workersMin=1` (script em DECISIONS `[2026-09-03]`) | ~US$ 2,50/h → **≈ US$ 1,90 na janela de 45 min** |
+| 2. Conferir | 30 min antes | `GET /v2/<id>/health` até ver `idle: 1` ou `ready: 1` | — |
+| 3. Se ficar tudo zero | 30 min antes | **escada** do DECISIONS: recycle max 0→1 → purge-queue + cancel/retry → `workersMin=1` → kill total (min/max=0, esperar zerar, pedir de novo) | — |
+| 4. Se ficar `throttled` | — | **DC sem GPU: só esperar** (hoje passou de 1 h). ⚠️ Não adianta escada. | — |
+| 5. Job de aquecimento | 15 min antes | 1 vídeo curto pelo produto (o worker já está de pé; serve para provar a cadeia) | ~US$ 0,12 |
+| 6. **Cool-down** | ao fim | `workersMin=0` **e provar**: `health` com `idle/ready/running = 0` + reler `workersMin` pela API | — |
+
+**Tempo de ponta a ponta com worker QUENTE (medido, 2026-09-02, 15 s de vídeo):** upload 2,7 s (6 MB) → complete 5,4 s → job 66,4 s → **total ~1 min 15 s**. Com worker frio e DC folgado: ~8,4 min. Com DC apertado (hoje): **indeterminado — mais de 1 h sem GPU**.
+
+**Estado do endpoint ao fim desta sessão:** `workersMin` volta a **0** pelo daemon (prova no ESTADO da próxima rodada / no log `daemon-curva.log`).
+
+**Aberto por número:** #61 watchdog geração 2 · #62 mínimo no ao vivo · #37 busca semântica · #41 cores · #47 resto do viewer · **curva de VRAM (20/60/120 s) pendente de GPU** — os três scans já estão no ar, é só colher.
+
+**Próximo comando (rodada seguinte):**
+```bash
+cd ~/twins-piloto/repo && git pull
+# 1) colher a curva: os 3 scans (370feca7 20s · 43f02be3 60s · 736fa42f 120s) já
+#    estão enfileirados; ver metrics.peak_vram_mb de cada um e fechar a tabela
+# 2) com o número: decidir maxDurationS honesto (D- se < 120)
+# 3) #62 (mínimo no ao vivo, pequeno) e #61 (watchdog g2)
+```
 
 ## Rodada 4 — gravar no celular tem que funcionar (2026-09-03)
 
