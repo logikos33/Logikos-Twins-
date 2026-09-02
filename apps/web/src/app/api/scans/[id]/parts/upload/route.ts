@@ -18,7 +18,10 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const token = req.nextUrl.searchParams.get("token") ?? "";
-  const partNumber = Number.parseInt(req.nextUrl.searchParams.get("partNumber") ?? "", 10);
+  const partNumber = Number.parseInt(
+    req.nextUrl.searchParams.get("partNumber") ?? "",
+    10,
+  );
 
   if (!Number.isInteger(partNumber) || partNumber < 1 || partNumber > 10000) {
     return NextResponse.json({ error: "corpo inválido" }, { status: 400 });

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  maxUploadParts,
-  presignPart,
-  InvalidStateError,
-} from "@/lib/services/scans";
+import { maxUploadParts, presignPart, InvalidStateError } from "@/lib/services/scans";
 import { authorizeRead } from "@/lib/services/share-links";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +45,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const cap = maxUploadParts();
   if (parsed.data.partNumber > cap) {
     return NextResponse.json(
-      { error: `parte ${parsed.data.partNumber} excede o teto do produto (${cap} partes)` },
+      {
+        error: `parte ${parsed.data.partNumber} excede o teto do produto (${cap} partes)`,
+      },
       { status: 413 },
     );
   }

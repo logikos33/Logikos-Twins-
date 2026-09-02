@@ -371,10 +371,7 @@ export function ScanViewer({
     if (!res.ok) return;
     const link = (await res.json()) as { id: string; token: string; expiresAt: string };
     setShareUrl(`${window.location.origin}/s/${link.token}`);
-    setShareLinks((ls) => [
-      { ...link, views: 0, state: "valid" },
-      ...ls,
-    ]);
+    setShareLinks((ls) => [{ ...link, views: 0, state: "valid" }, ...ls]);
   }, [scanId, token, shareDays]);
 
   const revokeGuestLink = useCallback(
@@ -384,7 +381,9 @@ export function ScanViewer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shareToken: token }),
       });
-      setShareLinks((ls) => ls.map((l) => (l.id === id ? { ...l, state: "revoked" } : l)));
+      setShareLinks((ls) =>
+        ls.map((l) => (l.id === id ? { ...l, state: "revoked" } : l)),
+      );
     },
     [token],
   );
@@ -407,7 +406,10 @@ export function ScanViewer({
     !scale || scale.method === "none"
       ? { text: ts("viewer", "scaleDefine"), dot: "bg-warning" }
       : {
-          text: scale.method === "aruco" ? ts("viewer", "scaleAruco") : ts("viewer", "scaleManual"),
+          text:
+            scale.method === "aruco"
+              ? ts("viewer", "scaleAruco")
+              : ts("viewer", "scaleManual"),
           dot: "bg-success",
         };
 
@@ -430,19 +432,21 @@ export function ScanViewer({
         ? "share"
         : layersOpen
           ? "layers"
-        : searchFocus
-          ? "tool-search"
-          : tool === "measure"
-            ? "tool-measure"
-            : tool === "pin" || pendingPin || openPin
-              ? "tool-annotate"
-              : "ready";
+          : searchFocus
+            ? "tool-search"
+            : tool === "measure"
+              ? "tool-measure"
+              : tool === "pin" || pendingPin || openPin
+                ? "tool-annotate"
+                : "ready";
 
   return (
     <div
       data-screen={readOnly ? "shared" : "viewer"}
       data-state={effState}
-      data-plug={effState === "error" ? undefined : readOnly ? "shared.load" : "viewer.load"}
+      data-plug={
+        effState === "error" ? undefined : readOnly ? "shared.load" : "viewer.load"
+      }
       className="relative h-dvh w-full overflow-hidden bg-ink"
     >
       <div
@@ -455,7 +459,9 @@ export function ScanViewer({
       {!ready && !loadError && (
         <div className="grid-grego absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-ink px-6">
           <LogoSymbol className="h-14 w-14 animate-pulse text-signal" />
-          <p className="mt-2 font-display text-lg font-medium">{ts("viewer", "loadingTitle")}</p>
+          <p className="mt-2 font-display text-lg font-medium">
+            {ts("viewer", "loadingTitle")}
+          </p>
           <p className="font-mono text-[13px] text-cyan">{progress}%</p>
           <div className="h-1 w-64 max-w-full overflow-hidden rounded-full bg-surface-2">
             <div
@@ -472,7 +478,9 @@ export function ScanViewer({
             <span className="mx-auto grid h-[70px] w-[70px] place-items-center rounded-full border-[1.5px] border-danger/60">
               <IconX className="h-7 w-7 text-danger" />
             </span>
-            <h2 className="mt-4 font-display text-lg font-medium">{ts("viewer", "errTitle")}</h2>
+            <h2 className="mt-4 font-display text-lg font-medium">
+              {ts("viewer", "errTitle")}
+            </h2>
             <p className="mt-2 text-sm leading-relaxed text-mist">{loadError}</p>
             <p className="mt-1 text-sm text-mist">
               <b className="font-medium text-signal">{ts("viewer", "errLinkOk")}</b>{" "}
@@ -501,7 +509,9 @@ export function ScanViewer({
           <IconBack className="h-[21px] w-[21px]" />
         </Link>
         <div className="min-w-0">
-          <b className="block truncate font-display text-[15px] font-medium">{ts("viewer", "title")}</b>
+          <b className="block truncate font-display text-[15px] font-medium">
+            {ts("viewer", "title")}
+          </b>
         </div>
         <span className="flex-1" />
         <button
@@ -531,7 +541,10 @@ export function ScanViewer({
           className="inline-flex h-[34px] flex-none items-center rounded-full border border-line bg-graphite/60 px-3 font-mono text-[11px] whitespace-nowrap backdrop-blur-sm"
         >
           {cloudMb != null
-            ? ts("viewer", "lodChip").replace("{mb}", cloudMb.toFixed(1).replace(".", ","))
+            ? ts("viewer", "lodChip").replace(
+                "{mb}",
+                cloudMb.toFixed(1).replace(".", ","),
+              )
             : "…"}
         </button>
         {readOnly && (
@@ -540,14 +553,14 @@ export function ScanViewer({
           </span>
         )}
         {!readOnly && (
-        <button
-          data-plug="share.create"
-          onClick={shareLink}
-          aria-label={ts("viewer", "share")}
-          className="grid h-(--tap) w-(--tap) flex-none place-items-center rounded-full bg-graphite/55 backdrop-blur-sm"
-        >
-          <IconShare className="h-[20px] w-[20px]" />
-        </button>
+          <button
+            data-plug="share.create"
+            onClick={shareLink}
+            aria-label={ts("viewer", "share")}
+            className="grid h-(--tap) w-(--tap) flex-none place-items-center rounded-full bg-graphite/55 backdrop-blur-sm"
+          >
+            <IconShare className="h-[20px] w-[20px]" />
+          </button>
         )}
         <button
           onClick={() => {
@@ -560,7 +573,6 @@ export function ScanViewer({
           <IconEyeOff className="h-[20px] w-[20px]" />
         </button>
       </div>
-
 
       {/* restaurar interface */}
       {hudHidden && (
@@ -616,7 +628,17 @@ export function ScanViewer({
                 .map((label, i) => (
                   <button
                     key={label}
-                    data-plug={search.trim() ? (i === 0 ? (readOnly ? "shared.search.focus" : "search.focus") : undefined) : readOnly ? undefined : "search.example"}
+                    data-plug={
+                      search.trim()
+                        ? i === 0
+                          ? readOnly
+                            ? "shared.search.focus"
+                            : "search.focus"
+                          : undefined
+                        : readOnly
+                          ? undefined
+                          : "search.example"
+                    }
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       setSearch(label);
@@ -702,7 +724,9 @@ export function ScanViewer({
         </button>
         {cutOpen && (
           <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-graphite/95 px-2 py-3 backdrop-blur-md">
-            <span className="font-mono text-[9px] tracking-wider text-mist">{ts("viewer", "cutTop")}</span>
+            <span className="font-mono text-[9px] tracking-wider text-mist">
+              {ts("viewer", "cutTop")}
+            </span>
             <input
               type="range"
               min={0.05}
@@ -714,7 +738,9 @@ export function ScanViewer({
               className="h-[150px] w-7 cursor-grab accent-cyan"
               style={{ writingMode: "vertical-lr", direction: "rtl" }}
             />
-            <span className="font-mono text-[9px] tracking-wider text-mist">{ts("viewer", "cutFloor")}</span>
+            <span className="font-mono text-[9px] tracking-wider text-mist">
+              {ts("viewer", "cutFloor")}
+            </span>
             <span className="font-mono text-[11px] text-cyan">
               {clip >= 0.999 ? ts("viewer", "cutNone") : `${Math.round(clip * 100)}%`}
             </span>
@@ -759,7 +785,9 @@ export function ScanViewer({
           >
             <i className="mx-auto block h-1 w-9 rounded-full bg-surface-2" />
           </button>
-          <h3 className="font-display text-[17px] font-medium">{ts("viewer", "layers")}</h3>
+          <h3 className="font-display text-[17px] font-medium">
+            {ts("viewer", "layers")}
+          </h3>
           {(
             [
               ["cloud", ts("viewer", "layerCloud")],
@@ -828,7 +856,8 @@ export function ScanViewer({
                 {matches.length > 1 && (
                   <span className="font-normal text-mist">
                     {" "}
-                    · {ts("viewer", "ofN")
+                    ·{" "}
+                    {ts("viewer", "ofN")
                       .replace("{i}", String(matchIdx + 1))
                       .replace("{n}", String(matches.length))}
                   </span>
@@ -1103,7 +1132,9 @@ export function ScanViewer({
           </div>
           {shareUrl && (
             <div className="mt-3 flex items-center gap-2 rounded-[10px] border border-line bg-surface-2 p-2.5">
-              <span className="min-w-0 flex-1 truncate font-mono text-[11px]">{shareUrl}</span>
+              <span className="min-w-0 flex-1 truncate font-mono text-[11px]">
+                {shareUrl}
+              </span>
               <button
                 data-plug="share.copy"
                 onClick={() => {

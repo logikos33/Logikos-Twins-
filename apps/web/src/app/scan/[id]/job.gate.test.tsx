@@ -27,7 +27,9 @@ describe("gate de plugs — tela job (contrato v1.2)", () => {
   const tela = contractScreen("job");
 
   it("todos os estados do contrato aparecem na matriz", () => {
-    expect([...new Set(CASOS.map(([, st]) => st))].sort()).toEqual([...tela.states].sort());
+    expect([...new Set(CASOS.map(([, st]) => st))].sort()).toEqual(
+      [...tela.states].sort(),
+    );
   });
 
   for (const [status, state, plugs] of CASOS) {

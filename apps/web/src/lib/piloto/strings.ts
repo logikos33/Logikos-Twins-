@@ -9,7 +9,10 @@ import strings from "./strings.json";
 type Dict = typeof strings;
 
 /** t("entry", "capture") — tipado por seção; arrays saem como readonly string[]. */
-export function t<S extends keyof Dict, K extends keyof Dict[S]>(section: S, key: K): Dict[S][K] {
+export function t<S extends keyof Dict, K extends keyof Dict[S]>(
+  section: S,
+  key: K,
+): Dict[S][K] {
   return strings[section][key];
 }
 

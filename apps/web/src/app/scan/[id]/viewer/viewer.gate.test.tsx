@@ -34,7 +34,9 @@ const DETECTIONS = {
   ],
 };
 const ANNOTATIONS = {
-  annotations: [{ id: "a1", type: "pin", position: [0, 1, 0], data: { text: "Vazamento" } }],
+  annotations: [
+    { id: "a1", type: "pin", position: [0, 1, 0], data: { text: "Vazamento" } },
+  ],
 };
 
 beforeEach(() => {
@@ -47,7 +49,10 @@ beforeEach(() => {
       if (u.includes("/detections")) return jsonRes(DETECTIONS);
       if (u.includes("poses")) return jsonRes({ frames: [], keyframes: [] });
       // HEAD da nuvem (Content-Length do chip de LOD)
-      return new Response(null, { status: 200, headers: { "content-length": "9437184" } });
+      return new Response(null, {
+        status: 200,
+        headers: { "content-length": "9437184" },
+      });
     }),
   );
 });
@@ -163,7 +168,9 @@ describe("gate de plugs — tela viewer (contrato v1.2)", () => {
     await waitFor(() =>
       expect(container.querySelector('[data-state="share"]')).not.toBeNull(),
     );
-    expect(container.querySelectorAll('[data-plug="share.validity.set"]')).toHaveLength(3);
+    expect(container.querySelectorAll('[data-plug="share.validity.set"]')).toHaveLength(
+      3,
+    );
     // nada na sheet aponta para /scan/<id>?token= (o link do dono)
     expect(container.innerHTML).not.toContain("/scan/s1?token=");
   });
@@ -176,8 +183,8 @@ describe("gate de plugs — tela viewer (contrato v1.2)", () => {
       () => fireEvent.click(container.querySelector('[data-plug="layers.toggle"]')!),
     ]) {
       act(acao);
-      const plugs = [...container.querySelectorAll("[data-plug]")].map(
-        (e) => e.getAttribute("data-plug")!,
+      const plugs = [...container.querySelectorAll("[data-plug]")].map((e) =>
+        e.getAttribute("data-plug")!,
       );
       const foreign = checkPlugs(container, "viewer", "x", []).foreign;
       expect(foreign, plugs.join(",")).toEqual([]);

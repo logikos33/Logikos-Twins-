@@ -34,10 +34,18 @@ const findMany = vi.fn();
 const findFirst = vi.fn();
 vi.mock("@/lib/db", () => ({
   db: {
-    project: { get findUnique() { return findUnique; } },
+    project: {
+      get findUnique() {
+        return findUnique;
+      },
+    },
     scan: {
-      get findMany() { return findMany; },
-      get findFirst() { return findFirst; },
+      get findMany() {
+        return findMany;
+      },
+      get findFirst() {
+        return findFirst;
+      },
     },
   },
 }));
@@ -57,7 +65,9 @@ describe("/p/:token — entry pública (#38)", () => {
   it("SEM cookie: token válido lista os mapas do projeto (state ready)", async () => {
     findUnique.mockResolvedValue(PROJETO);
     findMany.mockResolvedValue([SCAN]);
-    const jsx = await ProjectEntryPage({ params: Promise.resolve({ token: "tok_valido" }) });
+    const jsx = await ProjectEntryPage({
+      params: Promise.resolve({ token: "tok_valido" }),
+    });
     const { container, getByText } = render(jsx);
     expect(container.querySelector('[data-state="ready"]')).not.toBeNull();
     expect(getByText("Galpão Vila Anchieta")).toBeTruthy();
@@ -66,7 +76,9 @@ describe("/p/:token — entry pública (#38)", () => {
 
   it("token revogado → invalid-link (nunca 500, nunca enumeração)", async () => {
     findUnique.mockResolvedValue({ ...PROJETO, revokedAt: new Date() });
-    const jsx = await ProjectEntryPage({ params: Promise.resolve({ token: "tok_valido" }) });
+    const jsx = await ProjectEntryPage({
+      params: Promise.resolve({ token: "tok_valido" }),
+    });
     const { container } = render(jsx);
     expect(container.querySelector('[data-state="invalid-link"]')).not.toBeNull();
   });

@@ -7,7 +7,13 @@ import { describe, expect, it, vi } from "vitest";
  * mockado como guest válido: o handler REAL decide o 403.
  */
 
-const SCAN = { id: "s1", videoKey: "k", uploadId: "u", status: "uploading", shareToken: "dono" };
+const SCAN = {
+  id: "s1",
+  videoKey: "k",
+  uploadId: "u",
+  status: "uploading",
+  shareToken: "dono",
+};
 
 vi.mock("@/lib/services/share-links", async (orig) => {
   const real = (await orig()) as Record<string, unknown>;
@@ -37,7 +43,10 @@ function jsonReq(url: string, body: unknown, method = "POST") {
 describe("escrita com token de CONVIDADO → 403, por endpoint", () => {
   it("POST /parts", async () => {
     const res = await postParts(
-      jsonReq("http://x/api/scans/s1/parts", { partNumber: 1, shareToken: "guest" }) as never,
+      jsonReq("http://x/api/scans/s1/parts", {
+        partNumber: 1,
+        shareToken: "guest",
+      }) as never,
       ctx,
     );
     expect(res.status).toBe(403);

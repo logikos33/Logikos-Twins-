@@ -17,7 +17,10 @@ export function newGuestToken(): string {
   return randomBytes(24).toString("base64url");
 }
 
-export async function createShareLink(scanId: string, days: 1 | 7 | 30): Promise<ShareLink> {
+export async function createShareLink(
+  scanId: string,
+  days: 1 | 7 | 30,
+): Promise<ShareLink> {
   return db.shareLink.create({
     data: {
       scanId,

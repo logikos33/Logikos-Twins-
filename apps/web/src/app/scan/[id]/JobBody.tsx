@@ -66,7 +66,8 @@ const STAGE: Record<JobStatus, number> = {
 };
 
 const CHIP_DOT: Record<JobStatus, string> = {
-  recording: "bg-record animate-[rec-dot_1s_steps(2,end)_infinite] motion-reduce:animate-none",
+  recording:
+    "bg-record animate-[rec-dot_1s_steps(2,end)_infinite] motion-reduce:animate-none",
   uploading: "bg-cyan",
   uploaded: "bg-cyan",
   queued: "bg-warning",
@@ -217,9 +218,7 @@ export function JobBody(p: JobBodyProps) {
           <EduTheater />
 
           <div className="mt-4 flex flex-wrap items-baseline gap-x-3">
-            <h2 className="font-display text-[19px] font-medium">
-              {LABELS[p.status]}
-            </h2>
+            <h2 className="font-display text-[19px] font-medium">{LABELS[p.status]}</h2>
           </div>
           {SUBLINES[p.status] && (
             <p className="mt-1 text-[13px] text-mist">{SUBLINES[p.status]}</p>
@@ -257,11 +256,15 @@ export function JobBody(p: JobBodyProps) {
           <IconKey className="h-4 w-4 text-warning" />
           {t("job", "keepLinkTitle")}
         </h3>
-        <p className="mt-1 text-xs leading-relaxed text-mist">{t("job", "keepLinkSub")}</p>
+        <p className="mt-1 text-xs leading-relaxed text-mist">
+          {t("job", "keepLinkSub")}
+        </p>
         <button
           onClick={p.onCopyLink}
           className={`mt-2.5 inline-flex min-h-(--tap) items-center rounded-[10px] border px-4 font-mono text-xs transition ${
-            p.copied ? "border-success text-success" : "border-line-strong hover:border-cyan"
+            p.copied
+              ? "border-success text-success"
+              : "border-line-strong hover:border-cyan"
           }`}
         >
           {p.copied ? t("job", "copied") : t("job", "copyLink")}

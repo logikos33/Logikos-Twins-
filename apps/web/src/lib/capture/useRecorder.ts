@@ -154,10 +154,9 @@ export function useRecorder(maxSeconds: number) {
       patch({
         phase: "error",
         denied: negada,
-        error:
-          negada
-            ? "Permissão de câmera negada. Libere a câmera nas configurações do navegador."
-            : `Não foi possível abrir a câmera: ${String(err)}`,
+        error: negada
+          ? "Permissão de câmera negada. Libere a câmera nas configurações do navegador."
+          : `Não foi possível abrir a câmera: ${String(err)}`,
       });
     }
   }, [patch]);
@@ -305,7 +304,9 @@ export function useRecorder(maxSeconds: number) {
     const atual = (track.getSettings() as { torch?: boolean }).torch ?? false;
     const ligar = !atual;
     try {
-      await track.applyConstraints({ advanced: [{ torch: ligar } as MediaTrackConstraintSet] });
+      await track.applyConstraints({
+        advanced: [{ torch: ligar } as MediaTrackConstraintSet],
+      });
       patch({ torchOn: ligar });
     } catch {
       // dispositivo recusou — estado não muda

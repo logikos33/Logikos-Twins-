@@ -55,7 +55,10 @@ export default function DevStatesPage() {
         <h2 className="mb-3 text-sm font-semibold text-mist">jobStates</h2>
         <ul className="space-y-2">
           {FAKE_STATES.map((s, i) => (
-            <li key={`${s.kind}-${"stage" in s ? s.stage : i}`} className="flex items-center gap-3">
+            <li
+              key={`${s.kind}-${"stage" in s ? s.stage : i}`}
+              className="flex items-center gap-3"
+            >
               <StateChip kind={s.kind} stage={"stage" in s ? s.stage : undefined} />
               <code className="text-xs text-faint">{JSON.stringify(s)}</code>
             </li>
@@ -130,7 +133,9 @@ export default function DevStatesPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-mist">tela job — 7 estados do contrato</h2>
+        <h2 className="mb-3 text-sm font-semibold text-mist">
+          tela job — 7 estados do contrato
+        </h2>
         <div className="space-y-6">
           {(
             [

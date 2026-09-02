@@ -25,7 +25,9 @@ export default async function SharedPage({
   if (guest.state !== "valid") {
     return (
       <SharedFim
-        texto={guest.state === "revoked" ? STRINGS.shared.revoked : STRINGS.shared.expired}
+        texto={
+          guest.state === "revoked" ? STRINGS.shared.revoked : STRINGS.shared.expired
+        }
         state={guest.state}
       />
     );

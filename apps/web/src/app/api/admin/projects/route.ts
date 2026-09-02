@@ -12,7 +12,8 @@ async function isAdmin(): Promise<boolean> {
 }
 
 export async function GET() {
-  if (!(await isAdmin())) return NextResponse.json({ error: "não encontrado" }, { status: 404 });
+  if (!(await isAdmin()))
+    return NextResponse.json({ error: "não encontrado" }, { status: 404 });
   const projects = await listProjects();
   return NextResponse.json({
     projects: projects.map((p) => ({
@@ -28,7 +29,8 @@ export async function GET() {
 const bodySchema = z.object({ name: z.string().trim().min(1).max(120) });
 
 export async function POST(req: NextRequest) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "não encontrado" }, { status: 404 });
+  if (!(await isAdmin()))
+    return NextResponse.json({ error: "não encontrado" }, { status: 404 });
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "corpo inválido" }, { status: 400 });

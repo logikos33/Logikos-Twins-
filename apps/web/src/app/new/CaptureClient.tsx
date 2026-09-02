@@ -31,7 +31,8 @@ export function CaptureClient({
   captureToken?: string;
 }) {
   const router = useRouter();
-  const { state, videoRef, openCamera, start, stop, toggleTorch } = useRecorder(maxSeconds);
+  const { state, videoRef, openCamera, start, stop, toggleTorch } =
+    useRecorder(maxSeconds);
   const [showFallback, setShowFallback] = useState(false);
   const [blurFaces, setBlurFaces] = useState(false);
   const [instrOpen, setInstrOpen] = useState(true);

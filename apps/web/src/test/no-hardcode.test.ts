@@ -31,7 +31,9 @@ describe("gate estático — zero literal e zero hex nas telas convertidas", () 
   for (const rel of ARQUIVOS_CONVERTIDOS) {
     const src = readFileSync(join(RAIZ, rel), "utf8");
     // comentários fora do jogo (têm PT-BR legítimo)
-    const semComentarios = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const semComentarios = src
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
 
     it(`${rel}: sem texto de UI hardcoded`, () => {
       const m = semComentarios.match(TEXTO_CRU);

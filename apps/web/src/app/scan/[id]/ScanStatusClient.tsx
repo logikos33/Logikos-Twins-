@@ -142,7 +142,9 @@ export function ScanStatusClient({
         >
           {t("job", "revealTitle")}
         </h1>
-        <p className="font-mono text-xs tracking-wider text-mist">{t("job", "revealSub")}</p>
+        <p className="font-mono text-xs tracking-wider text-mist">
+          {t("job", "revealSub")}
+        </p>
         <button
           data-plug="job.map.open"
           onClick={() => setRevealed(true)}

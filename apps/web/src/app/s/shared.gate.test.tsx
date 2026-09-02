@@ -48,7 +48,13 @@ beforeEach(() => {
         return new Response(
           JSON.stringify({
             detections: [
-              { id: "d1", label: "extintor", score: 0.9, frameIdx: 4, worldPos: [0, 0, 0] },
+              {
+                id: "d1",
+                label: "extintor",
+                score: 0.9,
+                frameIdx: 4,
+                worldPos: [0, 0, 0],
+              },
               { id: "d2", label: "mesa", score: 0.8, frameIdx: 8, worldPos: [1, 0, 0] },
             ],
           }),
@@ -59,7 +65,10 @@ beforeEach(() => {
           status: 200,
           headers: { "content-type": "application/json" },
         });
-      return new Response(null, { status: 200, headers: { "content-length": "9437184" } });
+      return new Response(null, {
+        status: 200,
+        headers: { "content-length": "9437184" },
+      });
     }),
   );
 });
@@ -103,7 +112,12 @@ describe("gate de plugs — tela shared (contrato v1.2)", () => {
     expect(check.missing).toEqual([]);
     expect(check.foreign).toEqual([]);
     expect(check.rootOk).toBe(true);
-    for (const escrita of ["share.create", "measure.start", "annotate.start", "measure.point"]) {
+    for (const escrita of [
+      "share.create",
+      "measure.start",
+      "annotate.start",
+      "measure.point",
+    ]) {
       expect(container.querySelector(`[data-plug="${escrita}"]`), escrita).toBeNull();
     }
   });
