@@ -390,7 +390,39 @@
       "label": "Digite o ID do job para confirmar",
       "confirm": "Apagar arquivos",
       "cancel": "Cancelar"
-    }
+    },
+    "kicker": "logikos twins · painel",
+    "title": "Operação",
+    "summary": "{n} scans · {hoje} hoje (limite {lim}/dia) · custo acumulado US$ {custo}",
+    "loginTitle": "Painel do operador",
+    "loginToken": "Token de acesso",
+    "loginSubmit": "Entrar",
+    "loginHint": "Cole o ADMIN_TOKEN do ambiente. Token errado responde 404 — sem tentativas reveladas.",
+    "errorsTitle": "Erros recentes",
+    "noMessage": "sem mensagem",
+    "tableTitle": "Scans",
+    "cols": {
+      "id": "id",
+      "titulo": "título",
+      "status": "status",
+      "criado": "criado",
+      "video": "vídeo",
+      "custo": "custo"
+    },
+    "filters": {
+      "all": "Todos",
+      "queued": "Na fila",
+      "processing": "Processando",
+      "done": "Pronto",
+      "error": "Falhou"
+    },
+    "filterAria": "Filtrar por estado",
+    "open": "abrir",
+    "copyProv": "prov ⎘",
+    "copied": "copiado ✓",
+    "videoDeleted": "apagado (retenção)",
+    "videoOk": "ok",
+    "aboveThreshold": "acima do limiar de US$ {v}"
   },
   "devStates": {
     "title": "Estados — QA e cobertura do contrato",
