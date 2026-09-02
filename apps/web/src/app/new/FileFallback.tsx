@@ -6,19 +6,26 @@ import { PartBuffer } from "@/lib/capture/partBuffer";
 import { UploadQueue } from "@/lib/capture/uploadQueue";
 import { makeUploadPart } from "@/lib/capture/upload-part";
 import { IconBack, IconFile, IconShield, IconUpFile, IconX } from "@/components/icons";
+import { t } from "@/lib/piloto/strings";
+import { checkFileLimits } from "@/lib/capture/support";
 
 /**
- * Fallback de arquivo: desktop, vídeos de drone (N0) e navegadores sem MediaRecorder.
+ * Fallback de captura quando o MediaRecorder não grava (ADR-0008).
  *
- * NÃO é um caminho de segunda classe (ADR-0008): usa o MESMO multipart, as mesmas
- * rotas e produz o mesmo objeto no storage — o arquivo é fatiado localmente e passa
- * pelo mesmo PartBuffer/UploadQueue da gravação ao vivo. A diferença é só a origem
- * dos bytes.
+ * O caminho PRIMÁRIO continua sendo gravar: `capture="environment"` faz o toque
+ * abrir a CÂMERA NATIVA do celular — o usuário grava ali e o arquivo volta
+ * inteiro. Escolher da galeria (drone/desktop) é o secundário. Os dois entram
+ * pelo MESMO pipeline da gravação ao vivo: fatiado local (PartBuffer) → fila
+ * sequencial com retry (UploadQueue) → mesmas rotas → mesmo objeto no storage.
+ *
+ * O arquivo vem inteiro (120 s a 1080p ≈ 100–200 MB), então duração e tamanho
+ * são validados AQUI, antes de gastar rede — e o servidor revalida no complete.
  */
 
 type Phase = "idle" | "uploading" | "error";
 
 const SLICE_BYTES = 8 * 1024 * 1024;
+const MAX_FILE_MB = 300;
 
 async function api<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -33,27 +40,68 @@ async function api<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** Duração do arquivo via metadata — sem decodificar o vídeo inteiro. */
+function readDuration(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(Number.isFinite(v.duration) ? v.duration : null);
+    };
+    v.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    v.src = url;
+  });
+}
+
 export function FileFallback({
   captureToken,
+  maxSeconds,
   reason,
+  technicalReason,
   onBack,
 }: {
   captureToken?: string;
+  maxSeconds: number;
   reason?: string;
+  technicalReason?: string | null;
   onBack?: () => void;
 }) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const cameraRef = useRef<HTMLInputElement | null>(null);
+  const galleryRef = useRef<HTMLInputElement | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState({ sent: 0, total: 0 });
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleFile(file: File) {
-    setPhase("uploading");
     setFileName(file.name);
     setError(null);
 
+    // Limites do produto ANTES de gastar rede — errorCode limit-exceeded.
+    const durationS = await readDuration(file);
+    const limite = checkFileLimits(file.size, durationS, maxSeconds, MAX_FILE_MB);
+    if (limite === "too-big") {
+      setPhase("error");
+      setError(t("capture", "fallbackTooBig").replace("{mb}", String(MAX_FILE_MB)));
+      return;
+    }
+    if (limite === "too-long") {
+      setPhase("error");
+      setError(
+        t("capture", "fallbackTooLong")
+          .replace("{dur}", String(Math.round(durationS ?? 0)))
+          .replace("{max}", String(maxSeconds)),
+      );
+      return;
+    }
+
+    setPhase("uploading");
     try {
       const mimeType = file.type || "video/mp4";
       const created = await api<{ scanId: string; shareToken: string }>("/api/scans", {
@@ -71,7 +119,7 @@ export function FileFallback({
       );
 
       // O arquivo é fatiado pelo MESMO PartBuffer da gravação — mesma numeração,
-      // mesmas regras de tamanho.
+      // mesmas regras de tamanho; a fila reenvia parte falhada com backoff.
       const buffer = new PartBuffer();
       for (let offset = 0; offset < file.size; offset += SLICE_BYTES) {
         const part = buffer.push(file.slice(offset, offset + SLICE_BYTES, file.type));
@@ -84,10 +132,10 @@ export function FileFallback({
 
       const completed = await api<{ status: string; error: string | null }>(
         `/api/scans/${created.scanId}/complete`,
-        { shareToken: created.shareToken, parts, durationS: null },
+        { shareToken: created.shareToken, parts, durationS },
       );
       if (completed.status === "error") {
-        throw new Error(completed.error ?? "Falha ao concluir o envio.");
+        throw new Error(completed.error ?? t("capture", "fallbackCompleteFail"));
       }
 
       router.push(`/scan/${created.scanId}?token=${created.shareToken}`);
@@ -98,6 +146,10 @@ export function FileFallback({
   }
 
   const pct = progress.total ? Math.round((progress.sent / progress.total) * 100) : 0;
+  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void handleFile(file);
+  };
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-5 py-10 sm:px-6">
@@ -107,49 +159,64 @@ export function FileFallback({
           className="mb-3 inline-flex min-h-(--tap) items-center gap-1.5 self-start pr-3 text-sm text-mist transition hover:text-signal"
         >
           <IconBack className="h-5 w-5" />
-          câmera
+          {t("capture", "fallbackBack")}
         </button>
       )}
 
-      <h1 className="font-display text-2xl font-bold">Enviar arquivo de vídeo</h1>
+      <h1 className="font-display text-2xl font-bold">{t("capture", "fallbackTitle")}</h1>
       {reason && <p className="mt-2 text-sm text-warning">{reason}</p>}
       <p className="mt-2 mb-5 text-sm leading-relaxed text-mist">
-        Para <b className="font-medium text-signal">desktop, drone</b> ou navegador sem
-        câmera. Mesmo pipeline da captura ao vivo: o arquivo sobe em partes e o
-        processamento dispara sozinho.
+        {t("capture", "fallbackBody")}
       </p>
 
+      {/* capture="environment": o toque abre a câmera nativa — grava, não escolhe. */}
       <input
-        ref={inputRef}
+        ref={cameraRef}
+        type="file"
+        accept="video/*"
+        capture="environment"
+        className="hidden"
+        onChange={onPick}
+      />
+      <input
+        ref={galleryRef}
         type="file"
         accept="video/mp4,video/webm,video/quicktime"
         className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) void handleFile(file);
-        }}
+        onChange={onPick}
       />
 
       {phase === "idle" && (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="flex flex-col items-center gap-3 rounded-lg border-[1.5px] border-dashed border-line-strong px-5 py-9 text-center transition hover:border-cyan hover:bg-cyan/[0.03]"
-        >
-          <IconUpFile className="h-8 w-8 text-cyan" />
-          <span className="text-sm text-mist">
-            <b className="font-semibold text-signal">Toque para escolher o vídeo</b>
-            <span className="mt-1 block font-mono text-[11px] tracking-wide text-faint">
-              MP4 · WebM · MOV — até 3 min e 300 MB
+        <>
+          <button
+            data-plug="capture.fallback-file"
+            onClick={() => cameraRef.current?.click()}
+            className="flex flex-col items-center gap-3 rounded-lg border-[1.5px] border-dashed border-line-strong px-5 py-9 text-center transition hover:border-cyan hover:bg-cyan/[0.03]"
+          >
+            <IconUpFile className="h-8 w-8 text-cyan" />
+            <span className="text-sm text-mist">
+              <b className="font-semibold text-signal">
+                {t("capture", "fallbackRecord")}
+              </b>
+              <span className="mt-1 block font-mono text-[11px] tracking-wide text-faint">
+                {t("capture", "fallbackRecordSub").replace("{max}", String(maxSeconds))}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+          <button
+            onClick={() => galleryRef.current?.click()}
+            className="mt-3 self-center text-xs text-mist underline decoration-dotted underline-offset-2 transition hover:text-signal"
+          >
+            {t("capture", "fallbackGallery")}
+          </button>
+        </>
       )}
 
       {phase === "uploading" && (
         <div className="rounded-lg border border-line bg-graphite p-4">
           <div className="flex items-center gap-2.5 font-mono text-[13px]">
             <IconFile className="h-[18px] w-[18px] flex-none text-mist" />
-            <span className="truncate">{fileName ?? "vídeo"}</span>
+            <span className="truncate">{fileName ?? t("capture", "fallbackVideo")}</span>
           </div>
           <div className="mt-3 h-1 overflow-hidden rounded-full bg-surface-2">
             <div
@@ -159,7 +226,9 @@ export function FileFallback({
           </div>
           <div className="mt-2 flex justify-between font-mono text-[11px] text-mist">
             <span>
-              parte {Math.min(progress.sent + 1, progress.total)} de {progress.total}
+              {t("capture", "fallbackPart")
+                .replace("{n}", String(Math.min(progress.sent + 1, progress.total)))
+                .replace("{total}", String(progress.total))}
             </span>
             <span>{pct}%</span>
           </div>
@@ -167,7 +236,7 @@ export function FileFallback({
       )}
 
       {phase === "error" && (
-        <div className="rounded-lg border border-line border-l-[3px] border-l-magenta bg-graphite p-4 text-sm">
+        <div className="rounded-lg border border-line border-l-[3px] border-l-danger bg-graphite p-4 text-sm">
           <p className="flex items-start gap-2 text-danger-soft">
             <IconX className="mt-0.5 h-4 w-4 flex-none" />
             {error}
@@ -175,18 +244,26 @@ export function FileFallback({
           <button
             onClick={() => {
               setPhase("idle");
-              if (inputRef.current) inputRef.current.value = "";
+              if (cameraRef.current) cameraRef.current.value = "";
+              if (galleryRef.current) galleryRef.current.value = "";
             }}
             className="mt-3 rounded-[10px] bg-cyan px-4 py-2 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
           >
-            Tentar de novo
+            {t("common", "retry")}
           </button>
         </div>
       )}
 
+      {technicalReason && (
+        <details className="mt-4 text-xs text-faint">
+          <summary className="cursor-pointer">{t("capture", "fallbackDetail")}</summary>
+          <code className="mt-1 block font-mono">{technicalReason}</code>
+        </details>
+      )}
+
       <p className="mt-6 text-xs leading-relaxed text-mist">
-        <IconShield className="mr-1.5 -mt-0.5 inline h-3.5 w-3.5" />O vídeo bruto é
-        apagado após 7 dias; o mapa 3D e as fotos de evidência permanecem.
+        <IconShield className="mr-1.5 -mt-0.5 inline h-3.5 w-3.5" />
+        {t("capture", "fallbackLgpd")}
       </p>
     </main>
   );

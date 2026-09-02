@@ -16,6 +16,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRecorder } from "@/lib/capture/useRecorder";
+import {
+  captureVerdict,
+  readCaptureEnv,
+  type CaptureVerdict,
+} from "@/lib/capture/support";
 import { FileFallback } from "./FileFallback";
 import { CaptureView, type CaptureState } from "./CaptureView";
 import { t } from "@/lib/piloto/strings";
@@ -38,7 +43,9 @@ export function CaptureClient({
   const [instrOpen, setInstrOpen] = useState(true);
   const [hintDismissed, setHintDismissed] = useState(true);
   const [isPortrait, setIsPortrait] = useState(false);
-  const [insecure, setInsecure] = useState(false);
+  // Veredito do ambiente (https/webview/apis) — decidido UMA vez no mount, no
+  // cliente. "ok" até o effect rodar: SSR e hidratação rendem o prompt normal.
+  const [verdict, setVerdict] = useState<CaptureVerdict>("ok");
 
   useEffect(() => {
     if (window.localStorage.getItem(INSTR_KEY) !== "1") return;
@@ -47,10 +54,12 @@ export function CaptureClient({
   }, []);
 
   useEffect(() => {
-    const local = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-    if (window.location.protocol !== "https:" && !local) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- detecção de contexto (http sem câmera) só existe no cliente; roda uma vez no mount
-      setInsecure(true);
+    // isSecureContext no lugar do protocol: cobre iframe inseguro e origens
+    // opacas — o protocolo sozinho já deu falso "seguro" em webview.
+    const v = captureVerdict(readCaptureEnv());
+    if (v !== "ok") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- detecção de ambiente (https/webview/APIs) só existe no cliente; roda uma vez no mount
+      setVerdict(v);
       return;
     }
     const mq = window.matchMedia("(orientation: portrait)");
@@ -77,31 +86,38 @@ export function CaptureClient({
     if (!open) window.localStorage.setItem(INSTR_KEY, "1");
   }, []);
 
-  if (showFallback || state.unsupported) {
+  if (
+    (showFallback || state.unsupported) &&
+    verdict !== "in-app-browser" &&
+    verdict !== "https-required"
+  ) {
     return (
       <FileFallback
         captureToken={captureToken}
+        maxSeconds={maxSeconds}
         reason={state.unsupported ? tUnsupportedReason() : undefined}
+        technicalReason={state.reason}
         onBack={state.unsupported ? undefined : () => setShowFallback(false)}
       />
     );
   }
 
-  const captureState: CaptureState = insecure
-    ? "https-required"
-    : state.phase === "error"
-      ? state.denied
-        ? "permission-denied"
-        : "unsupported"
-      : state.phase === "recording"
-        ? "recording"
-        : state.phase === "finishing"
-          ? "stopping"
-          : state.phase === "ready"
-            ? isPortrait && !hintDismissed && !instrOpen
-              ? "portrait-hint"
-              : "idle"
-            : "permission-prompt"; // idle | requesting-camera
+  const captureState: CaptureState =
+    verdict !== "ok"
+      ? verdict
+      : state.phase === "error"
+        ? state.denied
+          ? "permission-denied"
+          : "unsupported"
+        : state.phase === "recording"
+          ? "recording"
+          : state.phase === "finishing"
+            ? "stopping"
+            : state.phase === "ready"
+              ? isPortrait && !hintDismissed && !instrOpen
+                ? "portrait-hint"
+                : "idle"
+              : "permission-prompt"; // idle | requesting-camera
 
   return (
     <CaptureView
@@ -121,6 +137,11 @@ export function CaptureClient({
       onDismissHint={dismissHint}
       onToggleInstr={closeInstr}
       onToggleBlur={setBlurFaces}
+      onOpenExternal={() => {
+        // Melhor esforço: alguns webviews respeitam _blank e mandam ao navegador
+        // padrão; os demais ficam com a instrução do menu (texto da tela).
+        window.open(window.location.href, "_blank", "noopener");
+      }}
       camSlot={
         <video
           ref={videoRef}

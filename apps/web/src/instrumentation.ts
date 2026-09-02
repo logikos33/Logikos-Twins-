@@ -12,6 +12,7 @@ export async function register(): Promise<void> {
 
   const { reconcileStuckScans } = await import("@/lib/services/processing");
   const { runRetention } = await import("@/lib/services/retention");
+  const { runUploadHygiene } = await import("@/lib/services/upload-hygiene");
 
   const INTERVAL_MS = 60_000;
   setInterval(() => {
@@ -27,6 +28,7 @@ export async function register(): Promise<void> {
   // é sobra — o prazo é de dias; no dev (TTL em minutos) dá para ver acontecer.
   const RETENTION_INTERVAL_MS = 5 * 60_000;
   setInterval(() => {
+    void runUploadHygiene();
     runRetention()
       .then((n) => {
         if (n > 0) console.warn(`retenção: ${n} vídeo(s) bruto(s) apagado(s)`);
@@ -34,5 +36,5 @@ export async function register(): Promise<void> {
       .catch((err) => console.error("retenção falhou:", err));
   }, RETENTION_INTERVAL_MS).unref();
 
-  console.warn("reconciliação (60 s) e retenção (5 min) ativas");
+  console.warn("reconciliação (60 s), retenção e higiene de uploads (5 min) ativas");
 }

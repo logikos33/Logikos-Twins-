@@ -32,6 +32,7 @@ export type CaptureState =
   | "permission-denied"
   | "unsupported"
   | "https-required"
+  | "in-app-browser"
   | "idle"
   | "recording"
   | "stopping"
@@ -51,6 +52,7 @@ export interface CaptureViewProps {
   onStop: () => void;
   onTorch: () => void;
   onFallback: () => void;
+  onOpenExternal: () => void;
   onAllow: () => void;
   onDismissHint: () => void;
   onToggleInstr: (open: boolean) => void;
@@ -231,6 +233,28 @@ export function CaptureView(p: CaptureViewProps) {
             >
               {t("capture", "fallback")}
             </button>
+          </div>
+        )}
+
+        {p.state === "in-app-browser" && (
+          <div className="mx-auto flex max-w-sm flex-col items-center justify-center px-6 text-center">
+            <LogoSymbol className="h-10 w-10 text-faint" />
+            <p className="mt-4 font-display text-lg font-medium">
+              {t("capture", "inAppTitle")}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-mist">
+              {t("capture", "inAppBody")}
+            </p>
+            <button
+              data-plug="capture.open-external"
+              onClick={p.onOpenExternal}
+              className="mt-5 w-full rounded-md bg-cyan py-3 font-semibold text-ink hover:bg-cyan-deep active:scale-[0.97]"
+            >
+              {t("capture", "inAppOpen")}
+            </button>
+            <p className="mt-3 text-xs leading-relaxed text-faint">
+              {t("capture", "inAppHint")}
+            </p>
           </div>
         )}
 

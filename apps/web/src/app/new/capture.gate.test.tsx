@@ -12,6 +12,7 @@ const ESPERADO: Record<CaptureState, string[]> = {
   "permission-denied": ["capture.fallback-file"],
   unsupported: ["capture.fallback-file"],
   "https-required": [],
+  "in-app-browser": ["capture.open-external"],
   idle: ["capture.torch", "capture.start", "capture.fallback-file"],
   recording: ["capture.torch", "capture.stop", "capture.fallback-file"],
   stopping: ["capture.torch", "capture.stop", "capture.fallback-file"],
@@ -38,6 +39,7 @@ function renderState(state: CaptureState) {
       onStop={nada}
       onTorch={nada}
       onFallback={nada}
+      onOpenExternal={nada}
       onAllow={nada}
       onDismissHint={nada}
       onToggleInstr={nada}
@@ -76,6 +78,7 @@ describe("gate de plugs — tela capture (contrato v1.2)", () => {
         onStart={() => undefined}
         onStop={() => undefined}
         onTorch={() => undefined}
+        onOpenExternal={() => undefined}
         onFallback={() => undefined}
         onAllow={() => undefined}
         onDismissHint={() => undefined}

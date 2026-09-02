@@ -1,7 +1,69 @@
 # ESTADO — Piloto mobile (motor residente → serverless real → captura pelo celular)
 
 > **Âncora de reentrância.** Sessão nova: leia este arquivo primeiro e continue do primeiro marco aberto.
-> Atualizado: 2026-09-02 · rodada 3 ("Piloto no ar") · base = `origin/main` @ `b5ef868`.
+> Atualizado: 2026-09-03 · rodada 4 ("gravar no celular") · base = `origin/main` @ `ae82edf`.
+
+## Rodada 4 — gravar no celular tem que funcionar (2026-09-03)
+
+**🔴 AÇÕES-VITOR (topo, nesta ordem):**
+1. **Abrir `https://logikos-twins-production.up.railway.app/diag` no celular que falhou e mandar um print.** A página imprime UA, isSecureContext, APIs, os 5 mimes com ✔/✘, kinds de dispositivos e o veredito — nada é coletado nem enviado (LGPD); tem botão "Testar câmera" que mostra o NOME exato do erro.
+2. Checklist de prova no celular (6 linhas):
+   - [ ] abrir `/diag` no aparelho que falhou → print
+   - [ ] abrir o link do projeto no **Chrome/Safari** → gravar 60 s → PARAR → ver o job andar
+   - [ ] abrir o MESMO link **pelo WhatsApp** → deve aparecer "Abra no navegador do celular" com botão (não mais "não grava")
+   - [ ] no fallback (se aparecer): tocar "Gravar com a câmera do celular" → deve abrir a CÂMERA nativa, não a galeria
+   - [ ] gravar >120 s na câmera nativa → deve ser recusado com a mensagem de limite, antes de subir
+   - [ ] conferir o scan em `/admin` (aba jobs)
+3. CORS do R2 segue pendente (rodadas anteriores) — o proxy cobre.
+
+**Auditoria "a gravação de hoje subiu?" (respondida com dados, 2026-09-03):**
+
+| scan | estado | bytes no R2 | multipart | veredito |
+|---|---|---|---|---|
+| `ceaf8b0a` (02/09 13:44) | recording | **4 partes = 27,4 MB pendentes** | ABERTO — preservado (evidência) | **Subiu EM PARTE.** A câmera abriu, gravou e 27 MB subiram pelo proxy — o `complete` nunca veio (aba fechada antes de PARAR, ou o app matou a página). Não é o webview: é a 2ª tentativa, num navegador real. |
+| `22164ff7` (01/09) | recording | 1 parte = 1 KB | **ABORTADO** na auditoria | teste abandonado |
+| `38c1b584` (01/09) | recording | 0 partes | **ABORTADO** na auditoria | teste abandonado |
+| demais 8 de 48 h | done/error/queued | objetos completos no R2 | — | sadios |
+
+→ **2 multiparts órfãos abortados (≈1 KB); limpeza agora é automática**: `upload-hygiene.ts` roda a cada 5 min (mesmo tick da retenção) — aborta multipart >24 h e marca scan preso em recording/uploading >24 h como `error` com mensagem honesta. O `ceaf8b0a` cai sozinho no próximo ciclo após completar 24 h.
+
+**Tabela do bloco 0 — caminhos que levavam à MESMA tela "não grava" (antes do fix):**
+
+| # | Condição real | file:line (antes) | O que o usuário via |
+|---|---|---|---|
+| 1 | `!navigator.mediaDevices?.getUserMedia` | useRecorder.ts:116 | FileFallback "Este navegador não grava direto. Use Enviar vídeo do celular" |
+| 2 | `pickMimeType()===null` (sem MediaRecorder OU 0/5 mimes) | useRecorder.ts:124 (58-64) | a MESMA tela |
+| 3 | `getUserMedia` lança QUALQUER erro ≠ NotAllowed (NotFound/NotSupported/Security/Overconstrained) | useRecorder.ts:152-160 + CaptureClient:95 | a MESMA tela (estado unsupported) |
+| — | webview (WhatsApp/Instagram…) | **não existia detecção** | caía num dos de cima — caminho ERRADO |
+| — | `https-required` checava `location.protocol`, não `isSecureContext` | CaptureClient:50 | falso-seguro possível em webview/iframe |
+
+**O que mudou (cada causa com sua tela — `support.ts` é o módulo puro, ordem é contrato):**
+1. `isSecureContext=false` → `https-required` (agora via isSecureContext).
+2. Webview embutido (WhatsApp/Instagram/FB/LinkedIn/Telegram/GSA/`; wv)`) → **estado NOVO `in-app-browser`** (contrato v1.2 ganhou o estado + plug `capture.open-external`, nas duas cópias): "Abra no navegador do celular", botão que tenta `window.open(_blank)` + instrução do menu. **Ordem: https ANTES de webview ANTES de unsupported — testada.**
+3. APIs ausentes/mime zero → `unsupported`, com motivo técnico (`getUserMedia:ausente`, `MediaRecorder:ausente`, `mime:nenhum de 5`, `err.name`) guardado em `state.reason` e visível recolhido no fallback (details) e na `/diag`.
+4. `NotAllowedError`/`SecurityError` → `permission-denied`; `NotFoundError` e afins → `unsupported` (fallback de câmera).
+
+**Fallback agora GRAVA (bloco 5):** input primário com **`capture="environment"`** (o toque abre a câmera nativa — confirmado que o atributo NÃO existia; era metade da confusão) + accept `video/*`; texto trocado para **"Gravar com a câmera do celular"**; galeria/desktop/drone vira secundário. Mesmo pipeline (PartBuffer 8 MB → UploadQueue com retry/backoff → proxy → mesmas rotas). **Limite de 120 s validado no cliente via metadata ANTES de subir** (`checkFileLimits`, errorCode limit-exceeded) e revalidado no servidor (`complete` 422 — agora o durationS REAL é enviado, antes ia null e o servidor nunca validava).
+
+**Prova do arquivo grande pelo proxy (produção, 2026-09-03):** 150,1 MB sintético (testsrc2 120 s 1080p) em 18 partes de 8 MB → **32,3 s (37,2 Mbps), pior parte 4,0 s, zero erro de body-limit/timeout; memória do serviço pico 0,18 GB, CPU pico 9%**. Sem `complete` (teto GPU US$ 0 respeitado); multipart e linha de teste limpos.
+
+**Provas de gate:** 200 testes ✓ (28 files) · sabotagens por sed = 1 vermelho cada: ordem do verdict invertida; `capture="environment"` removido; higiene abortando o upload de hoje · FileFallback entrou no gate estático no-hardcode (ficou VERMELHO com os literais antigos antes da conversão — prova natural) e os literais/magenta saíram.
+
+**D- da rodada:**
+- D: retomada além do retry-por-parte (persistir sessão multipart entre reloads) fica de fora — 4 tentativas com backoff por parte cobre 4G instável; retomar após fechar a aba exigiria persistir estado local e reconciliar com o servidor (registrar se o piloto mostrar necessidade).
+- D: `/diag` fora do gate de strings (página técnica, output é dado do navegador); zero coleta.
+- D: o scan `ceaf8b0a` do Vitor NÃO foi completado manualmente (mp4 sem moov final tem chance de ser inútil e completar dispararia job = GPU; a regra de 24 h limpa).
+- D: contrato v1.2 ganhou `in-app-browser`/`capture.open-external` — decisão registrada aqui; export do Design fica de atualizar na próxima ida ao Design.
+
+**Ficou por provar (precisa de aparelho físico):** o comportamento REAL do webview do WhatsApp/Instagram no aparelho do Vitor (a heurística de UA está testada com UAs reais, mas o aparelho exato não foi informado — bloco 1 existe para isso); se `window.open(_blank)` escapa do webview em cada app (melhor esforço documentado na tela).
+
+**Próximo comando (rodada seguinte):**
+```bash
+cd ~/twins-piloto/repo && git pull
+# 1) ler o print do /diag do Vitor e agir sobre o dado real
+# 2) se o webview for o culpado confirmado: avaliar deep-link intent:// (Android)
+# 3) pendências: #37 busca semântica · #41 cores · resto da #47
+```
 
 ## Rodada 3 — Piloto no ar (2026-09-02)
 
