@@ -406,7 +406,7 @@
     },
     "kicker": "logikos twins · painel",
     "title": "Operação",
-    "summary": "{n} scans · {hoje} hoje (limite {lim}/dia) · custo acumulado US$ {custo}",
+    "summary": "{n} scans · {hoje} hoje (limite {lim}/dia) · custo acumulado US$ {custo} (≈ R$ {brl})",
     "loginTitle": "Painel do operador",
     "loginToken": "Token de acesso",
     "loginSubmit": "Entrar",
@@ -449,7 +449,13 @@
     "rerun": "reprocessar",
     "rerunTitle": "Reprocessar este scan (vídeo precisa estar vivo)",
     "rerunOk": "Scan {id} voltou para a fila.",
-    "rerunFail": "Não deu para reprocessar."
+    "rerunFail": "Não deu para reprocessar.",
+    "configTitle": "Config do piloto",
+    "configUsdBrl": "Câmbio USD → BRL (exibição de custo)",
+    "configGpuUsd": "Tarifa de GPU (US$ por segundo, referência)",
+    "configSave": "Salvar",
+    "configSaved": "Salvo ✓",
+    "configHint": "Dois números de exibição: o custo real de cada job vem do worker. Persistem no banco (app_config)."
   },
   "devStates": {
     "title": "Estados — QA e cobertura do contrato",
