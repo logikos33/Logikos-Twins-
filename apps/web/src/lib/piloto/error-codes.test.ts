@@ -4,16 +4,26 @@ import { ERROR_CODES, ERROR_MESSAGES, mapHttpError, mapScanError } from "./error
 describe("mapScanError — errorMsg persistido → código do contrato", () => {
   it("os 3 errorMsg de produto conhecidos mapeiam exato", () => {
     expect(
-      mapScanError("O vídeo chegou, mas o processamento não pôde ser iniciado. Tente de novo em instantes."),
+      mapScanError(
+        "O vídeo chegou, mas o processamento não pôde ser iniciado. Tente de novo em instantes.",
+      ),
     ).toBe("dispatch-failed");
     expect(mapScanError("Gravação abandonada.")).toBe("upload-abandoned");
-    expect(mapScanError("Vídeo de 400 MB excede o limite de 300 MB.")).toBe("limit-exceeded");
+    expect(mapScanError("Vídeo de 400 MB excede o limite de 300 MB.")).toBe(
+      "limit-exceeded",
+    );
   });
 
   it("string técnica crua do worker vira processing-failed, nunca vaza", () => {
-    expect(mapScanError("ffmpeg falhou (1): /tmp/scan-abc/video.mp4")).toBe("processing-failed");
-    expect(mapScanError("FlashInfer requires GPUs with sm75 or higher")).toBe("processing-failed");
-    expect(mapScanError("qualquer stderr desconhecido do pipeline")).toBe("processing-failed");
+    expect(mapScanError("ffmpeg falhou (1): /tmp/scan-abc/video.mp4")).toBe(
+      "processing-failed",
+    );
+    expect(mapScanError("FlashInfer requires GPUs with sm75 or higher")).toBe(
+      "processing-failed",
+    );
+    expect(mapScanError("qualquer stderr desconhecido do pipeline")).toBe(
+      "processing-failed",
+    );
   });
 
   it("sem errorMsg cai no genérico legível", () => {
