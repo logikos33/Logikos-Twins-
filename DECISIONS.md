@@ -749,3 +749,19 @@ credencial R2 do bucket; daqui em diante toda resposta de PATCH é filtrada.
   mais novo e o "fix" sugerido era downgrade major para 6.19.3 — não.
 - Resolvido com `overrides.mysql2 = ^3.24.3` no package.json: a vulnerabilidade sai
   do lockfile de verdade, em vez de virar exceção com prazo no audit-allowlist.
+
+## [2026-09-02] Endpoint em EU-RO-1 com volume em US-KS-2: zero workers para sempre — fix + receita do recycle
+
+- ACHADO: `piloto-lingbot` estava com `locations=EU-RO-1` e o network volume
+  (`upp3c2jg6i`) vive em US-KS-2. Nessa combinação o scaler não tenta NADA:
+  health mostra zero em todas as colunas (nem `throttled`) e o job fica IN_QUEUE
+  indefinidamente. Não identifiquei o autor da mudança (não foi esta sessão).
+- FIX: `saveEndpoint` com `locations=US-KS-2` **não basta** — o scaler continua
+  congelado para a fila existente. Receita completa: (1) corrigir locations;
+  (2) purge-queue; (3) **recycle `workersMax 0→1`** (o mesmo da troca de
+  template); (4) job novo. Só então: throttled → initializing → ready → running.
+- Sintoma-diagnóstico para a próxima vez: `zero workers e nem throttled` =
+  problema de CONFIG (DC/volume/filtro); `throttled oscilando` = DC sem GPU
+  livre (aguardar); `initializing preso` = imagem/template.
+- e2e da rodada: cancel+retry pelas rotas novas do #45 destravou o scan em
+  produção; job terminou em 66,4 s de exec, US$ 0,0461, VRAM 13,5 GB.

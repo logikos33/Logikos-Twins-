@@ -1,7 +1,65 @@
 # ESTADO — Piloto mobile (motor residente → serverless real → captura pelo celular)
 
 > **Âncora de reentrância.** Sessão nova: leia este arquivo primeiro e continue do primeiro marco aberto.
-> Atualizado: 2026-08-31 · rodada 1 · base = `origin/main` @ `2e10a80`.
+> Atualizado: 2026-09-02 · rodada 3 ("Piloto no ar") · base = `origin/main` @ `b5ef868`.
+
+## Rodada 3 — Piloto no ar (2026-09-02)
+
+**🔎 Divergências-achado (topo, como pede o prompt):**
+1. **O endpoint `piloto-lingbot` estava com `locations=EU-RO-1` e o volume de pesos em US-KS-2** — combinação que NUNCA provisiona worker (zero em tudo, nem `throttled`). Não identifiquei quem mudou (não foi esta sessão; suspeito da exploração do endpoint-reserva na rodada 2). Corrigido via `saveEndpoint` → US-KS-2 **+ recycle obrigatório `workersMax 0→1`** (sem o recycle o scaler segue congelado mesmo com config certa). Receita em DECISIONS `[2026-09-02]`.
+2. **A main estava VERMELHA no CI** ao abrir o PR #53 (herdado dos merges da rodada 2B): 3 erros de lint (react-compiler) + `mysql2 [high]` do prisma CLI no gate de vulnerabilidades + 2 arquivos fora do prettier. Consertado dentro do #53 (override `mysql2@^3.24.3`; downgrade sugerido pelo npm audit foi recusado).
+3. CORS do R2 segue sendo **AÇÃO-VITOR** (creds sem escopo de bucket, provado 2×) — o proxy same-origin (#51) cobre o piloto.
+
+**Entregue (tudo mergeado, deploy provado por /livez == SHA da main):**
+- **#53 → issue #47:** `/s/:shareToken` somente-leitura REAL. Capability no servidor: `authorizeRead → owner|guest`; **cada endpoint de escrita responde 403 ao convidado com um teste por endpoint** (parts, parts/upload, complete, scale, annotations, +cancel/retry no #55). Migration `share_links` (token 192 bits, validade 1/7/30d, revogação, views). Viewer em readOnly É a tela `shared` do contrato (plugs shared.*, dock sem escrita, overlay de pick desmontado). Sheet de share do dono substitui o `navigator.share` que **vazava o token do dono**. Estados expired/revoked renderizáveis. Gates sabotados e provados (403→200 e data-screen errado = vermelhos).
+- **#54 → bloco 4 LGPD:** retenção de 7 dias **provada em produção com objeto de teste** — INSERT vencido via `railway ssh` + objeto no R2 → o job real (tick 5 min) purgou sozinho (`video_deleted_at 07:52:34+00`, objeto AUSENTE). Produção usa o default 10080 min (conferido: env não sobrescreve). `docs/piloto/LGPD-PILOTO.md` + `retention.proof.test.ts` (roda só com `LGPD_PROOF_ENV`) + `scripts/f0-real.mjs`.
+- **#55 → issue #45:** cancelar / tentar de novo / rerun de admin. `ScanStatus` ganha `cancelled` (migration aditiva). Regras no servidor: cancel condicionado ao status (409 se já terminou; COMPLETED tardio não ressuscita), retry só com vídeo bruto vivo (LGPD → 409 honesto), admin rerun inclui `done`. **Dogfooding em produção na mesma hora:** o scan preso do e2e foi destravado com `POST /cancel` + `POST /retry` reais.
+
+**Bloco 6 — e2e GPU pelo caminho NOVO (proxy #51), medido em produção:**
+| Etapa | Número |
+|---|---|
+| create → scan | 1,1 s |
+| upload 6 MB (2 partes, proxy same-origin) | **2,7 s** |
+| complete → queued | 5,4 s |
+| Job GPU (15 s de vídeo, 150 frames) | exec **66,4 s** · infer 16,0 s · upload artefatos 9,9 s |
+| Custo do job | **US$ 0,0461** · VRAM pico 13,5 GB · 643 786 pontos · 44 kf |
+| Cold start honesto | retry→done **8,4 min** (recycle + DC apertado: throttled oscilou ~4 min antes da GPU) |
+| Custo GPU da rodada | **≈ US$ 0,05** (teto 5,00; gatilho de parada 3,00 — longe) · saldo 20,74 |
+
+Meta "<10 min frio" passou **sem margem** → warm-up antes da demo é OBRIGATÓRIO (abaixo).
+
+**Warm-up / cool-down da demo (comandos):**
+```bash
+# 15 min antes (aquecer): recycle + job sintético para materializar o worker
+# (usar o python de DECISIONS [2026-09-02]: saveEndpoint workersMax 0→1)
+# e disparar 1 vídeo curto pelo produto (custo ≈ US$ 0,05)
+ENVFILE=env.json VIDEO=curto.mp4 node scripts/f0-real.mjs   # ou o fluxo do celular
+# na janela da demo: workersMax=2 SÓ se houver 2 apresentações simultâneas
+# depois (esfriar): conferir /health workers=0 (idleTimeout 5 s esvazia sozinho);
+# workersMax volta a 1; custo em regime = storage do volume (US$ 0,001/h)
+```
+
+**Roteiro literal da demo (link + celular, sem cadastro):**
+1. Admin cria projeto em `/admin` (aba projetos) → **copiar link** `/p/<token>` → mandar no WhatsApp do cliente.
+2. Cliente abre no celular → `Gravar` → permitir câmera → filmar 15–60 s → `PARAR`.
+3. A página de status mostra as etapas; se travar: **Cancelar → Tentar de novo** (agora existem).
+4. `done` → viewer 3D no celular; medir com 2 toques; busca filtra objetos.
+5. Botão share → **link de convidado 7 dias** → abrir aba anônima: viewer somente-leitura (badge), sem ferramentas de escrita.
+6. `/admin`: job com custo, proveniência, reprocessar.
+
+**AÇÕES-VITOR (persistem):**
+- **CORS do R2** (JSON exato em DECISIONS `[2026-09-01]`) — destrava o upload direto e aposenta o proxy.
+- **Vídeos reais em `pilot/inputs/`** → `ENVFILE=… node scripts/f0-real.mjs` (F0-real + escala ≤5%).
+- **Teste no celular físico** do fluxo completo (aceite 8 da rodada 2 segue pendente).
+
+**Pendências numeradas:** #37 busca semântica real (grande — embeddings; a busca atual filtra labels client-side) · #39 config persistente (usdBrlRate/gpuUsdPerS) · #41 cores do export · resto da issue #47 (cloud_full/LOD toggle real, delete de anotação).
+
+**Próximo comando (rodada seguinte):**
+```bash
+cd ~/twins-piloto/repo && git pull
+# 1) se houver vídeos: F0-real (acima). 2) #39 (pequeno). 3) #37 (grande, planejar).
+# aceite visual: abrir o roteiro da demo de ponta a ponta num celular físico.
+```
 
 ## Camada B — conversão das telas (2026-09-02, em curso)
 
