@@ -722,3 +722,30 @@ credencial R2 do bucket; daqui em diante toda resposta de PATCH é filtrada.
   caminho residente com desprojeção (sem point head, sem stack de render) mede 15,4 GB
   no dobro de frames do exemplo da época. O conserto mudou o número; registro fecha.
 - `F0-real: PENDENTE (aguardando vídeos)` — mesmos comandos, `pilot/inputs/*.mp4`.
+
+## [2026-09-02] LGPD bloco 4: retenção de 7 dias PROVADA em produção com objeto de teste
+
+- A promessa "vídeo bruto apagado em 7 dias" foi provada de ponta a ponta no ambiente
+  real: objeto `tmp/lgpd-proof-bloco4` no R2 + linha de scan com `created_at = now()-8d`
+  inserida direto no Postgres → o job de produção (tick de 5 min, `instrumentation.ts`)
+  purgou sozinho: objeto AUSENTE no R2 e `video_deleted_at = 2026-09-02 07:52:34+00`.
+  Linha e objeto de teste removidos ao final; nada pré-existente foi tocado.
+- Produção NÃO define `VIDEO_RETENTION_MINUTES` → vale o default 10080 (7 dias) de
+  `env.ts`. Conferido na env do Railway em 2026-09-02; nenhuma mudança necessária.
+- Acesso ao Postgres para a prova: `railway ssh` no container do banco com o SQL em
+  base64 (o CLI re-parseia args no sh remoto — parênteses explodem). O caminho
+  "criar TCP proxy" foi DESCARTADO: o Railway redeploya o banco ao commitar o proxy,
+  e reiniciar o Postgres do piloto por causa de uma prova seria o rabo abanando o
+  cachorro. Receita documentada aqui para a próxima prova.
+- `retention.proof.test.ts` entra no repo como prova reprodutível: só roda com
+  `LGPD_PROOF_ENV=<json>` (railway variables --json); no CI é skip.
+- `docs/piloto/LGPD-PILOTO.md` criado: o que se coleta, onde vive, TTLs, e por que a
+  promessa é um job idempotente e não uma frase de marketing.
+
+## [2026-09-02] mysql2 high no gate: override em vez de allowlist
+
+- O `npm audit` acusou mysql2 3.15.3 [high] vindo do prisma@7.10.0 (CLI, dev-dep) —
+  driver MySQL embutido que este projeto (Postgres) nunca executa. Não há prisma 7.x
+  mais novo e o "fix" sugerido era downgrade major para 6.19.3 — não.
+- Resolvido com `overrides.mysql2 = ^3.24.3` no package.json: a vulnerabilidade sai
+  do lockfile de verdade, em vez de virar exceção com prazo no audit-allowlist.
