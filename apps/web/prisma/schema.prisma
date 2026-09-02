@@ -142,3 +142,12 @@ model Detection {
   @@index([scanId, label])
   @@map("detections")
 }
+
+/// Config do admin (#39) — key-value raso; os campos vivem no serviço, não aqui.
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@map("app_config")
+}

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { CONFIG_DEFAULTS, getConfig } from "@/lib/services/app-config";
 import { AdminView, type AdminProject, type AdminRow } from "./AdminView";
 import { listProjects } from "@/lib/services/projects";
 
@@ -26,6 +27,7 @@ export default async function AdminPage() {
         maxPerDay={env().MAX_SCANS_PER_DAY}
         totalCost={0}
         costAlertUsd={env().COST_ALERT_USD}
+        config={CONFIG_DEFAULTS}
         errors={[]}
       />
     );
@@ -77,6 +79,7 @@ export default async function AdminPage() {
       maxPerDay={env().MAX_SCANS_PER_DAY}
       totalCost={totalCost}
       costAlertUsd={env().COST_ALERT_USD}
+      config={await getConfig()}
       errors={scans
         .filter((s) => s.status === "error")
         .slice(0, 20)

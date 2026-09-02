@@ -13,6 +13,7 @@ import { useState } from "react";
 import { LogoSymbol } from "@/components/Logo";
 import { notImplemented } from "@/lib/piloto/plugs";
 import { t } from "@/lib/piloto/strings";
+import type { PilotConfig } from "@/lib/services/app-config";
 
 export interface AdminRow {
   id: string;
@@ -43,6 +44,7 @@ export interface AdminViewProps {
   maxPerDay: number;
   totalCost: number;
   costAlertUsd: number;
+  config: PilotConfig;
   errors: Array<{ id: string; createdAt: string; msg: string | null }>;
 }
 
@@ -70,7 +72,9 @@ export function AdminView(p: AdminViewProps) {
   const [filtro, setFiltro] = useState<Filtro>("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [rerunMsg, setRerunMsg] = useState<string | null>(null);
-  const [view, setView] = useState<"jobs" | "projects">("jobs");
+  const [view, setView] = useState<"jobs" | "projects" | "config">("jobs");
+  const [cfg, setCfg] = useState(p.config);
+  const [cfgSaved, setCfgSaved] = useState(false);
   const [projects, setProjects] = useState(p.projects);
   const [novoNome, setNovoNome] = useState("");
 
@@ -115,7 +119,7 @@ export function AdminView(p: AdminViewProps) {
     ["admin.nav.projects", () => setView("projects")],
     ["admin.nav.jobs", () => setView("jobs")],
     ["admin.nav.links", notImplemented("admin.nav.links", 47)],
-    ["admin.nav.config", notImplemented("admin.nav.config", 39)],
+    ["admin.nav.config", () => setView("config")],
   ] as const;
 
   async function criarProjeto() {
@@ -144,6 +148,20 @@ export function AdminView(p: AdminViewProps) {
       .catch(() => undefined);
     setCopiedId(pr.id);
     setTimeout(() => setCopiedId(null), 1500);
+  }
+
+  // #39: salva pelo cookie do painel; a resposta autoritativa substitui o form.
+  async function salvarConfig() {
+    const res = await fetch("/api/admin/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cfg),
+    }).catch(() => null);
+    if (res?.ok) {
+      setCfg((await res.json()) as PilotConfig);
+      setCfgSaved(true);
+      setTimeout(() => setCfgSaved(false), 1800);
+    }
   }
 
   // #45: reprocessa pelo cookie do painel; a resposta (ou o 409) vira aviso no topo.
@@ -184,7 +202,8 @@ export function AdminView(p: AdminViewProps) {
             .replace("{n}", String(p.rows.length))
             .replace("{hoje}", String(p.today))
             .replace("{lim}", String(p.maxPerDay))
-            .replace("{custo}", p.totalCost.toFixed(2))}
+            .replace("{custo}", p.totalCost.toFixed(2))
+            .replace("{brl}", (p.totalCost * cfg.usdBrlRate).toFixed(2))}
         </p>
         {rerunMsg && <p className="mt-2 font-mono text-xs text-warning">{rerunMsg}</p>}
         <nav
@@ -195,7 +214,8 @@ export function AdminView(p: AdminViewProps) {
             const [plug, handler] = navPlugs[i]!;
             const ativa =
               (view === "jobs" && plug === "admin.nav.jobs") ||
-              (view === "projects" && plug === "admin.nav.projects");
+              (view === "projects" && plug === "admin.nav.projects") ||
+              (view === "config" && plug === "admin.nav.config");
             return (
               <button
                 key={plug}
@@ -213,6 +233,42 @@ export function AdminView(p: AdminViewProps) {
           })}
         </nav>
       </header>
+
+      {view === "config" && (
+        <section className="max-w-sm">
+          <h2 className="mb-3 text-sm font-semibold text-mist">
+            {t("admin", "configTitle")}
+          </h2>
+          {(
+            [
+              ["usdBrlRate", t("admin", "configUsdBrl")],
+              ["gpuUsdPerS", t("admin", "configGpuUsd")],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="mb-3 block text-xs text-mist">
+              {label}
+              <input
+                type="number"
+                step="any"
+                min={0}
+                value={cfg[key]}
+                onChange={(e) => setCfg((c) => ({ ...c, [key]: Number(e.target.value) }))}
+                className="mt-1 block w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 font-mono text-sm text-signal outline-none focus:border-cyan"
+              />
+            </label>
+          ))}
+          <button
+            data-plug="admin.config.save"
+            onClick={() => void salvarConfig()}
+            className="mt-1 rounded-[10px] bg-cyan px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-cyan-deep"
+          >
+            {cfgSaved ? t("admin", "configSaved") : t("admin", "configSave")}
+          </button>
+          <p className="mt-3 text-xs leading-relaxed text-faint">
+            {t("admin", "configHint")}
+          </p>
+        </section>
+      )}
 
       {view === "projects" && (
         <section>

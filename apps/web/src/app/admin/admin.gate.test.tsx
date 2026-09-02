@@ -33,6 +33,7 @@ const BASE = {
   totalCost: 1.0,
   costAlertUsd: 0.75,
   errors: [{ id: "efgh5678-y", createdAt: "2026-09-02 05:10", msg: "ffmpeg falhou" }],
+  config: { usdBrlRate: 5.5, gpuUsdPerS: 0.000694 },
 };
 
 /** Estados do contrato SEM tela ainda — nomeados: mudança no contrato quebra aqui. */
@@ -40,7 +41,6 @@ const PENDENTES = {
   "project-detail": 38,
   "job-detail": 45,
   links: 47,
-  config: 39,
   "confirm-destructive": 45,
 };
 
@@ -50,9 +50,9 @@ describe("gate de plugs — tela admin (contrato v1.2)", () => {
   const tela = contractScreen("admin");
 
   it("estados cobertos + pendentes nomeados = contrato", () => {
-    expect(["login", "jobs", "projects", ...Object.keys(PENDENTES)].sort()).toEqual(
-      [...tela.states].sort(),
-    );
+    expect(
+      ["login", "jobs", "projects", "config", ...Object.keys(PENDENTES)].sort(),
+    ).toEqual([...tela.states].sort());
   });
 
   it("login: admin.login no submit, raiz correta", () => {
@@ -99,6 +99,14 @@ describe("gate de plugs — tela admin (contrato v1.2)", () => {
     expect(check.missing).toEqual([]);
     expect(check.foreign).toEqual([]);
     expect(check.rootOk).toBe(true);
+  });
+
+  it("config (#39): aba real com admin.config.save; salvar persiste pela rota", () => {
+    const { container, getAllByText } = render(<AdminView authed {...BASE} />);
+    fireEvent.click(getAllByText("Config")[0]!);
+    expect(container.querySelector('[data-state="config"]')).not.toBeNull();
+    expect(container.querySelector('[data-plug="admin.config.save"]')).not.toBeNull();
+    expect(container.querySelectorAll('input[type="number"]')).toHaveLength(2);
   });
 
   it("filtro funciona: 'Falhou' deixa só a linha error", () => {
