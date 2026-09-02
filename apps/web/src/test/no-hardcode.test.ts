@@ -17,6 +17,7 @@ export const ARQUIVOS_CONVERTIDOS = [
   "app/new/CaptureClient.tsx",
   "app/scan/[id]/JobBody.tsx",
   "app/scan/[id]/ScanStatusClient.tsx",
+  "app/scan/[id]/viewer/ScanViewer.tsx",
   "components/piloto/StateChip.tsx",
 ];
 
