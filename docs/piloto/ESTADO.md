@@ -3,6 +3,57 @@
 > **Âncora de reentrância.** Sessão nova: leia este arquivo primeiro e continue do primeiro marco aberto.
 > Atualizado: 2026-08-31 · rodada 1 · base = `origin/main` @ `2e10a80`.
 
+## Bloco 4 — rodada do front (2026-09-02)
+
+**Divergência no topo:** o prompt dizia contrato v1 em `docs/piloto/ui-contract.json` e export em `design/piloto-mobile/` · **nenhum dos dois existia** (git e disco verificados) · segui o caminho previsto: contrato v1.1 nasceu do que tem fonte; Camada A completa; **Camada B BLOQUEADA no export** (issue #12 — os 46 plugs do v1 entram verbatim no commit dele).
+
+**PRs:** contrato v1.1 (#35, doc-only) e Camada A (#36) — ambos mergeados com CI verde. **76 testes web** (51+25).
+
+### Inventário (bloco 0)
+
+| Item | Existe? | Onde | O que falta |
+|---|---|---|---|
+| Rotas do contrato | parcial | `/new` `/scan/[id]` (+viewer) `/admin` `/login` `/` · **`/dev/states` NOVO** | `entry`/`shared` dedicadas = Camada B |
+| Tokens de design | sim (`--color-*`, casa) | `globals.css:17-33` + D-1 novos (`--color-danger/record/status-processing`) | prefixo `--lk-*` do prompt NÃO adotado — casa vence (registrado) |
+| Logo · icons · fontes | sim | `components/Logo.tsx`, `icons.tsx`, `src/fonts/*.woff2` | — |
+| Dicionário de strings | parcial | mensagens de erro de produto em `lib/piloto/error-codes.ts`; **233 literais** inventariados por tela (varredura, chaves sugeridas) | extração por tela na Camada B |
+| Hooks/endpoints por plug | tabela abaixo | — | 3 issues (#37 #38 #39) |
+| Harness de teste | vitest + jsdom | `apps/web/vitest.config.ts` | @testing-library entra na Camada B p/ o gate de render |
+
+### Plugs v1.1 — plug · hook/endpoint · estado
+
+| Plug | Hook/endpoint | Estado |
+|---|---|---|
+| capture.permission.request | `useRecorder.openCamera` (`useRecorder.ts:128+`) | pronto p/ ligar (B) |
+| job.recapture | `router.push("/new")` | pronto p/ ligar (B) |
+| search.open · shared.search.open | **não existe busca** | `notImplemented` · **#37** |
+| layers.set | dock de camadas do `ScanViewer.tsx` | pronto p/ ligar (B) |
+| viewer.pin.open | pins/annotations do viewer | pronto p/ ligar (B) |
+| admin.project.open | **sem modelo de projeto** | `notImplemented` · **#38** |
+| admin.job.provenance.copy | `meta.json` (artifacts) + clipboard | pronto p/ ligar (B) |
+| admin.nav.* (4) | rotas/âncoras do admin | pronto p/ ligar (B) |
+| Config.usdBrlRate · gpuUsdPerS | **sem persistência** (costAlertUsd = env ✓) | **#39** |
+
+### Erro do backend → errorCodes (contrato)
+
+12 códigos em `ui-contract.json` + mapeadores totais em `lib/piloto/error-codes.ts` (`mapScanError`/`mapHttpError`, fallback SEMPRE legível). Varredura completa origem→código (39 emissores enumerados) na saída do workflow da rodada; padrão-chave: **errorMsg do worker chegava VERBATIM à UI** (stderr de ffmpeg, paths) — `processing-failed` estanca isso; a string técnica fica p/ log/admin.
+
+### D- da rodada
+
+- **D-1 (magenta/estado):** revogada a extensão que usava magenta em gravar/erro; paleta semântica: erro `#FF5A36` (novo `--color-danger`), ok/atenção = tokens existentes (`#2EE6A3`/`#FFB224` — mantidos em vez dos hex do prompt: identidade da casa vence), processando = Névoa+ícone; **colisão "gravando" resolvida: branco-gelo `#F5F7FA` pulsante em steps + ponto + palavra** (não colide com erro/atenção/ciano). `DESIGN-TOKENS.md` §3.2 reescrito, zero magenta em estado.
+- **D-2 (config nunca constante):** os 3 fakes viraram `config` no contrato; persistência de usdBrlRate/gpuUsdPerS = #39.
+- **D-camada-A:** dicionário de strings entra POR TELA na Camada B (233 literais mapeados; trocá-los agora = diff monstro sem tela p/ validar). Reversível: as chaves sugeridas estão na varredura.
+- **Fugitivo do #27:** `detections` GET validava shareToken na mão (sem validade) — corrigido p/ `findAuthorized` no PR da Camada A; grep atual: zero validação manual restante.
+
+### Próximo comando (Camada B — no commit do export)
+
+```bash
+cd ~/twins-piloto/repo && git pull && ls design/piloto-mobile/  # confirmar export
+git worktree add ~/twins-piloto/wt-b4-entry -b piloto/tela-entry origin/main
+# ordem: entry → capture → job → viewer (casca+ferramentas) → shared → admin; 1 PR/tela
+# gate: data-plug 1×/estado (por item em listas) + data-state em /dev/states + zero literal/hex — provar falhando
+```
+
 ## Rodada 2 — em andamento (2026-09-01)
 
 **Teste no celular (iOS Safari): CAUSA-RAIZ PROVADA.** "Parte 1 falhou: TypeError: Load failed" = o R2 responde literalmente **"CORS not configured for this bucket"** ao preflight — o PUT presignado do navegador não passa (a validação de julho não sobreviveu no bucket). A chave S3 atual não tem permissão bucket-level (PutBucketCors → AccessDenied). **AÇÃO-VITOR (30 s, destrava o celular):** painel Cloudflare → R2 → bucket `logikos-twins` → Settings → CORS policy → colar:
