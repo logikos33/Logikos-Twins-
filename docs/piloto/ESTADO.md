@@ -9,10 +9,21 @@
 
 | Tela | PR | Estados | Plugs | Gate provado falhando |
 |---|---|---|---|---|
-| entry (/entry; troca de / no aceite) | **#43 ✔** | 5 | 4 (+plug POR ITEM testado com 2) | 3 vermelhos |
-| capture (/new, hook real) | **#44 ✔** | 8 | 5 na matriz | 2 vermelhos |
-| job (/scan/[id], orquestração intacta) | em CI | 7 | 5 (+recapture) · cancel/retry=#45 | 6 vermelhos |
-| viewer · shared · admin | próximas | — | — | — |
+| entry (/entry; troca de / no aceite) | **#43 ✔** | 5/5 | 4 (+POR ITEM testado) | 3 vermelhos |
+| capture (/new, hook real) | **#44 ✔** | 8/8 | 5 na matriz | 2 vermelhos |
+| job (/scan/[id], orquestração intacta) | **#46 ✔** | 7/7 | 5 (+recapture) · cancel/retry=#45 | 6 vermelhos |
+| viewer (tela real, 1 PR — mesmo arquivo) | **#48 ✔** | 7/9 (loading-full+share nomeados → #47) | 13 reais (+tag.set/example/pin.open POR ITEM) · lod.toggle=#47 | 3 vermelhos |
+| shared | **resultado negativo registrado** | — | dono≡convidado até #38: os 4 plugs shared.* duplicariam o viewer na MESMA tela (viola unicidade) — pendente-nomeado | — |
+| admin | **#49 ✔** | 2/8 reais (login NOVO + jobs) · 6 nomeados #38/#39/#45/#47 | login/filter/nav×4 + open/provenance.copy POR ITEM | 1 vermelho |
+
+**Totais:** 138 testes web · zero literal/zero hex nas telas convertidas (gate estático) · chip de LOD com Content-Length REAL · D-3 (admin 390 px) implementado · **login do admin mudou**: /admin sem cookie mostra o card (plug admin.login); /admin/login segue 404 a token errado.
+
+**Próximo comando (rodada seguinte):**
+```bash
+cd ~/twins-piloto/repo && git pull
+# pendências numeradas: #37 busca · #38 projetos · #39 config · #45 controles de job · #47 APIs do viewer/share
+# aceite visual: abrir /dev/states no dev (DEV_STATES=1) e as 4 telas no staging
+```
 
 **D- da Camada B:**
 - **Rotas reais × alvo** (routeMap no contrato): /p/:token etc. aguardam #38; telas vivem nas rotas existentes.
