@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { StateChip } from "@/components/piloto/StateChip";
 import { devStatesEnabled } from "@/lib/piloto/dev-flag";
+import { STRINGS } from "@/lib/piloto/strings";
 import { EntryClient } from "@/app/entry/EntryClient";
+import { CaptureView, type CaptureState } from "@/app/new/CaptureView";
 import { ERROR_CODES, ERROR_MESSAGES } from "@/lib/piloto/error-codes";
 import { PROCESSING_STAGES, type JobState } from "@/lib/piloto/job-state";
 
@@ -30,6 +32,10 @@ const ENTRY_MAPS = [
   { id: "m2", name: "Mezanino", date: "2026-09-02", st: "processing", href: "#" },
   { id: "m3", name: "Doca 3", date: "2026-09-01", st: "failed", href: "#" },
 ] as const;
+
+function mockLabel(): string {
+  return STRINGS.common.mock.toUpperCase();
+}
 
 export default function DevStatesPage() {
   if (!devStatesEnabled()) notFound();
@@ -67,6 +73,54 @@ export default function DevStatesPage() {
                   state={st}
                   projectName="Galpão Vila Anchieta"
                   maps={[...ENTRY_MAPS]}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-mist">tela capture — 8 estados</h2>
+        <div className="space-y-6">
+          {(
+            [
+              "permission-prompt",
+              "permission-denied",
+              "unsupported",
+              "https-required",
+              "idle",
+              "recording",
+              "stopping",
+              "portrait-hint",
+            ] as CaptureState[]
+          ).map((st) => (
+            <div key={st}>
+              <p className="mb-1 font-mono text-xs text-faint">capture · {st}</p>
+              <div className="h-[560px] overflow-hidden rounded-xl border border-line">
+                <CaptureView
+                  state={st}
+                  elapsedS={st === "stopping" ? 120 : 42}
+                  maxSeconds={120}
+                  partsSent={5}
+                  partsQueued={1}
+                  instrOpen={false}
+                  blurFaces
+                  onStart={() => undefined}
+                  onStop={() => undefined}
+                  onTorch={() => undefined}
+                  onFallback={() => undefined}
+                  onAllow={() => undefined}
+                  onDismissHint={() => undefined}
+                  onToggleInstr={() => undefined}
+                  onToggleBlur={() => undefined}
+                  camSlot={
+                    <div className="relative h-full w-full bg-[color:var(--color-surface-2)]">
+                      <span className="k-label absolute top-4 right-4 text-[10px] text-faint">
+                        {mockLabel()}
+                      </span>
+                    </div>
+                  }
                 />
               </div>
             </div>
