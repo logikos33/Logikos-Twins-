@@ -27,8 +27,17 @@ export interface AdminRow {
   provenance: string;
 }
 
+export interface AdminProject {
+  id: string;
+  name: string;
+  captureToken: string;
+  createdAt: string;
+  revoked: boolean;
+}
+
 export interface AdminViewProps {
   authed: boolean;
+  projects: AdminProject[];
   rows: AdminRow[];
   today: number;
   maxPerDay: number;
@@ -60,6 +69,9 @@ const FILTRO_STATUS: Record<Filtro, (s: string) => boolean> = {
 export function AdminView(p: AdminViewProps) {
   const [filtro, setFiltro] = useState<Filtro>("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [view, setView] = useState<"jobs" | "projects">("jobs");
+  const [projects, setProjects] = useState(p.projects);
+  const [novoNome, setNovoNome] = useState("");
 
   if (!p.authed) {
     return (
@@ -97,11 +109,39 @@ export function AdminView(p: AdminViewProps) {
   const rows = p.rows.filter((r) => FILTRO_STATUS[filtro](r.status));
   const nav = t("admin", "nav");
   const navPlugs = [
-    ["admin.nav.projects", notImplemented("admin.nav.projects", 38)],
-    ["admin.nav.jobs", () => undefined],
+    ["admin.nav.projects", () => setView("projects")],
+    ["admin.nav.jobs", () => setView("jobs")],
     ["admin.nav.links", notImplemented("admin.nav.links", 47)],
     ["admin.nav.config", notImplemented("admin.nav.config", 39)],
   ] as const;
+
+  async function criarProjeto() {
+    const name = novoNome.trim();
+    if (!name) return;
+    const res = await fetch("/api/admin/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (res.ok) {
+      const np = (await res.json()) as AdminProject;
+      setProjects((ps) => [{ ...np, createdAt: "", revoked: false }, ...ps]);
+      setNovoNome("");
+    }
+  }
+
+  async function revogarProjeto(id: string) {
+    await fetch(`/api/admin/projects/${id}/revoke`, { method: "POST" });
+    setProjects((ps) => ps.map((x) => (x.id === id ? { ...x, revoked: true } : x)));
+  }
+
+  function copiarLink(pr: AdminProject) {
+    void navigator.clipboard
+      ?.writeText(`${window.location.origin}/p/${pr.captureToken}`)
+      .catch(() => undefined);
+    setCopiedId(pr.id);
+    setTimeout(() => setCopiedId(null), 1500);
+  }
 
   function copyProv(r: AdminRow) {
     void navigator.clipboard?.writeText(r.provenance).catch(() => undefined);
@@ -112,7 +152,7 @@ export function AdminView(p: AdminViewProps) {
   return (
     <main
       data-screen="admin"
-      data-state="jobs"
+      data-state={view}
       className="grid-grego mx-auto flex min-h-dvh w-full max-w-4xl flex-col gap-7 px-5 py-9 sm:px-6"
     >
       <header>
@@ -133,7 +173,9 @@ export function AdminView(p: AdminViewProps) {
         <nav className="mt-4 flex gap-1 border-b border-line" aria-label={t("admin", "title")}>
           {nav.map((label, i) => {
             const [plug, handler] = navPlugs[i]!;
-            const ativa = plug === "admin.nav.jobs";
+            const ativa =
+              (view === "jobs" && plug === "admin.nav.jobs") ||
+              (view === "projects" && plug === "admin.nav.projects");
             return (
               <button
                 key={plug}
@@ -152,7 +194,67 @@ export function AdminView(p: AdminViewProps) {
         </nav>
       </header>
 
-      {p.errors.length > 0 && (
+      {view === "projects" && (
+        <section>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <h2 className="text-sm font-semibold text-mist">{t("admin", "projectsTitle")}</h2>
+            <div className="ml-auto flex gap-2">
+              <input
+                value={novoNome}
+                onChange={(e) => setNovoNome(e.target.value)}
+                placeholder={t("admin", "projectName")}
+                className="w-56 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-sm outline-none focus:border-cyan"
+              />
+              <button
+                data-plug="admin.project.create"
+                onClick={() => void criarProjeto()}
+                className="rounded-[10px] bg-cyan px-4 py-2 text-sm font-semibold text-ink hover:bg-cyan-deep"
+              >
+                {t("admin", "projectCreate")}
+              </button>
+            </div>
+          </div>
+          {projects.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-line-strong p-6 text-center text-sm text-mist">
+              {t("admin", "projectEmpty")}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {projects.map((pr) => (
+                <li
+                  key={pr.id}
+                  className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-graphite p-3"
+                >
+                  <span className="text-sm font-medium">{pr.name}</span>
+                  <span className="font-mono text-[11px] text-faint">
+                    {t("admin", "projectLink")} ·{pr.revoked ? ` ${t("admin", "projectRevoked")}` : ` /p/${pr.captureToken.slice(0, 8)}…`}
+                  </span>
+                  <span className="ml-auto flex gap-2">
+                    <button
+                      data-plug="admin.project.link.copy"
+                      onClick={() => copiarLink(pr)}
+                      disabled={pr.revoked}
+                      className="rounded-lg border border-line-strong px-3 py-1.5 font-mono text-xs text-cyan disabled:opacity-40"
+                    >
+                      {copiedId === pr.id ? t("admin", "projectCopied") : t("admin", "projectCopy")}
+                    </button>
+                    <button
+                      data-plug="admin.project.link.revoke"
+                      onClick={() => void revogarProjeto(pr.id)}
+                      disabled={pr.revoked}
+                      className="rounded-lg border border-line-strong px-3 py-1.5 font-mono text-xs text-danger-soft disabled:opacity-40"
+                    >
+                      {t("admin", "projectRevoke")}
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {view === "jobs" && p.errors.length > 0 && (
         <section>
           <h2 className="mb-2 text-sm font-semibold text-danger-soft">
             {t("admin", "errorsTitle")}
@@ -168,6 +270,7 @@ export function AdminView(p: AdminViewProps) {
         </section>
       )}
 
+      {view === "jobs" && (
       <section>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-mist">{t("admin", "tableTitle")}</h2>
@@ -284,6 +387,7 @@ export function AdminView(p: AdminViewProps) {
           </table>
         </div>
       </section>
+      )}
     </main>
   );
 }

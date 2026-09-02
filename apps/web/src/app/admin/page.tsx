@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
-import { AdminView, type AdminRow } from "./AdminView";
+import { AdminView, type AdminProject, type AdminRow } from "./AdminView";
+import { listProjects } from "@/lib/services/projects";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export default async function AdminPage() {
     return (
       <AdminView
         authed={false}
+        projects={[]}
         rows={[]}
         today={0}
         maxPerDay={env().MAX_SCANS_PER_DAY}
@@ -30,6 +32,13 @@ export default async function AdminPage() {
   }
 
   const scans = await db.scan.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
+  const projects: AdminProject[] = (await listProjects()).map((pr) => ({
+    id: pr.id,
+    name: pr.name,
+    captureToken: pr.captureToken,
+    createdAt: pr.createdAt.toISOString(),
+    revoked: pr.revokedAt != null,
+  }));
   const dayStart = new Date();
   dayStart.setUTCHours(0, 0, 0, 0);
 
@@ -59,6 +68,7 @@ export default async function AdminPage() {
   return (
     <AdminView
       authed
+      projects={projects}
       rows={rows}
       today={scans.filter((s) => s.createdAt >= dayStart).length}
       maxPerDay={env().MAX_SCANS_PER_DAY}

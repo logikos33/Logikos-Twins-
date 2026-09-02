@@ -163,7 +163,7 @@ export function useRecorder(maxSeconds: number) {
   }, [patch]);
 
   const start = useCallback(
-    async (blurFaces = false) => {
+    async (blurFaces = false, captureToken?: string) => {
       const stream = streamRef.current;
       const mimeType = pickMimeType();
       if (!stream || !mimeType) return;
@@ -173,6 +173,7 @@ export function useRecorder(maxSeconds: number) {
       try {
         // 1. Cria o scan e abre o multipart ANTES do primeiro frame.
         const created = await api<{ scanId: string; shareToken: string }>("/api/scans", {
+          captureToken,
           mimeType,
           blurFaces,
         });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createScan, UnsupportedMimeError } from "@/lib/services/scans";
+import { findByCaptureToken } from "@/lib/services/projects";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 
@@ -12,6 +13,9 @@ const bodySchema = z.object({
   mimeType: z.string().min(1).max(100),
   // Blur de rostos opcional (D6, LGPD).
   blurFaces: z.boolean().optional(),
+  // Link do projeto (#38): associa o scan; inválido/revogado NÃO erra — o scan
+  // nasce órfão (o cliente ainda consegue gravar; a associação é conveniência).
+  captureToken: z.string().max(64).optional(),
 });
 
 /**
@@ -51,7 +55,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const created = await createScan(parsed.data);
+    const projeto = parsed.data.captureToken
+      ? await findByCaptureToken(parsed.data.captureToken)
+      : null;
+    const created = await createScan({ ...parsed.data, projectId: projeto?.id });
     console.warn(JSON.stringify({ event: "scan.created", scan_id: created.scanId }));
     return NextResponse.json(created, { status: 201 });
   } catch (err) {

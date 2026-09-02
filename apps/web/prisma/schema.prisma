@@ -24,11 +24,29 @@ enum ScanStatus {
   error
 }
 
+model Project {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  // Link do cliente: quem tem o captureToken vê e grava no projeto — sem
+  // cadastro (contrato v1.2 /p/:token). Opaco, CSPRNG, 24 bytes base64url.
+  captureToken String  @unique @map("capture_token")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz()
+
+  scans Scan[]
+
+  @@map("projects")
+}
+
 model Scan {
   id        String     @id @default(uuid()) @db.Uuid
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz()
   status    ScanStatus @default(recording)
   title     String?
+
+  // Projeto dono (nullable: scans órfãos pré-#38 continuam válidos).
+  projectId String?  @map("project_id") @db.Uuid
+  project   Project? @relation(fields: [projectId], references: [id])
 
   // Acesso sem login: quem tem o token vê o scan. Gerado com aleatoriedade
   // criptográfica — é a única barreira, então não pode ser adivinhável.
