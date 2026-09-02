@@ -42,6 +42,8 @@ const serverSchema = z.object({
 
   MAX_VIDEO_MB: z.coerce.number().int().positive().default(300),
   MAX_VIDEO_SECONDS: z.coerce.number().int().positive().default(120),
+  // Mínimo do contrato (minDurationS): gravação curta é dinheiro queimado e mapa ruim.
+  MIN_VIDEO_SECONDS: z.coerce.number().int().positive().default(20),
   // Validade dos links novos (piloto): vencido → 404. Dias.
   SHARE_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
   // Limiar de alerta de custo por job no admin (US$).

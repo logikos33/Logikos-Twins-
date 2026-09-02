@@ -472,7 +472,9 @@
     "configGpuUsd": "Tarifa de GPU (US$ por segundo, referência)",
     "configSave": "Salvar",
     "configSaved": "Salvo ✓",
-    "configHint": "Dois números de exibição: o custo real de cada job vem do worker. Persistem no banco (app_config)."
+    "configHint": "Dois números de exibição: o custo real de cada job vem do worker. Persistem no banco (app_config).",
+    "watchdogAlert": "⚠ Scaler congelado às {at} UTC: scan {scan} preso na fila há {min} min com zero workers. Aplicar a escada do DECISIONS [2026-09-03].",
+    "configCostAlert": "Alerta de custo por scan (US$) — destaca no painel acima deste valor"
   },
   "devStates": {
     "title": "Estados — QA e cobertura do contrato",

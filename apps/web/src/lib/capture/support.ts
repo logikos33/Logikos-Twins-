@@ -84,8 +84,10 @@ export function checkFileLimits(
   durationS: number | null,
   maxSeconds: number,
   maxFileMb = 300,
-): "too-big" | "too-long" | null {
+  minSeconds = 20,
+): "too-big" | "too-long" | "too-short" | null {
   if (maxFileMb * 1024 * 1024 < sizeBytes) return "too-big";
   if (durationS !== null && maxSeconds < durationS) return "too-long";
+  if (durationS !== null && durationS < minSeconds) return "too-short";
   return null;
 }

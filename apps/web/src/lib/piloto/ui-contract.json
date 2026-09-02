@@ -347,7 +347,8 @@
     "viewer-load-failed": "falha client-side ao carregar nuvem/calibração",
     "internal-error": "500 catch-all das rotas",
     "unknown": "fallback LEGÍVEL de mapeamento — nunca tela branca",
-    "_pendentes_do_export": "video-too-short, video-too-long, no-motion, gpu-unavailable, timeout — entram quando houver emissor real (validações de captura/timeout do job); por ora mapeiam para limit-exceeded/processing-failed"
+    "_pendentes_do_export": "video-too-short, video-too-long, no-motion, gpu-unavailable, timeout — entram quando houver emissor real (validações de captura/timeout do job); por ora mapeiam para limit-exceeded/processing-failed",
+    "video-too-short": "422 do complete: durationS abaixo de minDurationS — recusado antes de enfileirar (cliente valida por metadata antes de subir)"
   },
   "viewModels": {
     "Project": {
