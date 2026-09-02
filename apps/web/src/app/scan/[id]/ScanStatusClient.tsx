@@ -28,7 +28,15 @@ type ScanInfo = {
 
 const ISSUE_JOB_CONTROLS = 45; // rotas de cancelar/reprocessar job
 
-export function ScanStatusClient({ scanId, token }: { scanId: string; token: string }) {
+export function ScanStatusClient({
+  scanId,
+  token,
+  readOnly = false,
+}: {
+  scanId: string;
+  token: string;
+  readOnly?: boolean;
+}) {
   const [scan, setScan] = useState<ScanInfo | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -110,6 +118,7 @@ export function ScanStatusClient({ scanId, token }: { scanId: string; token: str
       <ViewerGate
         scanId={scanId}
         token={token}
+        readOnly={readOnly}
         cloudUrl={scan.artifacts["cloud_preview_url"]!}
         posesUrl={scan.artifacts["poses_url"]!}
         initialScale={scan.scale}

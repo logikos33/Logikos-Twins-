@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { findAuthorized } from "@/lib/services/scans";
+import { authorizeRead } from "@/lib/services/share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const { id } = await ctx.params;
   const token = req.nextUrl.searchParams.get("token") ?? "";
 
-  const scan = await findAuthorized(id, token);
+  const auth = await authorizeRead(id, token);
+  const scan = auth?.scan;
   if (!scan) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }
@@ -59,10 +60,15 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     );
   }
 
-  const scan = await findAuthorized(id, parsed.data.shareToken);
-  if (!scan) {
+  const auth = await authorizeRead(id, parsed.data.shareToken);
+  if (!auth) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }
+  // Capability no SERVIDOR (#47): convidado não anota.
+  if (auth.role === "guest") {
+    return NextResponse.json({ error: "link somente-leitura" }, { status: 403 });
+  }
+  const scan = auth.scan;
 
   const created = await db.annotation.create({
     data: {

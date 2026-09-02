@@ -22,6 +22,7 @@ const ScanViewer = dynamic(
 );
 
 type Props = {
+  readOnly?: boolean;
   scanId: string;
   token: string;
   cloudUrl: string;

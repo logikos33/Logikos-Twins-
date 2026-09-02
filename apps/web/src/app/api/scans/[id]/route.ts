@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { artifactUrls, findAuthorized } from "@/lib/services/scans";
+import { artifactUrls } from "@/lib/services/scans";
+import { authorizeRead } from "@/lib/services/share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const { id } = await ctx.params;
   const token = req.nextUrl.searchParams.get("token") ?? "";
 
-  const scan = await findAuthorized(id, token);
+  const auth = await authorizeRead(id, token);
+  const scan = auth?.scan;
   if (!scan) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  findAuthorized,
   maxUploadParts,
   uploadPartDirect,
   InvalidStateError,
 } from "@/lib/services/scans";
+import { authorizeRead } from "@/lib/services/share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +23,15 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if (!Number.isInteger(partNumber) || partNumber < 1 || partNumber > 10000) {
     return NextResponse.json({ error: "corpo inválido" }, { status: 400 });
   }
-  const scan = await findAuthorized(id, token);
-  if (!scan) {
+  const auth = await authorizeRead(id, token);
+  if (!auth) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }
+  // Capability no SERVIDOR (#47): convidado é somente-leitura.
+  if (auth.role === "guest") {
+    return NextResponse.json({ error: "link somente-leitura" }, { status: 403 });
+  }
+  const scan = auth.scan;
   const cap = maxUploadParts();
   if (partNumber > cap) {
     return NextResponse.json(
