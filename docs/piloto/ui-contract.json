@@ -1,0 +1,110 @@
+{
+  "version": "1.1",
+  "changelog": [
+    "1.1 (2026-09-02): nasce NO REPO a partir das 9 propostas do handoff do Design + regras de navegação do admin e de plug-por-item. Os 46 plugs do v1 vivem só no export do Design (design/piloto-mobile/, AINDA NÃO COMMITADO — issue #12); serão incorporados aqui, sem renomear nada deste arquivo, no primeiro commit do export. jobStates e errorCodes derivados do código real (ver docs/piloto/ESTADO.md).",
+    "1.0: 46 plugs definidos no Claude Design (export pendente de commit)."
+  ],
+  "pending": {
+    "v1Plugs": "pending-export — os 46 data-plug do v1 estão no DOM do export do Design; entram aqui verbatim quando design/piloto-mobile/ for commitado (issue #12)."
+  },
+  "rules": {
+    "todoInterativoTemPlug": "todo elemento interativo carrega data-plug de valor deste contrato; zero data-plug fora do contrato",
+    "plugPorItemDeLista": "em listas, o plug aplica-se a CADA item renderizado, com key = id do view model (nunca índice)",
+    "controlesDoPrototipo": "Fluxo/Estados, retrato/paisagem e reset são do protótipo do Design — não entram no contrato e não são convertidos",
+    "estadoSempreTripla": "estado comunica-se com cor + ícone + palavra (WCAG 1.4.1); ciano nunca significa estado; magenta nunca em UI operacional"
+  },
+  "plugs": {
+    "capture.permission.request": {
+      "onde": "botão Permitir da tela de captura",
+      "fonte": "handoff §propostas"
+    },
+    "job.recapture": {
+      "onde": "Gravar de novo / Gravar novo mapa",
+      "fonte": "handoff §propostas"
+    },
+    "search.open": {
+      "onde": "botão Buscar da toolbar do viewer (search.query segue no input)",
+      "fonte": "handoff §propostas"
+    },
+    "shared.search.open": {
+      "onde": "botão Buscar na tela compartilhada",
+      "fonte": "handoff §propostas"
+    },
+    "layers.set": {
+      "onde": "linhas do painel de camadas (layers.toggle só abre o painel)",
+      "fonte": "handoff §propostas"
+    },
+    "viewer.pin.open": {
+      "onde": "toque num pino da nuvem",
+      "fonte": "handoff §propostas"
+    },
+    "admin.project.open": {
+      "onde": "linha da lista de projetos do admin",
+      "fonte": "handoff §propostas"
+    },
+    "admin.job.provenance.copy": {
+      "onde": "copiar proveniência do job no admin",
+      "fonte": "handoff §propostas"
+    },
+    "admin.nav.projects": {
+      "onde": "navegação do admin",
+      "fonte": "regra v1.1"
+    },
+    "admin.nav.jobs": {
+      "onde": "navegação do admin",
+      "fonte": "regra v1.1"
+    },
+    "admin.nav.links": {
+      "onde": "navegação do admin",
+      "fonte": "regra v1.1"
+    },
+    "admin.nav.config": {
+      "onde": "navegação do admin",
+      "fonte": "regra v1.1"
+    }
+  },
+  "config": {
+    "usdBrlRate": {
+      "tipo": "number",
+      "default": 5.4,
+      "nota": "cotação exibida no admin — campo de config, nunca constante"
+    },
+    "gpuUsdPerS": {
+      "tipo": "number",
+      "default": 0.00086,
+      "nota": "tarifa GPU US$/s — config, nunca constante"
+    },
+    "costAlertUsd": {
+      "tipo": "number",
+      "default": 0.75,
+      "nota": "limiar de alerta de custo por job (já existe como env COST_ALERT_USD)"
+    }
+  },
+  "jobStates": [
+    "uploading",
+    "upload-paused-offline",
+    "queued",
+    "processing",
+    "completed",
+    "failed",
+    "cancelled"
+  ],
+  "jobStateNotes": {
+    "processing": "carrega stage (etapa nomeada do worker: download, normalize, extract, blur, infer, convert, upload) — progresso é a ETAPA, nunca porcentagem inventada",
+    "mapeamentoBackend": "estados do banco (schema.prisma ScanStatus) → contrato: recording+uploading→uploading; uploaded+queued→queued; processing+postprocessing→processing; done→completed; error→failed; cancelled só existe no contrato (fluxo futuro de cancelamento)"
+  },
+  "errorCodes": {
+    "invalid-body": "400 das rotas (JSON inválido / zod) — UI genérica, recarregar",
+    "not-found": "404: scan inexistente = token errado = link vencido (indistinguíveis por design)",
+    "unauthorized-webhook": "401 do tráfego interno (webhook RunPod / detections POST)",
+    "limit-exceeded": "tetos do produto: 429 diário, 413 partes, 422 duração, errorMsg de MB",
+    "unsupported-media": "415: MIME fora de MP4/WebM/MOV",
+    "upload-conflict": "409 InvalidStateError (upload fechado / estado não aceita)",
+    "dispatch-failed": "vídeo chegou, disparo falhou — RECUPERÁVEL sem regravar (CTA distinto)",
+    "processing-failed": "job FAILED do worker — mensagem de produto; string técnica só em log/admin",
+    "upload-abandoned": "gravação abandonada (abortUpload)",
+    "viewer-load-failed": "falha client-side ao carregar nuvem/calibração",
+    "internal-error": "500 catch-all das rotas",
+    "unknown": "fallback LEGÍVEL de mapeamento — nunca tela branca"
+  }
+}
