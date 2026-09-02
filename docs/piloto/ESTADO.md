@@ -18,6 +18,8 @@
 
 **Totais:** 138 testes web · zero literal/zero hex nas telas convertidas (gate estático) · chip de LOD com Content-Length REAL · D-3 (admin 390 px) implementado · **login do admin mudou**: /admin sem cookie mostra o card (plug admin.login); /admin/login segue 404 a token errado.
 
+**Incidente pós-merge (resolvido no PR #50):** os deploys de #48/#49 FALHARAM no Railway — `plug-coverage.ts` importava `docs/piloto/ui-contract.json`, que não existe no contexto `rootDirectory=apps/web` (a CI passa porque o checkout é o monorepo). Fix: cópia viva do contrato em `apps/web/src/lib/piloto/ui-contract.json` + teste de sincronização com a canônica (skip onde docs/ não existe). **Lição permanente: import de fora de `apps/web` compila no CI e quebra só no Railway** — o teste de sync é o guarda. `/livez` provado = commit da main.
+
 **Próximo comando (rodada seguinte):**
 ```bash
 cd ~/twins-piloto/repo && git pull
