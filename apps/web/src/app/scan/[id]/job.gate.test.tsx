@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { assertPlugs, checkPlugs, contractScreen } from "@/test/plug-coverage";
-import { JobBody, contractState, type JobStatus } from "./JobBody";
+import { JobBody, type JobStatus } from "./JobBody";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 // O EduTheater é canvas — fora do gate (mockado leve).

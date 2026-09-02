@@ -113,7 +113,6 @@ export function ScanViewer({
   const [cutOpen, setCutOpen] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
   const [searchFocus, setSearchFocus] = useState(false);
-  const [shareFeedback, setShareFeedback] = useState(false);
 
   // Medição em andamento: até 2 pontos.
   const [measurePts, setMeasurePts] = useState<Vec3[]>([]);
@@ -361,7 +360,7 @@ export function ScanViewer({
         .then((d: { links: typeof shareLinks }) => setShareLinks(d.links))
         .catch(() => undefined);
     }
-  }, [scanId, token, shareOpen, shareLinks]);
+  }, [scanId, token, shareOpen]);
 
   const createGuestLink = useCallback(async () => {
     const res = await fetch(`/api/scans/${scanId}/share`, {
@@ -562,11 +561,6 @@ export function ScanViewer({
         </button>
       </div>
 
-      {shareFeedback && (
-        <p className="absolute top-16 left-1/2 z-30 -translate-x-1/2 rounded-[10px] border border-line-strong border-l-[3px] border-l-cyan bg-surface-2 px-4 py-2.5 text-[13px]">
-          {ts("viewer", "shareCopied")}
-        </p>
-      )}
 
       {/* restaurar interface */}
       {hudHidden && (

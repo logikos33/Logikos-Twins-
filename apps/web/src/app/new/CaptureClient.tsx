@@ -48,6 +48,7 @@ export function CaptureClient({
   useEffect(() => {
     const local = ["localhost", "127.0.0.1"].includes(window.location.hostname);
     if (window.location.protocol !== "https:" && !local) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- detecção de contexto (http sem câmera) só existe no cliente; roda uma vez no mount
       setInsecure(true);
       return;
     }
