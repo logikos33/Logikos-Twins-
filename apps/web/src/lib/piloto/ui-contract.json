@@ -1,0 +1,440 @@
+{
+  "version": "1.2",
+  "changelog": [
+    "1.2 (2026-09-02): FUSÃO — absorve verbatim os 46 plugs/telas/states/viewModels do export do Design (design/piloto-mobile/ui-contract.json, agora snapshot histórico; ESTE arquivo é a única fonte viva, como o próprio handoff.md:5 declara) + 3 plugs achados no DOM sem contrato (annotate.tag.set, search.example, share.validity.set — issue #40). Divergências reconciliadas (D- no ESTADO): rotas do export são projeto-cêntricas e ficam como ALVO pós-#38 (mapa em routeMap; telas convertem nas rotas reais); stages = etapas REAIS do worker (extract/blur/reconstruct/fuse/publish do export viram rótulos de exibição); errorCodes do export sem emissor real (video-too-short, no-motion…) NÃO entram até existirem validações que os emitam.",
+    "1.1 (2026-09-02): nasce NO REPO a partir das 9 propostas do handoff do Design + regras de navegação do admin e de plug-por-item. Os 46 plugs do v1 vivem só no export do Design (design/piloto-mobile/, AINDA NÃO COMMITADO — issue #12); serão incorporados aqui, sem renomear nada deste arquivo, no primeiro commit do export. jobStates e errorCodes derivados do código real (ver docs/piloto/ESTADO.md).",
+    "1.0: 46 plugs definidos no Claude Design (export pendente de commit)."
+  ],
+  "pending": {
+    "v1Plugs": "RESOLVIDO em 1.2 — export commitado (2113680)."
+  },
+  "conventions": {
+    "screenAttr": "data-screen",
+    "stateAttr": "data-state",
+    "plugAttr": "data-plug",
+    "plugFormat": "<tela>.<acao>",
+    "rules": [
+      "Todo elemento interativo tem data-plug com o nome exato deste arquivo.",
+      "A raiz de cada tela tem data-screen e data-state; todo estado listado é renderizável com dados fake.",
+      "Nomes idênticos no Claude Design e no código. Plug fora deste arquivo é achado, não invenção.",
+      "Estado é sempre cor + ícone + palavra. Ciano só em elemento interativo.",
+      "Medidas em JetBrains Mono, vírgula decimal, unidade m: 0,84 m · 2,41 m · 12,3 m (>= 10 m, 1 casa)."
+    ]
+  },
+  "rules": {
+    "todoInterativoTemPlug": "todo elemento interativo carrega data-plug de valor deste contrato; zero data-plug fora do contrato",
+    "plugPorItemDeLista": "em listas, o plug aplica-se a CADA item renderizado, com key = id do view model (nunca índice)",
+    "controlesDoPrototipo": "Fluxo/Estados, retrato/paisagem e reset são do protótipo do Design — não entram no contrato e não são convertidos",
+    "estadoSempreTripla": "estado comunica-se com cor + ícone + palavra (WCAG 1.4.1); ciano nunca significa estado; magenta nunca em UI operacional"
+  },
+  "routeMap": {
+    "nota": "rotas do export exigem modelo de Projeto (#38); até lá as telas vivem nas rotas REAIS:",
+    "entry": {
+      "alvo": "/p/:token",
+      "real": "/"
+    },
+    "capture": {
+      "alvo": "/p/:token/capturar",
+      "real": "/new"
+    },
+    "job": {
+      "alvo": "/p/:token/jobs/:jobId",
+      "real": "/scan/:id?token="
+    },
+    "viewer": {
+      "alvo": "/m/:mapId",
+      "real": "/scan/:id/viewer?token= (gate interno)"
+    },
+    "shared": {
+      "alvo": "/s/:shareToken",
+      "real": "/scan/:id?token= (mesmo token; dono≡convidado até #38)"
+    },
+    "admin": {
+      "alvo": "/admin",
+      "real": "/admin (cookie via /admin/login)"
+    },
+    "dev-states": {
+      "alvo": "/dev/states",
+      "real": "/dev/states (guard DEV)"
+    }
+  },
+  "screens": [
+    {
+      "id": "entry",
+      "route": "/p/:token",
+      "purpose": "Entrada do cliente pelo link do projeto, sem cadastro.",
+      "states": [
+        "loading",
+        "ready",
+        "empty",
+        "invalid-link",
+        "offline"
+      ],
+      "plugs": [
+        "entry.load",
+        "entry.capture.open",
+        "entry.map.open",
+        "entry.guide.toggle"
+      ]
+    },
+    {
+      "id": "capture",
+      "route": "/p/:token/capturar",
+      "purpose": "Gravar pelo navegador com upload progressivo enquanto grava.",
+      "states": [
+        "permission-prompt",
+        "permission-denied",
+        "unsupported",
+        "https-required",
+        "idle",
+        "recording",
+        "stopping",
+        "portrait-hint"
+      ],
+      "plugs": [
+        "capture.start",
+        "capture.stop",
+        "capture.torch",
+        "capture.fallback-file",
+        "capture.guide.dismiss"
+      ],
+      "limits": {
+        "maxDurationS": 120,
+        "minDurationS": 20,
+        "partMinBytes": 5242880,
+        "timesliceMs": 3000,
+        "audio": false
+      }
+    },
+    {
+      "id": "job",
+      "route": "/p/:token/jobs/:jobId",
+      "purpose": "Envio, fila, processamento e resultado de um job.",
+      "states": [
+        "uploading",
+        "upload-paused-offline",
+        "queued",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "stages": [
+        "extract",
+        "blur",
+        "reconstruct",
+        "fuse",
+        "publish"
+      ],
+      "errorCodes": [
+        "video-too-short",
+        "video-too-long",
+        "no-motion",
+        "gpu-unavailable",
+        "timeout",
+        "internal"
+      ],
+      "plugs": [
+        "job.poll",
+        "job.cancel",
+        "job.retry",
+        "job.map.open"
+      ]
+    },
+    {
+      "id": "viewer",
+      "route": "/m/:mapId",
+      "purpose": "Mapa 3D no toque: navegar, medir, anotar, buscar, camadas, compartilhar.",
+      "states": [
+        "loading-lod",
+        "ready",
+        "loading-full",
+        "tool-measure",
+        "tool-annotate",
+        "tool-search",
+        "layers",
+        "share",
+        "error"
+      ],
+      "plugs": [
+        "viewer.load",
+        "viewer.lod.toggle",
+        "measure.start",
+        "measure.point",
+        "measure.remove",
+        "annotate.start",
+        "annotate.photo",
+        "annotate.save",
+        "annotate.remove",
+        "search.query",
+        "search.focus",
+        "layers.toggle",
+        "share.create",
+        "share.copy",
+        "share.whatsapp",
+        "share.revoke",
+        "export.request"
+      ],
+      "layers": [
+        "cloud-lod",
+        "cloud-full",
+        "pins",
+        "objects",
+        "trajectory"
+      ]
+    },
+    {
+      "id": "shared",
+      "route": "/s/:shareToken",
+      "purpose": "Link público somente leitura, com validade.",
+      "states": [
+        "loading",
+        "ready",
+        "expired",
+        "revoked"
+      ],
+      "plugs": [
+        "shared.load",
+        "shared.search.query",
+        "shared.search.focus",
+        "shared.layers.toggle"
+      ]
+    },
+    {
+      "id": "admin",
+      "route": "/admin",
+      "purpose": "Operação do piloto pelo Vitor: projetos, jobs, custo, proveniência, links, limites.",
+      "states": [
+        "login",
+        "projects",
+        "project-detail",
+        "jobs",
+        "job-detail",
+        "links",
+        "config",
+        "confirm-destructive"
+      ],
+      "plugs": [
+        "admin.login",
+        "admin.project.create",
+        "admin.project.link.copy",
+        "admin.project.link.revoke",
+        "admin.job.filter",
+        "admin.job.open",
+        "admin.job.archive",
+        "admin.job.purge",
+        "admin.job.rerun",
+        "admin.link.revoke",
+        "admin.config.save",
+        "admin.export.request"
+      ]
+    },
+    {
+      "id": "dev-states",
+      "route": "/dev/states",
+      "purpose": "Só em DEV: renderiza cada estado de cada tela com dados fake, para QA e teste de cobertura.",
+      "states": [
+        "index"
+      ],
+      "plugs": []
+    }
+  ],
+  "extraPlugs": {
+    "capture.permission.request": {
+      "onde": "botão Permitir da tela de captura",
+      "fonte": "handoff §propostas"
+    },
+    "job.recapture": {
+      "onde": "Gravar de novo / Gravar novo mapa",
+      "fonte": "handoff §propostas"
+    },
+    "search.open": {
+      "onde": "botão Buscar da toolbar do viewer (search.query segue no input)",
+      "fonte": "handoff §propostas"
+    },
+    "shared.search.open": {
+      "onde": "botão Buscar na tela compartilhada",
+      "fonte": "handoff §propostas"
+    },
+    "layers.set": {
+      "onde": "linhas do painel de camadas (layers.toggle só abre o painel)",
+      "fonte": "handoff §propostas"
+    },
+    "viewer.pin.open": {
+      "onde": "toque num pino da nuvem",
+      "fonte": "handoff §propostas"
+    },
+    "admin.project.open": {
+      "onde": "linha da lista de projetos do admin",
+      "fonte": "handoff §propostas"
+    },
+    "admin.job.provenance.copy": {
+      "onde": "copiar proveniência do job no admin",
+      "fonte": "handoff §propostas"
+    },
+    "admin.nav.projects": {
+      "onde": "navegação do admin",
+      "fonte": "regra v1.1"
+    },
+    "admin.nav.jobs": {
+      "onde": "navegação do admin",
+      "fonte": "regra v1.1"
+    },
+    "admin.nav.links": {
+      "onde": "navegação do admin",
+      "fonte": "regra v1.1"
+    },
+    "admin.nav.config": {
+      "onde": "navegação do admin",
+      "fonte": "regra v1.1"
+    },
+    "annotate.tag.set": {
+      "onde": "chips de etiqueta na folha do pino (Viewer.dc.html:112-113, handler tg.pick)",
+      "fonte": "issue #40"
+    },
+    "search.example": {
+      "onde": "exemplos de busca (Viewer.dc.html:131, Shared.dc.html:93, handler ex.go)",
+      "fonte": "issue #40"
+    },
+    "share.validity.set": {
+      "onde": "validade do link 1/7/30 dias (Viewer.dc.html:169-170, handler dop.pick)",
+      "fonte": "issue #40"
+    }
+  },
+  "config": {
+    "usdBrlRate": {
+      "tipo": "number",
+      "default": 5.4,
+      "nota": "cotação exibida no admin — campo de config, nunca constante"
+    },
+    "gpuUsdPerS": {
+      "tipo": "number",
+      "default": 0.00086,
+      "nota": "tarifa GPU US$/s — config, nunca constante"
+    },
+    "costAlertUsd": {
+      "tipo": "number",
+      "default": 0.75,
+      "nota": "limiar de alerta de custo por job (já existe como env COST_ALERT_USD)"
+    }
+  },
+  "jobStates": [
+    "uploading",
+    "upload-paused-offline",
+    "queued",
+    "processing",
+    "completed",
+    "failed",
+    "cancelled"
+  ],
+  "jobStateNotes": {
+    "processing": "carrega stage (etapa nomeada do worker: download, normalize, extract, blur, infer, convert, upload) — progresso é a ETAPA, nunca porcentagem inventada",
+    "mapeamentoBackend": "estados do banco (schema.prisma ScanStatus) → contrato: recording+uploading→uploading; uploaded+queued→queued; processing+postprocessing→processing; done→completed; error→failed; cancelled só existe no contrato (fluxo futuro de cancelamento)",
+    "stagesReais": "as etapas EXIBIDAS vêm do worker real (download, normalize, extract, blur, infer, convert, upload — lib/piloto/job-state.ts); os 5 stages do export (extract/blur/reconstruct/fuse/publish) são o vocabulário de exibição e mapeiam: download+normalize+extract→extract, blur→blur, infer→reconstruct, convert→fuse, upload→publish"
+  },
+  "errorCodes": {
+    "invalid-body": "400 das rotas (JSON inválido / zod) — UI genérica, recarregar",
+    "not-found": "404: scan inexistente = token errado = link vencido (indistinguíveis por design)",
+    "unauthorized-webhook": "401 do tráfego interno (webhook RunPod / detections POST)",
+    "limit-exceeded": "tetos do produto: 429 diário, 413 partes, 422 duração, errorMsg de MB",
+    "unsupported-media": "415: MIME fora de MP4/WebM/MOV",
+    "upload-conflict": "409 InvalidStateError (upload fechado / estado não aceita)",
+    "dispatch-failed": "vídeo chegou, disparo falhou — RECUPERÁVEL sem regravar (CTA distinto)",
+    "processing-failed": "job FAILED do worker — mensagem de produto; string técnica só em log/admin",
+    "upload-abandoned": "gravação abandonada (abortUpload)",
+    "viewer-load-failed": "falha client-side ao carregar nuvem/calibração",
+    "internal-error": "500 catch-all das rotas",
+    "unknown": "fallback LEGÍVEL de mapeamento — nunca tela branca",
+    "_pendentes_do_export": "video-too-short, video-too-long, no-motion, gpu-unavailable, timeout — entram quando houver emissor real (validações de captura/timeout do job); por ora mapeiam para limit-exceeded/processing-failed"
+  },
+  "viewModels": {
+    "Project": {
+      "id": "string",
+      "name": "string",
+      "captureUrl": "string",
+      "maps": "Map[]"
+    },
+    "Map": {
+      "id": "string",
+      "jobId": "string",
+      "name": "string",
+      "createdAt": "iso",
+      "nPoints": "int",
+      "state": "queued|running|completed|failed"
+    },
+    "Job": {
+      "id": "string",
+      "projectId": "string",
+      "state": "queued|running|completed|failed|cancelled",
+      "stage": "extract|blur|reconstruct|fuse|publish|null",
+      "progress": "0..1",
+      "queuePosition": "int|null",
+      "elapsedS": "int",
+      "videoDurationS": "int",
+      "uploadedBytes": "int",
+      "totalBytes": "int",
+      "error": {
+        "code": "video-too-short|video-too-long|no-motion|gpu-unavailable|timeout|internal",
+        "message": "string"
+      },
+      "result": {
+        "cloudLodUrl": "string",
+        "cloudFullUrl": "string",
+        "nPoints": "int",
+        "nKeyframes": "int",
+        "gpuSeconds": "int",
+        "costUsd": "number"
+      },
+      "provenance": {
+        "workerCommit": "sha",
+        "engineCommit": "sha",
+        "imageSha": "sha",
+        "weightsSha256": "sha"
+      }
+    },
+    "Measurement": {
+      "id": "string",
+      "mapId": "string",
+      "a": "[x,y,z]",
+      "b": "[x,y,z]",
+      "meters": "number",
+      "createdAt": "iso"
+    },
+    "Annotation": {
+      "id": "string",
+      "mapId": "string",
+      "position": "[x,y,z]",
+      "photoUrl": "string|null",
+      "note": "string",
+      "tag": "string|null",
+      "createdAt": "iso"
+    },
+    "SearchResult": {
+      "query": "string",
+      "label": "string",
+      "count": "int",
+      "hits": [
+        {
+          "id": "string",
+          "position": "[x,y,z]"
+        }
+      ]
+    },
+    "ShareLink": {
+      "id": "string",
+      "mapId": "string",
+      "url": "string",
+      "expiresAt": "iso",
+      "readOnly": true,
+      "views": "int",
+      "revoked": "bool"
+    },
+    "Config": {
+      "maxDurationS": "int",
+      "maxSizeMb": "int",
+      "gpuUsdPerS": "number",
+      "defaultLinkDays": "int",
+      "rawVideoTtlDays": "int (documentado, desativado no piloto)"
+    }
+  }
+}
