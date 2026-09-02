@@ -47,6 +47,7 @@ a obrigação de abrir o código. Não é uma questão de gosto por licenças.
 | eslint | MIT |
 | prettier | MIT |
 | vitest | MIT |
+| @testing-library/react (dev) | MIT |
 
 ## Worker (`worker/`)
 

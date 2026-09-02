@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { StateChip } from "@/components/piloto/StateChip";
 import { devStatesEnabled } from "@/lib/piloto/dev-flag";
+import { EntryClient } from "@/app/entry/EntryClient";
 import { ERROR_CODES, ERROR_MESSAGES } from "@/lib/piloto/error-codes";
 import { PROCESSING_STAGES, type JobState } from "@/lib/piloto/job-state";
 
@@ -22,6 +23,13 @@ const FAKE_STATES: JobState[] = [
   { kind: "failed", code: "processing-failed" },
   { kind: "cancelled" },
 ];
+
+const ENTRY_STATES = ["loading", "ready", "empty", "invalid-link", "offline"] as const;
+const ENTRY_MAPS = [
+  { id: "m1", name: "Piso térreo", date: "2026-08-12", st: "done", href: "#" },
+  { id: "m2", name: "Mezanino", date: "2026-09-02", st: "processing", href: "#" },
+  { id: "m3", name: "Doca 3", date: "2026-09-01", st: "failed", href: "#" },
+] as const;
 
 export default function DevStatesPage() {
   if (!devStatesEnabled()) notFound();
@@ -46,6 +54,24 @@ export default function DevStatesPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-mist">tela entry — 5 estados</h2>
+        <div className="space-y-6">
+          {ENTRY_STATES.map((st) => (
+            <div key={st}>
+              <p className="mb-1 font-mono text-xs text-faint">entry · {st}</p>
+              <div className="h-[520px] overflow-hidden rounded-xl border border-line">
+                <EntryClient
+                  state={st}
+                  projectName="Galpão Vila Anchieta"
+                  maps={[...ENTRY_MAPS]}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section data-screen="errors">
