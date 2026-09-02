@@ -11,7 +11,10 @@
  * da tela correspondente.
  */
 
-import contract from "../../../../docs/piloto/ui-contract.json";
+// Cópia VIVA do contrato dentro do app: o build do Railway usa rootDirectory
+// apps/web e não enxerga docs/ (deploy dos merges #48/#49 quebrou nisso).
+// O teste de sincronização abaixo impede divergência com a canônica.
+import contract from "../lib/piloto/ui-contract.json";
 
 type Screen = { id: string; plugs: string[]; states: string[] };
 
