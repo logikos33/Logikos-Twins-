@@ -7,6 +7,8 @@ import { calibrationFactor, distance, formatMeasurement } from "@/lib/viewer/sca
 import type { ScaleInfo, Vec3 } from "@/lib/viewer/scale";
 import { nearestKeyframe, type PosesFile } from "@/lib/viewer/poses";
 import { LogoSymbol } from "@/components/Logo";
+import { notImplemented } from "@/lib/piloto/plugs";
+import { t as ts } from "@/lib/piloto/strings";
 import {
   IconBack,
   IconCube,
@@ -80,6 +82,8 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
   const engineRef = useRef<ViewerEngine | null>(null);
 
   const [progress, setProgress] = useState(0);
+  // Tamanho REAL da nuvem carregada (Content-Length do artefato — contrato).
+  const [cloudMb, setCloudMb] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [tool, setTool] = useState<Tool>("navigate");
@@ -123,6 +127,9 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
   const [matchIdx, setMatchIdx] = useState(0);
 
   const posesRef = useRef<PosesFile | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  // Etiqueta do pin em criação (annotate.tag.set — vai no data JSON, sem migration).
+  const [pinTag, setPinTag] = useState<string | null>(null);
   // O callback de pick do engine vive fora do ciclo do React; a ferramenta ativa
   // chega até ele por ref, atualizada em efeito (não durante o render — regra dos hooks).
   const toolRef = useRef<Tool>(tool);
@@ -151,6 +158,12 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
 
     (async () => {
       try {
+        void fetch(cloudUrl, { method: "HEAD" })
+          .then((r) => {
+            const len = Number(r.headers.get("content-length"));
+            if (Number.isFinite(len) && len > 0) setCloudMb(len / 1024 / 1024);
+          })
+          .catch(() => undefined);
         await engine.loadCloud(cloudUrl, setProgress);
         const poses = (await (await fetch(posesUrl)).json()) as PosesFile;
         posesRef.current = poses;
@@ -284,7 +297,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         shareToken: token,
         type: "pin",
         position: pendingPin,
-        data: { text: pinText || undefined, keyframe },
+        data: { text: pinText || undefined, keyframe, tag: pinTag ?? undefined },
       }),
     });
     if (res.ok) {
@@ -293,7 +306,8 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
     }
     setPendingPin(null);
     setPinText("");
-  }, [pendingPin, pinText, scanId, token]);
+    setPinTag(null);
+  }, [pendingPin, pinText, pinTag, scanId, token]);
 
   /** Voa até uma detecção e abre o cartão de evidência. */
   const openEvidence = useCallback((list: SemanticDetection[], idx: number) => {
@@ -347,9 +361,9 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
 
   const scaleChip =
     !scale || scale.method === "none"
-      ? { text: "escala — definir", dot: "bg-warning" }
+      ? { text: ts("viewer", "scaleDefine"), dot: "bg-warning" }
       : {
-          text: `escala ✓ ${scale.method === "aruco" ? "aruco" : "manual"}`,
+          text: scale.method === "aruco" ? ts("viewer", "scaleAruco") : ts("viewer", "scaleManual"),
           dot: "bg-success",
         };
 
@@ -362,17 +376,36 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
 
   const hud = hudHidden ? "pointer-events-none opacity-0" : "opacity-100";
 
+  // Estado do CONTRATO derivado do estado real (v1.2): erro/carregando vencem;
+  // depois a ferramenta/painel ativo; senão ready.
+  const effState = loadError
+    ? "error"
+    : !ready
+      ? "loading-lod"
+      : layersOpen
+        ? "layers"
+        : searchFocus
+          ? "tool-search"
+          : tool === "measure"
+            ? "tool-measure"
+            : tool === "pin" || pendingPin || openPin
+              ? "tool-annotate"
+              : "ready";
+
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-ink">
-      <div ref={containerRef} className="absolute inset-0" />
+    <div
+      data-screen="viewer"
+      data-state={effState}
+      data-plug={effState === "error" ? undefined : "viewer.load"}
+      className="relative h-dvh w-full overflow-hidden bg-ink"
+    >
+      <div ref={containerRef} data-plug="measure.point" className="absolute inset-0" />
 
       {/* Carregamento — nunca tela preta (contrato §3.3) */}
       {!ready && !loadError && (
         <div className="grid-grego absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-ink px-6">
           <LogoSymbol className="h-14 w-14 animate-pulse text-signal" />
-          <p className="mt-2 font-display text-lg font-medium">
-            Carregando a nuvem de pontos…
-          </p>
+          <p className="mt-2 font-display text-lg font-medium">{ts("viewer", "loadingTitle")}</p>
           <p className="font-mono text-[13px] text-cyan">{progress}%</p>
           <div className="h-1 w-64 max-w-full overflow-hidden rounded-full bg-surface-2">
             <div
@@ -380,28 +413,27 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-xs text-mist">o mapa abre direto no navegador</p>
+          <p className="text-xs text-mist">{ts("viewer", "loadingNote")}</p>
         </div>
       )}
       {loadError && (
         <div className="grid-grego absolute inset-0 z-20 flex items-center justify-center p-6">
           <div className="max-w-sm text-center">
-            <span className="mx-auto grid h-[70px] w-[70px] place-items-center rounded-full border-[1.5px] border-magenta/50">
-              <IconX className="h-7 w-7 text-magenta" />
+            <span className="mx-auto grid h-[70px] w-[70px] place-items-center rounded-full border-[1.5px] border-danger/60">
+              <IconX className="h-7 w-7 text-danger" />
             </span>
-            <h2 className="mt-4 font-display text-lg font-medium">
-              Não foi possível carregar o mapa
-            </h2>
+            <h2 className="mt-4 font-display text-lg font-medium">{ts("viewer", "errTitle")}</h2>
             <p className="mt-2 text-sm leading-relaxed text-mist">{loadError}</p>
             <p className="mt-1 text-sm text-mist">
-              <b className="font-medium text-signal">O link continua válido</b> — tente de
-              novo.
+              <b className="font-medium text-signal">{ts("viewer", "errLinkOk")}</b>{" "}
+              {ts("viewer", "errRetryTail")}
             </p>
             <button
+              data-plug="viewer.load"
               onClick={() => window.location.reload()}
               className="mt-4 rounded-md bg-cyan px-6 py-3 font-semibold text-ink transition hover:bg-cyan-deep"
             >
-              Tentar de novo
+              {ts("common", "retry")}
             </button>
           </div>
         </div>
@@ -413,13 +445,13 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
       >
         <Link
           href="/"
-          aria-label="Voltar"
+          aria-label={ts("viewer", "back")}
           className="grid h-(--tap) w-(--tap) flex-none place-items-center rounded-full bg-graphite/55 backdrop-blur-sm"
         >
           <IconBack className="h-[21px] w-[21px]" />
         </Link>
         <div className="min-w-0">
-          <b className="block truncate font-display text-[15px] font-medium">Mapa 3D</b>
+          <b className="block truncate font-display text-[15px] font-medium">{ts("viewer", "title")}</b>
         </div>
         <span className="flex-1" />
         <button
@@ -432,18 +464,30 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
           className="inline-flex h-[34px] flex-none items-center gap-1.5 rounded-full border border-line bg-graphite/60 px-3 font-mono text-[11px] whitespace-nowrap backdrop-blur-sm"
           title={
             !scale || scale.method === "none"
-              ? "Sem escala: meça algo conhecido e toque em “Esta distância eu conheço”."
+              ? ts("viewer", "scaleTipNone")
               : scale.method === "aruco"
-                ? "Escala automática pelo marcador ArUco impresso."
-                : "Escala definida por medida de referência."
+                ? ts("viewer", "scaleTipAruco")
+                : ts("viewer", "scaleTipManual")
           }
         >
           <i className={`h-[7px] w-[7px] rounded-full ${scaleChip.dot}`} />
           {scaleChip.text}
         </button>
         <button
+          data-plug="viewer.lod.toggle"
+          onClick={() => notImplemented("viewer.lod.toggle", 47)({})}
+          aria-label={ts("viewer", "lodAria")}
+          title={ts("viewer", "lodFullSoon")}
+          className="inline-flex h-[34px] flex-none items-center rounded-full border border-line bg-graphite/60 px-3 font-mono text-[11px] whitespace-nowrap backdrop-blur-sm"
+        >
+          {cloudMb != null
+            ? ts("viewer", "lodChip").replace("{mb}", cloudMb.toFixed(1).replace(".", ","))
+            : "…"}
+        </button>
+        <button
+          data-plug="share.create"
           onClick={shareLink}
-          aria-label="Compartilhar"
+          aria-label={ts("viewer", "share")}
           className="grid h-(--tap) w-(--tap) flex-none place-items-center rounded-full bg-graphite/55 backdrop-blur-sm"
         >
           <IconShare className="h-[20px] w-[20px]" />
@@ -453,7 +497,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
             setHudHidden(true);
             closeSheets();
           }}
-          aria-label="Esconder interface"
+          aria-label={ts("viewer", "hideUi")}
           className="grid h-(--tap) w-(--tap) flex-none place-items-center rounded-full bg-graphite/55 backdrop-blur-sm"
         >
           <IconEyeOff className="h-[20px] w-[20px]" />
@@ -462,7 +506,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
 
       {shareFeedback && (
         <p className="absolute top-16 left-1/2 z-30 -translate-x-1/2 rounded-[10px] border border-line-strong border-l-[3px] border-l-cyan bg-surface-2 px-4 py-2.5 text-[13px]">
-          Link copiado. Quem receber vê o mapa direto no navegador.
+          {ts("viewer", "shareCopied")}
         </p>
       )}
 
@@ -470,7 +514,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
       {hudHidden && (
         <button
           onClick={() => setHudHidden(false)}
-          aria-label="Mostrar interface"
+          aria-label={ts("viewer", "showUi")}
           className="absolute right-2.5 bottom-[calc(env(safe-area-inset-bottom,0px)+12px)] z-10 grid h-(--tap) w-(--tap) place-items-center rounded-full bg-graphite/60 text-mist"
         >
           <IconEye className="h-5 w-5" />
@@ -492,14 +536,24 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
               setSearchFocus(false);
             }}
           >
-            <IconSearch className="h-[17px] w-[17px] flex-none text-mist" />
+            <button
+              type="button"
+              data-plug="search.open"
+              aria-label={ts("viewer", "searchOpenAria")}
+              onClick={() => searchInputRef.current?.focus()}
+              className="grid h-9 w-6 flex-none place-items-center text-mist"
+            >
+              <IconSearch className="h-[17px] w-[17px]" />
+            </button>
             <input
+              ref={searchInputRef}
+              data-plug="search.query"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onFocus={() => setSearchFocus(true)}
               onBlur={() => setTimeout(() => setSearchFocus(false), 200)}
-              placeholder="onde está…?"
-              aria-label="Buscar objeto no mapa"
+              placeholder={ts("viewer", "searchPlaceholder")}
+              aria-label={ts("viewer", "searchAria")}
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-mist"
             />
           </form>
@@ -507,9 +561,10 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
             <div className="mt-2 flex flex-wrap gap-1.5">
               {uniqueLabels
                 .filter((l) => !search.trim() || l.includes(search.trim().toLowerCase()))
-                .map((label) => (
+                .map((label, i) => (
                   <button
                     key={label}
+                    data-plug={search.trim() ? (i === 0 ? "search.focus" : undefined) : "search.example"}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       setSearch(label);
@@ -538,7 +593,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         <p
           className={`absolute top-[68px] left-1/2 z-10 hidden -translate-x-1/2 rounded-full border border-line bg-graphite/80 px-3 py-1.5 font-mono text-[11px] whitespace-nowrap text-mist backdrop-blur-sm transition-opacity sm:block ${hud}`}
         >
-          voar: WASD + QE · arraste para olhar
+          {ts("viewer", "flyHint")}
         </p>
       )}
 
@@ -547,7 +602,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         className={`absolute top-[68px] right-2.5 z-10 flex flex-col items-end gap-2 transition-opacity duration-300 ${hud}`}
       >
         <button
-          aria-label="Modo de câmera"
+          aria-label={ts("viewer", "camMode")}
           onClick={() => {
             setCamOpen((v) => !v);
             setCutOpen(false);
@@ -560,9 +615,9 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
           <div className="flex flex-col gap-1 rounded-2xl border border-line bg-graphite/95 p-1.5 backdrop-blur-md">
             {(
               [
-                ["orbit", "Órbita", IconOrbit],
-                ["fly", "Voar", IconFly],
-                ["top", "Planta", IconPlan],
+                ["orbit", ts("viewer", "camOrbit"), IconOrbit],
+                ["fly", ts("viewer", "camFly"), IconFly],
+                ["top", ts("viewer", "camTop"), IconPlan],
               ] as const
             ).map(([m, label, Icon]) => (
               <button
@@ -584,7 +639,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
           </div>
         )}
         <button
-          aria-label="Corte por altura"
+          aria-label={ts("viewer", "cutAria")}
           onClick={() => {
             setCutOpen((v) => !v);
             setCamOpen(false);
@@ -595,7 +650,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         </button>
         {cutOpen && (
           <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-graphite/95 px-2 py-3 backdrop-blur-md">
-            <span className="font-mono text-[9px] tracking-wider text-mist">teto</span>
+            <span className="font-mono text-[9px] tracking-wider text-mist">{ts("viewer", "cutTop")}</span>
             <input
               type="range"
               min={0.05}
@@ -603,13 +658,13 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
               step={0.01}
               value={clip}
               onChange={(e) => setClip(Number(e.target.value))}
-              aria-label="Altura do corte"
+              aria-label={ts("viewer", "cutAria")}
               className="h-[150px] w-7 cursor-grab accent-cyan"
               style={{ writingMode: "vertical-lr", direction: "rtl" }}
             />
-            <span className="font-mono text-[9px] tracking-wider text-mist">chão</span>
+            <span className="font-mono text-[9px] tracking-wider text-mist">{ts("viewer", "cutFloor")}</span>
             <span className="font-mono text-[11px] text-cyan">
-              {clip >= 0.999 ? "sem corte" : `${Math.round(clip * 100)}%`}
+              {clip >= 0.999 ? ts("viewer", "cutNone") : `${Math.round(clip * 100)}%`}
             </span>
           </div>
         )}
@@ -620,14 +675,15 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         className={`absolute bottom-[calc(env(safe-area-inset-bottom,0px)+14px)] left-2.5 z-10 flex flex-col gap-2 transition-opacity duration-300 ${hud}`}
       >
         <button
-          aria-label="Camadas"
+          data-plug="layers.toggle"
+          aria-label={ts("viewer", "layers")}
           onClick={() => setLayersOpen((v) => !v)}
           className={stkBtn(layersOpen)}
         >
           <IconLayers className="h-5 w-5" />
         </button>
         <button
-          aria-label="Replay do percurso"
+          aria-label={ts("viewer", "replayAria")}
           onClick={() => {
             const engine = engineRef.current;
             if (!engine) return;
@@ -645,23 +701,24 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
       {layersOpen && (
         <div className="absolute inset-x-0 bottom-0 z-20 max-h-[45%] overflow-auto rounded-t-3xl border-t border-line-strong bg-graphite px-5 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] shadow-sheet sm:right-4 sm:bottom-4 sm:left-auto sm:w-[340px] sm:rounded-3xl sm:border">
           <button
-            aria-label="Fechar camadas"
+            aria-label={ts("viewer", "layersClose")}
             onClick={() => setLayersOpen(false)}
             className="mx-auto mb-3 block h-6 w-full"
           >
             <i className="mx-auto block h-1 w-9 rounded-full bg-surface-2" />
           </button>
-          <h3 className="font-display text-[17px] font-medium">Camadas</h3>
+          <h3 className="font-display text-[17px] font-medium">{ts("viewer", "layers")}</h3>
           {(
             [
-              ["cloud", "Nuvem de pontos"],
-              ["trajectory", "Trajeto da câmera"],
-              ["pins", "Pins de anotação"],
-              ["detections", "Detecções"],
+              ["cloud", ts("viewer", "layerCloud")],
+              ["trajectory", ts("viewer", "layerTrajectory")],
+              ["pins", ts("viewer", "layerPins")],
+              ["detections", ts("viewer", "layerDetections")],
             ] as const
           ).map(([key, label]) => (
             <label
               key={key}
+              data-plug="layers.set"
               className="flex min-h-(--tap) cursor-pointer items-center justify-between text-sm"
             >
               {label}
@@ -704,7 +761,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         <div className="absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+124px)] z-[15] flex gap-3 rounded-lg border border-line bg-graphite/95 p-2.5 shadow-card backdrop-blur-md sm:top-[120px] sm:right-4 sm:bottom-auto sm:left-auto sm:w-[300px] sm:flex-col">
           {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada dinâmica */}
           <img
-            alt={`Evidência: ${openDetection.label}`}
+            alt={ts("viewer", "evidenceAlt").replace("{label}", openDetection.label)}
             src={`/api/scans/${scanId}/keyframes/${openDetection.frameIdx}?token=${encodeURIComponent(token)}`}
             className="h-[74px] w-[104px] flex-none rounded-[10px] border border-line object-cover sm:h-auto sm:w-full"
           />
@@ -719,17 +776,19 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
                 {matches.length > 1 && (
                   <span className="font-normal text-mist">
                     {" "}
-                    · {matchIdx + 1} de {matches.length}
+                    · {ts("viewer", "ofN")
+                      .replace("{i}", String(matchIdx + 1))
+                      .replace("{n}", String(matches.length))}
                   </span>
                 )}
               </span>
             </p>
             <p className="mt-0.5 font-mono text-[11px] text-mist">
-              confiança{" "}
+              {ts("viewer", "confidence")}{" "}
               <b className="font-medium text-cyan">
                 {(openDetection.score * 100).toFixed(0)}%
               </b>{" "}
-              · quadro {openDetection.frameIdx}
+              · {ts("viewer", "frame")} {openDetection.frameIdx}
             </p>
             {matches.length > 1 && (
               <div className="mt-auto flex gap-1.5 pt-1.5">
@@ -737,13 +796,13 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
                   onClick={() => openEvidence(matches, (matchIdx + 1) % matches.length)}
                   className="h-[34px] rounded-lg border border-line-strong px-3 font-mono text-xs transition hover:border-cyan hover:text-cyan"
                 >
-                  próxima ›
+                  {ts("viewer", "nextMatch")}
                 </button>
               </div>
             )}
           </div>
           <button
-            aria-label="Fechar"
+            aria-label={ts("viewer", "closeAria")}
             onClick={() => {
               setOpenDetection(null);
               setMatches([]);
@@ -760,8 +819,9 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
         <div className="absolute top-[68px] left-1/2 z-10 max-w-[92vw] -translate-x-1/2 rounded-lg border border-cyan-deep/60 bg-graphite/95 px-4 py-3 text-sm backdrop-blur-md">
           {measurePts.length < 2 ? (
             <p className="text-mist">
-              Toque em {measurePts.length === 0 ? "dois pontos" : "mais um ponto"} da
-              nuvem
+              {measurePts.length === 0
+                ? ts("viewer", "measureTapTwo")
+                : ts("viewer", "measureTapMore")}
             </p>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
@@ -773,7 +833,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
                   className="rounded-[10px] bg-cyan px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
                   onClick={() => setCalibrating(true)}
                 >
-                  Esta distância eu conheço
+                  {ts("viewer", "iKnowThis")}
                 </button>
               )}
               {calibrating && (
@@ -781,7 +841,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
                   <input
                     autoFocus
                     inputMode="decimal"
-                    placeholder="metros reais"
+                    placeholder={ts("viewer", "metersReal")}
                     value={calibValue}
                     onChange={(e) => setCalibValue(e.target.value)}
                     className="w-24 rounded-[10px] border border-line bg-surface-2 px-2.5 py-1.5 font-mono text-sm outline-none focus:border-cyan"
@@ -790,15 +850,16 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
                     className="rounded-[10px] bg-cyan px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
                     onClick={() => void saveCalibration()}
                   >
-                    Aplicar
+                    {ts("viewer", "apply")}
                   </button>
                 </span>
               )}
               <button
+                data-plug="measure.remove"
                 className="min-h-9 font-mono text-xs text-mist underline decoration-dotted underline-offset-2"
                 onClick={() => setMeasurePts([])}
               >
-                limpar
+                {ts("viewer", "clear")}
               </button>
             </div>
           )}
@@ -807,26 +868,53 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
 
       {/* ── Pin em criação ── */}
       {pendingPin && (
-        <div className="absolute top-[68px] left-1/2 z-10 flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-lg border border-line bg-graphite/95 px-3.5 py-3 text-sm backdrop-blur-md">
-          <input
-            autoFocus
-            placeholder="o que há aqui?"
-            value={pinText}
-            onChange={(e) => setPinText(e.target.value)}
-            className="w-44 rounded-[10px] border border-line bg-surface-2 px-2.5 py-1.5 text-sm outline-none focus:border-cyan"
-          />
-          <button
-            className="rounded-[10px] bg-cyan px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
-            onClick={() => void savePin()}
+        <div className="absolute top-[68px] left-1/2 z-10 flex max-w-[92vw] -translate-x-1/2 flex-col gap-2 rounded-lg border border-line bg-graphite/95 px-3.5 py-3 text-sm backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <input
+              autoFocus
+              placeholder={ts("viewer", "pinPlaceholder")}
+              value={pinText}
+              onChange={(e) => setPinText(e.target.value)}
+              className="w-44 rounded-[10px] border border-line bg-surface-2 px-2.5 py-1.5 text-sm outline-none focus:border-cyan"
+            />
+            <button
+              data-plug="annotate.save"
+              className="rounded-[10px] bg-cyan px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-cyan-deep"
+              onClick={() => void savePin()}
+            >
+              {ts("viewer", "savePin")}
+            </button>
+            <button
+              data-plug="annotate.remove"
+              className="min-h-9 font-mono text-xs text-mist underline decoration-dotted underline-offset-2"
+              onClick={() => {
+                setPendingPin(null);
+                setPinTag(null);
+              }}
+            >
+              {ts("viewer", "cancelLower")}
+            </button>
+          </div>
+          <div
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label={ts("viewer", "tagAria")}
           >
-            Salvar pin
-          </button>
-          <button
-            className="min-h-9 font-mono text-xs text-mist underline decoration-dotted underline-offset-2"
-            onClick={() => setPendingPin(null)}
-          >
-            cancelar
-          </button>
+            {ts("viewer", "tags").map((tag) => (
+              <button
+                key={tag}
+                data-plug="annotate.tag.set"
+                onClick={() => setPinTag(pinTag === tag ? null : tag)}
+                className={`h-8 rounded-full border px-3 text-xs transition ${
+                  pinTag === tag
+                    ? "border-cyan bg-cyan/15 text-cyan"
+                    : "border-line text-mist hover:border-line-strong"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -834,9 +922,11 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
       {openPin && (
         <div className="absolute bottom-[calc(env(safe-area-inset-bottom,0px)+124px)] left-1/2 z-[15] w-[min(300px,92vw)] -translate-x-1/2 rounded-lg border border-line bg-graphite/95 p-3 shadow-card backdrop-blur-md">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-medium">{openPin.data?.text ?? "Sem descrição"}</p>
+            <p className="text-sm font-medium">
+              {openPin.data?.text ?? ts("viewer", "pinNoText")}
+            </p>
             <button
-              aria-label="Fechar"
+              aria-label={ts("viewer", "closeAria")}
               className="grid h-9 w-9 flex-none place-items-center rounded-lg text-mist hover:text-signal"
               onClick={() => setOpenPin(null)}
             >
@@ -847,12 +937,13 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
             <>
               {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada dinâmica; next/image não otimiza storage externo */}
               <img
-                alt="Foto do local anotado"
+                data-plug="annotate.photo"
+                alt={ts("viewer", "pinPhotoAlt")}
                 src={`/api/scans/${scanId}/keyframes/${openPin.data.keyframe}?token=${encodeURIComponent(token)}`}
                 className="mt-2 w-full rounded-[10px] border border-line"
               />
               <p className="mt-1.5 font-mono text-[10px] text-faint">
-                foto do keyframe mais próximo
+                {ts("viewer", "pinPhotoNote")}
               </p>
             </>
           )}
@@ -870,6 +961,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
               .map((a) => (
                 <button
                   key={a.id}
+                  data-plug="viewer.pin.open"
                   onClick={() => setOpenPin(openPin?.id === a.id ? null : a)}
                   className={`inline-flex h-9 flex-none items-center gap-1.5 rounded-full border px-3 text-[13px] backdrop-blur-sm transition ${
                     openPin?.id === a.id
@@ -893,7 +985,7 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
                   : "border-line bg-graphite/80 text-signal"
               }`}
             >
-              todas{" "}
+              {ts("viewer", "allChips")}{" "}
               <b className="font-mono text-[11px] font-normal text-mist">
                 {detections.length}
               </b>
@@ -929,25 +1021,26 @@ export function ScanViewer({ scanId, token, cloudUrl, posesUrl, initialScale }: 
       <div
         className={`absolute bottom-[calc(env(safe-area-inset-bottom,0px)+14px)] left-1/2 z-10 flex -translate-x-1/2 rounded-full border border-line bg-graphite/85 p-1 backdrop-blur-md transition-opacity duration-300 ${hud}`}
         role="tablist"
-        aria-label="Ferramentas"
+        aria-label={ts("viewer", "dockAria")}
       >
         {(
           [
-            ["navigate", "navegar", IconOrbit],
-            ["measure", "medir", IconRuler],
-            ["pin", "anotar", IconPin],
+            ["navigate", ts("viewer", "dockNavigate"), IconOrbit, undefined],
+            ["measure", ts("viewer", "dockMeasure"), IconRuler, "measure.start"],
+            ["pin", ts("viewer", "dockPin"), IconPin, "annotate.start"],
           ] as const
-        ).map(([t, label, Icon]) => (
+        ).map(([tl, label, Icon, plug]) => (
           <button
-            key={t}
+            key={tl}
             role="tab"
-            aria-selected={tool === t}
+            aria-selected={tool === tl}
+            data-plug={plug}
             onClick={() => {
-              setTool(t);
-              if (t === "measure") setMeasurePts([]);
+              setTool(tl);
+              if (tl === "measure") setMeasurePts([]);
             }}
             className={`flex h-[52px] w-[66px] flex-col items-center justify-center gap-0.5 rounded-full transition ${
-              tool === t ? "bg-cyan text-ink" : "text-mist hover:text-signal"
+              tool === tl ? "bg-cyan text-ink" : "text-mist hover:text-signal"
             }`}
           >
             <Icon className="h-5 w-5" />
