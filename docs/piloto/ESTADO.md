@@ -49,6 +49,8 @@ Três sintéticos **verticais 1080×1920** (mesma orientação do celular que ge
 
 **Tempo de ponta a ponta com worker QUENTE (medido, 2026-09-02, 15 s de vídeo):** upload 2,7 s (6 MB) → complete 5,4 s → job 66,4 s → **total ~1 min 15 s**. Com worker frio e DC folgado: ~8,4 min. Com DC apertado (hoje): **indeterminado — mais de 1 h sem GPU**.
 
+**`/livez` × `origin/main` — leitura correta:** ao fim da rodada o `/livez` reporta `1ddb57c` (merge do #60) e a main está em `6977ab4`. **Não é deploy quebrado**: `watchPatterns: ["apps/web/**"]` faz o Railway marcar `SKIPPED` em PRs que só tocam `docs/` (#63 e #65 são docs-only; conferido em `list-deployments`: SKIPPED, e o #60 SUCCESS). **A regra do aceite passa a ser: `/livez` tem de bater o último commit que tocou `apps/web/**`, não o HEAD da main.** Divergência sem isso vira alarme falso toda rodada com PR de documentação.
+
 **Estado do endpoint ao fim da rodada — PROVADO** por `GET rest.runpod.io/v1/endpoints/mfnx103w05drr5`: `workersMin: 0`, `workersMax: 1`, `idleTimeout: 5`, volume `upp3c2jg6i`. Health ao fim: fila 0, 18 jobs completos, 0 falhas.
 
 **Aberto por número:** #61 watchdog geração 2 · #62 mínimo no ao vivo · **#64 restringir gpuIds às classes de 48 GB** (o 120 s passa de 24 GB) · #37 busca semântica · #41 cores · #47 resto do viewer.
