@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Space Grotesk';src:url('fonts/spacegrotesk.woff2') format('woff2');font-weight:300 700;font-display:swap}
+@font-face{font-family:'Inter';src:url('fonts/inter.woff2') format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('fonts/jbmono.woff2') format('woff2');font-weight:100 800;font-display:swap}
+html,body{height:100%}
+body{margin:0;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#0091AD}
+</style>
+</helmet>
+<div data-screen="entry" data-state="{{ state }}" data-plug="entry.load" style="width:100%;height:100%;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif;position:relative;overflow:hidden;display:flex;flex-direction:column">
+  <sc-if value="{{ isOffline }}" hint-placeholder-val="{{ false }}">
+    <div style="height:38px;background:#FFB020;color:#0A0A0F;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12.5px;font-weight:600;flex:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l16 16M8.5 8.7A8.4 8.4 0 0 0 4 12m4.9 3.2a4.4 4.4 0 0 1 6.2 0M12 8a8.4 8.4 0 0 1 8 4"></path><circle cx="12" cy="18.6" r="1.2" fill="currentColor" stroke="none"></circle></svg>
+      Sem rede
+    </div>
+  </sc-if>
+  <div style="display:flex;align-items:center;gap:12px;padding:20px 16px 6px;flex:none">
+    <svg width="30" height="30" viewBox="0 0 100 100" style="color:#F4F6F8;flex:none" aria-hidden="true"><circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="5.5"></circle><polyline points="27,79 50,27 73,79" fill="none" stroke="currentColor" stroke-width="10" stroke-linejoin="miter"></polyline></svg>
+    <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+      <span style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:20px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ projectName }}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.3em;color:#8A8F98">LOGIKOS TWINS</span>
+    </div>
+  </div>
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:14px">
+      <div style="height:52px;border-radius:12px;background:#14141C"></div>
+      <div style="height:48px;border-radius:16px;background:#14141C;opacity:0.7"></div>
+      <div style="height:82px;border-radius:16px;background:#14141C;opacity:0.55"></div>
+      <div style="height:82px;border-radius:16px;background:#14141C;opacity:0.4"></div>
+      <div style="height:82px;border-radius:16px;background:#14141C;opacity:0.28"></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ showBody }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;overflow-y:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px">
+      <button data-plug="entry.capture.open" onClick="{{ onCapture }}" style="height:52px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;flex:none" style-hover="background:#0091AD" style-active="transform:scale(0.97)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="13" height="11" rx="2"></rect><path d="M16 11l5-2.6v8.2L16 14"></path></svg>
+        Gravar novo mapa
+      </button>
+      <div style="background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;overflow:hidden;flex:none">
+        <button data-plug="entry.guide.toggle" onClick="{{ toggleGuide }}" style="width:100%;height:48px;display:flex;align-items:center;gap:10px;padding:0 14px;background:none;border:0;color:#F4F6F8;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.2a2.5 2.5 0 1 1 3.4 3.05c-.7.34-1 .75-1 1.55"></path><circle cx="12" cy="17" r="1.1" fill="#8A8F98" stroke="none"></circle></svg>
+          Como gravar bem
+          <span style="flex:1"></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate({{ guideRot }}deg)" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <sc-if value="{{ guideOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:2px 14px 16px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#F4F6F8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h4v-4h4V9h4V5M5 21h14"></path></svg>Ande devagar</div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#F4F6F8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.4 5M4 4v5h5"></path><path d="M5 19L19 5" stroke-width="1.6"></path></svg>Sem giros rápidos</div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#F4F6F8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 1 3.6 10.8c-.6.5-.6 1.2-.6 2.2H9c0-1-.05-1.7-.6-2.2A6 6 0 0 1 12 3z"></path></svg>Luz acesa, sem contraluz</div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#F4F6F8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="2.4"></rect><circle cx="17.6" cy="12" r="0.9" fill="#8A8F98" stroke="none"></circle></svg>60 a 120 s, celular na horizontal</div>
+          </div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;min-height:290px;border:1px dashed rgba(244,246,248,0.16);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background-image:repeating-linear-gradient(66deg,transparent 0 26px,rgba(20,20,28,0.85) 26px 27px)">
+          <svg width="38" height="38" viewBox="0 0 100 100" style="color:#3C3C48" aria-hidden="true"><circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="5.5"></circle><polyline points="27,79 50,27 73,79" fill="none" stroke="currentColor" stroke-width="10" stroke-linejoin="miter"></polyline></svg>
+          <span style="font-size:13.5px;color:#8A8F98;max-width:220px;text-align:center;line-height:1.5">Nenhum mapa ainda. Grave o primeiro.</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ hasMaps }}" hint-placeholder-val="{{ true }}">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.26em;color:#8A8F98;margin-top:4px">MAPAS DO PROJETO</div>
+        <sc-for list="{{ maps }}" as="m" hint-placeholder-count="3">
+          <div style="background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:12px;display:flex;gap:12px;align-items:center;flex:none">
+            <div style="width:56px;height:56px;border-radius:8px;background-color:#0F0F16;background-image:repeating-linear-gradient(66deg,transparent 0 7px,#1A1A24 7px 8px);border:1px solid rgba(244,246,248,0.08);flex:none"></div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.name }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">{{ m.date }}</span>
+              <sc-if value="{{ m.isDone }}" hint-placeholder-val="{{ true }}"><span style="align-self:flex-start;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:#3DDC84;color:#0A0A0F;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5.5 5.5L20 7"></path></svg>Pronto</span></sc-if>
+              <sc-if value="{{ m.isProc }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid rgba(244,246,248,0.16);color:#8A8F98;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h4v-4h4V9h4V5"></path></svg>Processando</span></sc-if>
+              <sc-if value="{{ m.isFailed }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:#FF5A36;color:#0A0A0F;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 17H2L12 3z"></path><path d="M12 10v4.5"></path></svg>Falhou</span></sc-if>
+            </div>
+            <sc-if value="{{ m.first }}" hint-placeholder-val="{{ true }}"><button data-plug="entry.map.open" onClick="{{ onOpenMap }}" style="height:38px;padding:0 14px;border:1px solid rgba(244,246,248,0.16);border-radius:8px;background:none;color:#F4F6F8;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;flex:none" style-hover="border-color:#00E5FF">Abrir</button></sc-if>
+            <sc-if value="{{ m.rest }}" hint-placeholder-val="{{ false }}"><button onClick="{{ onOpenMap }}" style="height:38px;padding:0 14px;border:1px solid rgba(244,246,248,0.16);border-radius:8px;background:none;color:#F4F6F8;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;flex:none" style-hover="border-color:#00E5FF">Abrir</button></sc-if>
+          </div>
+        </sc-for>
+      </sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isInvalid }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px">
+      <svg width="40" height="40" viewBox="0 0 100 100" style="color:#3C3C48" aria-hidden="true"><circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="5.5"></circle><polyline points="27,79 50,27 73,79" fill="none" stroke="currentColor" stroke-width="10" stroke-linejoin="miter"></polyline></svg>
+      <span style="font-size:14.5px;color:#F4F6F8;max-width:240px;text-align:center;line-height:1.55">Este link não é válido. Peça um novo a quem enviou.</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;loading&quot;,&quot;ready&quot;,&quot;empty&quot;,&quot;invalid-link&quot;,&quot;offline&quot;],&quot;default&quot;:&quot;ready&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;guideOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;projectName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Galpão Vila Anchieta&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;maps&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Map[]&quot;},&quot;onCapture&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onOpenMap&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  state = { guideOpen: this.props.guideOpen ?? false };
+  renderVals() {
+    const st = this.props.state ?? 'ready';
+    const maps = (this.props.maps ?? [
+      { name: 'Piso térreo', date: '12/08/2026 · 14:32', st: 'done' },
+      { name: 'Mezanino', date: 'hoje · 09:10', st: 'processing' },
+      { name: 'Doca 3', date: 'ontem · 17:44', st: 'failed' }
+    ]).map((m, i) => ({ ...m, isDone: m.st === 'done', isProc: m.st === 'processing', isFailed: m.st === 'failed', first: i === 0, rest: i !== 0 }));
+    return {
+      state: st,
+      projectName: this.props.projectName ?? 'Galpão Vila Anchieta',
+      isOffline: st === 'offline', isLoading: st === 'loading', isEmpty: st === 'empty', isInvalid: st === 'invalid-link',
+      showBody: st === 'ready' || st === 'offline' || st === 'empty',
+      hasMaps: st === 'ready' || st === 'offline',
+      maps,
+      guideOpen: this.state.guideOpen,
+      guideRot: this.state.guideOpen ? 180 : 0,
+      toggleGuide: () => this.setState(s => ({ guideOpen: !s.guideOpen })),
+      onCapture: () => this.props.onCapture && this.props.onCapture(),
+      onOpenMap: () => this.props.onOpenMap && this.props.onOpenMap()
+    };
+  }
+}
+</script>
+</body>
+</html>

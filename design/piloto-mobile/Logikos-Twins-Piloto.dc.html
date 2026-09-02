@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Space Grotesk';src:url('fonts/spacegrotesk.woff2') format('woff2');font-weight:300 700;font-display:swap}
+@font-face{font-family:'Inter';src:url('fonts/inter.woff2') format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('fonts/jbmono.woff2') format('woff2');font-weight:100 800;font-display:swap}
+html,body{height:100%}
+body{margin:0;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif;overscroll-behavior-y:none}
+a{color:#00E5FF}a:hover{color:#0091AD}
+select:focus,button:focus-visible,input:focus{outline:none;box-shadow:0 0 0 2px #0A0A0F,0 0 0 4px #00E5FF}
+</style>
+</helmet>
+<div style="width:100vw;height:100vh;display:flex;flex-direction:column;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+  <div style="height:50px;background:#14141C;border-bottom:1px solid rgba(244,246,248,0.16);display:flex;align-items:center;gap:12px;padding:0 16px;flex:none">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:#00E5FF;border:1px solid #00E5FF;padding:3px 8px">DEV</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#8A8F98">LOGIKOS TWINS · PILOTO</span>
+    <div style="display:flex;flex:none;border:1px solid rgba(244,246,248,0.16);border-radius:8px;overflow:hidden">
+      <sc-if value="{{ vFluxo }}" hint-placeholder-val="{{ true }}"><button style="height:32px;padding:0 14px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Fluxo</button></sc-if>
+      <sc-if value="{{ vEstados }}" hint-placeholder-val="{{ false }}"><button onClick="{{ setFluxo }}" style="height:32px;padding:0 14px;background:none;color:#8A8F98;border:0;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer">Fluxo</button></sc-if>
+      <sc-if value="{{ vEstados }}" hint-placeholder-val="{{ false }}"><button style="height:32px;padding:0 14px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Estados</button></sc-if>
+      <sc-if value="{{ vFluxo }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setEstados }}" style="height:32px;padding:0 14px;background:none;color:#8A8F98;border:0;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer">Estados</button></sc-if>
+    </div>
+    <sc-if value="{{ vFluxo }}" hint-placeholder-val="{{ true }}">
+      <select value="{{ screen }}" onChange="{{ onScreen }}" style="height:32px;background:#23242F;border:1px solid rgba(244,246,248,0.16);border-radius:8px;color:#F4F6F8;font-family:'JetBrains Mono',monospace;font-size:12px;padding:0 8px">
+        <option value="entry">entry</option>
+        <option value="capture">capture</option>
+        <option value="job">job</option>
+        <option value="viewer">viewer</option>
+        <option value="shared">shared</option>
+        <option value="admin">admin</option>
+      </select>
+      <select value="{{ curState }}" onChange="{{ onState }}" style="height:32px;background:#23242F;border:1px solid rgba(244,246,248,0.16);border-radius:8px;color:#F4F6F8;font-family:'JetBrains Mono',monospace;font-size:12px;padding:0 8px">
+        <sc-for list="{{ stateOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o.v }}">{{ o.v }}</option></sc-for>
+      </select>
+      <sc-if value="{{ orientable }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex:none;border:1px solid rgba(244,246,248,0.16);border-radius:8px;overflow:hidden">
+          <sc-if value="{{ oP }}" hint-placeholder-val="{{ true }}"><button style="height:32px;padding:0 10px;background:#23242F;color:#F4F6F8;border:0;font-family:inherit;font-size:11.5px;font-weight:500;cursor:pointer">Retrato</button></sc-if>
+          <sc-if value="{{ oL }}" hint-placeholder-val="{{ false }}"><button onClick="{{ setPortrait }}" style="height:32px;padding:0 10px;background:none;color:#8A8F98;border:0;font-family:inherit;font-size:11.5px;cursor:pointer">Retrato</button></sc-if>
+          <sc-if value="{{ oL }}" hint-placeholder-val="{{ false }}"><button style="height:32px;padding:0 10px;background:#23242F;color:#F4F6F8;border:0;font-family:inherit;font-size:11.5px;font-weight:500;cursor:pointer">Paisagem</button></sc-if>
+          <sc-if value="{{ oP }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setLandscape }}" style="height:32px;padding:0 10px;background:none;color:#8A8F98;border:0;font-family:inherit;font-size:11.5px;cursor:pointer">Paisagem</button></sc-if>
+        </div>
+      </sc-if>
+      <button onClick="{{ onReset }}" style="height:32px;flex:none;padding:0 12px;border:1px solid rgba(244,246,248,0.16);border-radius:8px;background:none;color:#8A8F98;font-family:inherit;font-size:11.5px;cursor:pointer" style-hover="color:#F4F6F8">Reiniciar fluxo</button>
+    </sc-if>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5C6470">protótipo · dados fake · strings.json</span>
+  </div>
+  <sc-if value="{{ vFluxo }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;min-height:0;overflow:auto;display:flex">
+      <div style="margin:auto;padding:22px">
+        <sc-if value="{{ scrEntry }}" hint-placeholder-val="{{ true }}">
+          <div data-screen-label="fluxo entry" style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Entry" state="{{ sEntry }}" on-capture="{{ goCapture }}" on-open-map="{{ goViewer }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{ scrCaptureP }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="fluxo capture" style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Capture" state="{{ sCapture }}" orientation="portrait" elapsed-s="{{ capElapsed }}" on-start="{{ startRec }}" on-stop="{{ stopRec }}" on-allow="{{ allowCam }}" on-fallback="{{ fallbackGo }}" on-dismiss-hint="{{ dismissHint }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{ scrCaptureL }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="fluxo capture paisagem" style="width:844px;height:390px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Capture" state="{{ sCapture }}" orientation="landscape" elapsed-s="{{ capElapsed }}" on-start="{{ startRec }}" on-stop="{{ stopRec }}" on-allow="{{ allowCam }}" on-fallback="{{ fallbackGo }}" on-dismiss-hint="{{ dismissHint }}" hint-size="844px,390px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{ scrJob }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="fluxo job" style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Job" state="{{ sJob }}" uploaded-mb="{{ jobUp }}" total-mb="{{ 48 }}" stage-index="{{ jobStage }}" queue-pos="{{ jobPos }}" elapsed-s="{{ jobElapsed }}" on-cancel="{{ cancelJob }}" on-retry="{{ retryJob }}" on-open-map="{{ openMap }}" on-recapture="{{ recapture }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{ scrViewerP }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="fluxo viewer" style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Viewer" state="{{ sViewer }}" live="{{ true }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{ scrViewerL }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="fluxo viewer paisagem" style="width:844px;height:390px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Viewer" state="{{ sViewer }}" live="{{ true }}" hint-size="844px,390px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{ scrSharedP }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="fluxo shared" style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Shared" state="{{ sShared }}" live="{{ true }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{ scrSharedL }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="fluxo shared paisagem" style="width:844px;height:390px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Shared" state="{{ sShared }}" live="{{ true }}" hint-size="844px,390px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+        <sc-if value="{{ scrAdmin }}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="fluxo admin" style="width:1440px;height:860px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Admin" state="{{ sAdmin }}" hint-size="1440px,860px" style="width:100%;height:100%"></dc-import></div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ vEstados }}" hint-placeholder-val="{{ false }}">
+    <div data-screen="dev-states" data-state="index" style="flex:1;min-height:0;overflow:auto;padding:26px 28px 90px">
+      <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:22px;margin:0 0 4px">Estados — QA e cobertura do contrato</h1>
+      <p style="font-size:12.5px;color:#8A8F98;margin:0 0 28px;max-width:720px">Cada estado de cada tela, com dados fake. Viewer e Shared em modo mock (sem WebGL) nesta página; o 3D real roda na visão Fluxo.</p>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.26em;color:#8A8F98;margin:0 0 14px">ENTRY · /p/:token</div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;margin-bottom:44px">
+        <sc-for list="{{ entryStates }}" as="st" hint-placeholder-count="5">
+          <div style="display:flex;flex-direction:column;gap:6px" data-screen-label="estados entry"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">{{ st.v }}</span><div style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Entry" state="{{ st.v }}" guide-open="{{ st.g }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div></div>
+        </sc-for>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.26em;color:#8A8F98;margin:0 0 14px">CAPTURE · /p/:token/capturar</div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-bottom:44px">
+        <sc-for list="{{ captureStates }}" as="st" hint-placeholder-count="8">
+          <div style="display:flex;flex-direction:column;gap:6px" data-screen-label="estados capture"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">{{ st.v }}</span><div style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Capture" state="{{ st.v }}" elapsed-s="{{ st.e }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div></div>
+        </sc-for>
+        <div style="display:flex;flex-direction:column;gap:6px" data-screen-label="estados capture paisagem"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">recording · paisagem</span><div style="width:844px;height:390px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Capture" state="recording" orientation="landscape" elapsed-s="{{ 74 }}" hint-size="844px,390px" style="width:100%;height:100%"></dc-import></div></div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.26em;color:#8A8F98;margin:0 0 14px">JOB · /p/:token/jobs/:jobId</div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;margin-bottom:44px">
+        <sc-for list="{{ jobStates }}" as="st" hint-placeholder-count="7">
+          <div style="display:flex;flex-direction:column;gap:6px" data-screen-label="estados job"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">{{ st.v }}</span><div style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Job" state="{{ st.v }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div></div>
+        </sc-for>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.26em;color:#8A8F98;margin:0 0 14px">VIEWER · /m/:mapId</div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-bottom:44px">
+        <sc-for list="{{ viewerStates }}" as="st" hint-placeholder-count="9">
+          <div style="display:flex;flex-direction:column;gap:6px" data-screen-label="estados viewer"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">{{ st.v }}</span><div style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Viewer" state="{{ st.v }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div></div>
+        </sc-for>
+        <div style="display:flex;flex-direction:column;gap:6px" data-screen-label="estados viewer paisagem"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">ready · paisagem</span><div style="width:844px;height:390px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Viewer" state="ready" hint-size="844px,390px" style="width:100%;height:100%"></dc-import></div></div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.26em;color:#8A8F98;margin:0 0 14px">SHARED · /s/:shareToken</div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;margin-bottom:44px">
+        <sc-for list="{{ sharedStates }}" as="st" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;gap:6px" data-screen-label="estados shared"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">{{ st.label }}</span><div style="width:390px;height:844px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F"><dc-import name="Shared" state="{{ st.v }}" search-open="{{ st.so }}" hint-size="390px,844px" style="width:100%;height:100%"></dc-import></div></div>
+        </sc-for>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.26em;color:#8A8F98;margin:0 0 14px">ADMIN · /admin (1440, exibido a 50%)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;margin-bottom:44px">
+        <sc-for list="{{ adminStates }}" as="st" hint-placeholder-count="8">
+          <div style="display:flex;flex-direction:column;gap:6px" data-screen-label="estados admin"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">{{ st.v }}</span><div style="width:720px;height:430px;border:1px solid rgba(244,246,248,0.16);border-radius:14px;overflow:hidden;background:#0A0A0F;position:relative"><div style="width:1440px;height:860px;transform:scale(0.5);transform-origin:0 0"><dc-import name="Admin" state="{{ st.v }}" hint-size="1440px,860px" style="width:100%;height:100%"></dc-import></div></div></div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    view: 'fluxo', screen: 'entry', orientation: 'portrait',
+    states: { entry: 'ready', capture: 'idle', job: 'uploading', viewer: 'ready', shared: 'ready', admin: 'projects' },
+    capElapsed: 0, jobUp: 12.4, jobStage: 2, jobPos: 2
+  };
+  _timers = [];
+  clearTimers() { this._timers.forEach(t => clearTimeout(t)); this._timers = []; if (this._iv) { clearInterval(this._iv); this._iv = null; } }
+  componentWillUnmount() { this._dead = true; this.clearTimers(); }
+  setScr(screen, st) { this.setState(s => ({ screen, states: st ? { ...s.states, [screen]: st } : s.states })); }
+  later(fn, ms) { this._timers.push(setTimeout(() => { if (!this._dead) fn(); }, ms)); }
+  startJobSim() {
+    this.clearTimers();
+    this.setScr('job', 'uploading');
+    this.setState({ jobUp: 4 });
+    this._iv = setInterval(() => {
+      this.setState(s => {
+        let up = s.jobUp + 6.5;
+        if (up >= 48) {
+          clearInterval(this._iv); this._iv = null;
+          this.later(() => this.queueSim(), 500);
+          return { jobUp: 48 };
+        }
+        return { jobUp: up };
+      });
+    }, 480);
+  }
+  queueSim() {
+    this.setState(s => ({ states: { ...s.states, job: 'queued' }, jobPos: 2 }));
+    this.later(() => { this.setState({ jobPos: 1 }); this.later(() => this.procSim(0), 1100); }, 1400);
+  }
+  procSim(i) {
+    this.setState(s => ({ states: { ...s.states, job: 'processing' }, jobStage: i }));
+    if (i < 4) this.later(() => this.procSim(i + 1), 1500);
+    else this.later(() => this.setState(s => ({ states: { ...s.states, job: 'completed' } })), 1500);
+  }
+  renderVals() {
+    const S = this.state;
+    const stateMap = {
+      entry: ['loading', 'ready', 'empty', 'invalid-link', 'offline'],
+      capture: ['permission-prompt', 'permission-denied', 'unsupported', 'https-required', 'idle', 'recording', 'stopping', 'portrait-hint'],
+      job: ['uploading', 'upload-paused-offline', 'queued', 'processing', 'completed', 'failed', 'cancelled'],
+      viewer: ['loading-lod', 'ready', 'loading-full', 'tool-measure', 'tool-annotate', 'tool-search', 'layers', 'share', 'error'],
+      shared: ['loading', 'ready', 'expired', 'revoked'],
+      admin: ['login', 'projects', 'project-detail', 'jobs', 'job-detail', 'links', 'config', 'confirm-destructive']
+    };
+    const scr = S.screen, oP = S.orientation === 'portrait';
+    const orientable = scr === 'capture' || scr === 'viewer' || scr === 'shared';
+    return {
+      vFluxo: S.view === 'fluxo', vEstados: S.view === 'estados',
+      setFluxo: () => this.setState({ view: 'fluxo' }),
+      setEstados: () => this.setState({ view: 'estados' }),
+      screen: scr, curState: S.states[scr],
+      stateOpts: stateMap[scr].map(v => ({ v })),
+      onScreen: e => { this.clearTimers(); this.setState({ screen: e.target.value }); },
+      onState: e => { this.clearTimers(); const v = e.target.value; this.setState(s => ({ states: { ...s.states, [s.screen]: v } })); },
+      orientable, oP: oP, oL: !oP,
+      setPortrait: () => this.setState({ orientation: 'portrait' }),
+      setLandscape: () => this.setState({ orientation: 'landscape' }),
+      onReset: () => { this.clearTimers(); this.setState({ screen: 'entry', states: { entry: 'ready', capture: 'idle', job: 'uploading', viewer: 'ready', shared: 'ready', admin: 'projects' }, capElapsed: 0, jobUp: 12.4, jobStage: 2, jobPos: 2 }); },
+      scrEntry: scr === 'entry', scrJob: scr === 'job', scrAdmin: scr === 'admin',
+      scrCaptureP: scr === 'capture' && oP, scrCaptureL: scr === 'capture' && !oP,
+      scrViewerP: scr === 'viewer' && oP, scrViewerL: scr === 'viewer' && !oP,
+      scrSharedP: scr === 'shared' && oP, scrSharedL: scr === 'shared' && !oP,
+      sEntry: S.states.entry, sCapture: S.states.capture, sJob: S.states.job,
+      sViewer: S.states.viewer, sShared: S.states.shared, sAdmin: S.states.admin,
+      capElapsed: S.capElapsed, jobUp: S.jobUp, jobStage: S.jobStage, jobPos: S.jobPos,
+      jobElapsed: 22 + S.jobStage * 21,
+      goCapture: () => { this.clearTimers(); this.setScr('capture', 'permission-prompt'); },
+      goViewer: () => { this.clearTimers(); this.setScr('viewer', 'ready'); },
+      allowCam: () => this.setScr('capture', 'idle'),
+      dismissHint: () => this.setScr('capture', 'idle'),
+      startRec: () => {
+        this.clearTimers();
+        this.setState(s => ({ states: { ...s.states, capture: 'recording' }, capElapsed: 0 }));
+        this._iv = setInterval(() => {
+          this.setState(s => {
+            const e = s.capElapsed + 1;
+            if (e >= 120) { clearInterval(this._iv); this._iv = null; this.later(() => this.stopFlow(), 400); }
+            return { capElapsed: Math.min(e, 120) };
+          });
+        }, 1000);
+      },
+      stopRec: () => this.stopFlow(),
+      fallbackGo: () => this.startJobSim(),
+      cancelJob: () => { this.clearTimers(); this.setState(s => ({ states: { ...s.states, job: 'cancelled' } })); },
+      retryJob: () => this.startJobSim(),
+      openMap: () => { this.clearTimers(); this.setScr('viewer', 'ready'); },
+      recapture: () => { this.clearTimers(); this.setScr('capture', 'idle'); },
+      entryStates: [{ v: 'loading' }, { v: 'ready', g: true }, { v: 'empty' }, { v: 'invalid-link' }, { v: 'offline' }],
+      captureStates: [{ v: 'permission-prompt' }, { v: 'permission-denied' }, { v: 'unsupported' }, { v: 'https-required' }, { v: 'idle', e: 0 }, { v: 'recording', e: 42 }, { v: 'stopping', e: 120 }, { v: 'portrait-hint' }],
+      jobStates: stateMap.job.map(v => ({ v })),
+      viewerStates: stateMap.viewer.map(v => ({ v })),
+      sharedStates: [{ v: 'loading', label: 'loading' }, { v: 'ready', so: true, label: 'ready · busca aberta' }, { v: 'expired', label: 'expired' }, { v: 'revoked', label: 'revoked' }],
+      adminStates: stateMap.admin.map(v => ({ v }))
+    };
+  }
+  stopFlow() {
+    if (this._iv) { clearInterval(this._iv); this._iv = null; }
+    this.setState(s => ({ states: { ...s.states, capture: 'stopping' } }));
+    this.later(() => this.startJobSim(), 1400);
+  }
+}
+</script>
+</body>
+</html>

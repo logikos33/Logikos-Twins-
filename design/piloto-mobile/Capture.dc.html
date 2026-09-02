@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Space Grotesk';src:url('fonts/spacegrotesk.woff2') format('woff2');font-weight:300 700;font-display:swap}
+@font-face{font-family:'Inter';src:url('fonts/inter.woff2') format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('fonts/jbmono.woff2') format('woff2');font-weight:100 800;font-display:swap}
+html,body{height:100%}
+body{margin:0;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#0091AD}
+</style>
+</helmet>
+<div data-screen="capture" data-state="{{ state }}" style="width:100%;height:100%;position:relative;overflow:hidden;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif">
+  <sc-if value="{{ showCam }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;background:#101018">
+      <div style="position:absolute;left:0;right:0;top:57%;height:1px;background:#1D1D28"></div>
+      <div style="position:absolute;left:-40px;bottom:18%;width:290px;height:1px;background:#191924;transform:rotate(14deg)"></div>
+      <div style="position:absolute;right:-40px;bottom:25%;width:270px;height:1px;background:#191924;transform:rotate(-12deg)"></div>
+      <span style="position:absolute;top:76px;right:16px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.26em;color:#3C3C48">CÂMERA · MOCK</span>
+    </div>
+  </sc-if>
+  <sc-if value="{{ showCounter }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);background:rgba(10,10,15,0.75);border:1px solid rgba(244,246,248,0.08);border-radius:8px;padding:8px 14px;font-family:'JetBrains Mono',monospace;font-weight:500;font-size:16px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap"><span style="color:{{ counterColor }}">{{ counter }}</span><span style="color:#8A8F98"> / 02:00</span></div>
+  </sc-if>
+  <sc-if value="{{ tipVisible }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:62px;left:50%;transform:translateX(-50%);background:rgba(20,20,28,0.85);border:1px solid rgba(244,246,248,0.08);border-radius:8px;padding:6px 12px;font-size:12.5px;white-space:nowrap">{{ tip }}</div>
+  </sc-if>
+  <sc-if value="{{ recPartsP }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:22px;bottom:138px;display:flex;align-items:center;gap:6px;background:rgba(10,10,15,0.6);border-radius:6px;padding:5px 9px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98"><svg width="11" height="11" viewBox="0 0 24 24" fill="#8A8F98" aria-hidden="true"><rect x="3" y="14" width="4" height="7"></rect><rect x="10" y="9" width="4" height="12"></rect><rect x="17" y="4" width="4" height="17"></rect></svg>{{ partsLabel }}</div>
+  </sc-if>
+  <sc-if value="{{ recPartsL }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:22px;bottom:20px;display:flex;align-items:center;gap:6px;background:rgba(10,10,15,0.6);border-radius:6px;padding:5px 9px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98"><svg width="11" height="11" viewBox="0 0 24 24" fill="#8A8F98" aria-hidden="true"><rect x="3" y="14" width="4" height="7"></rect><rect x="10" y="9" width="4" height="12"></rect><rect x="17" y="4" width="4" height="17"></rect></svg>{{ partsLabel }}</div>
+  </sc-if>
+  <sc-if value="{{ ctrlPortrait }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:18px 26px 30px;display:flex;align-items:flex-end;justify-content:space-between">
+      <button data-plug="capture.torch" onClick="{{ onTorch }}" aria-label="Lanterna" style="width:46px;height:46px;border-radius:50%;background:rgba(20,20,28,0.65);border:1px solid rgba(244,246,248,0.12);display:flex;align-items:center;justify-content:center;color:#F4F6F8;cursor:pointer;margin-bottom:14px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v3.2L13.2 9v10.4a1.2 1.2 0 0 1-2.4 0V9L9 6.2V3z"></path><path d="M12 11.5v2.5"></path></svg>
+      </button>
+      <sc-if value="{{ recIsStart }}" hint-placeholder-val="{{ true }}">
+        <button data-plug="capture.start" onClick="{{ onStart }}" aria-label="Gravar" style="width:78px;height:78px;border-radius:50%;border:2px solid rgba(244,246,248,0.55);background:rgba(10,10,15,0.35);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-active="transform:scale(0.97)"><span style="width:58px;height:58px;border-radius:50%;background:#F4F6F8;display:block"></span></button>
+      </sc-if>
+      <sc-if value="{{ recIsStop }}" hint-placeholder-val="{{ false }}">
+        <button data-plug="capture.stop" onClick="{{ onStop }}" aria-label="Parar gravação" style="width:78px;height:78px;border-radius:50%;border:0;background:#00E5FF;box-shadow:0 0 0 3px #0A0A0F,0 0 0 5px rgba(0,229,255,0.55);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-active="transform:scale(0.97)"><span style="width:26px;height:26px;border-radius:5px;background:#0A0A0F;display:block"></span></button>
+      </sc-if>
+      <button data-plug="capture.fallback-file" onClick="{{ onFallback }}" style="width:64px;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:5px;color:#8A8F98;font-size:10px;line-height:1.3;cursor:pointer;font-family:inherit;text-align:center;padding:0">
+        <span style="width:46px;height:46px;border-radius:50%;background:rgba(20,20,28,0.65);border:1px solid rgba(244,246,248,0.12);display:flex;align-items:center;justify-content:center;color:#F4F6F8"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V6m0 0l-4 4m4-4l4 4M4 19h16"></path></svg></span>
+        Enviar vídeo
+      </button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ ctrlLandscape }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:0;bottom:0;right:0;width:118px;padding:20px 0;display:flex;flex-direction:column;align-items:center;justify-content:space-between">
+      <button data-plug="capture.fallback-file" onClick="{{ onFallback }}" style="width:64px;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:5px;color:#8A8F98;font-size:10px;line-height:1.3;cursor:pointer;font-family:inherit;text-align:center;padding:0">
+        <span style="width:46px;height:46px;border-radius:50%;background:rgba(20,20,28,0.65);border:1px solid rgba(244,246,248,0.12);display:flex;align-items:center;justify-content:center;color:#F4F6F8"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V6m0 0l-4 4m4-4l4 4M4 19h16"></path></svg></span>
+        Enviar vídeo
+      </button>
+      <sc-if value="{{ recIsStart }}" hint-placeholder-val="{{ true }}">
+        <button data-plug="capture.start" onClick="{{ onStart }}" aria-label="Gravar" style="width:78px;height:78px;border-radius:50%;border:2px solid rgba(244,246,248,0.55);background:rgba(10,10,15,0.35);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-active="transform:scale(0.97)"><span style="width:58px;height:58px;border-radius:50%;background:#F4F6F8;display:block"></span></button>
+      </sc-if>
+      <sc-if value="{{ recIsStop }}" hint-placeholder-val="{{ false }}">
+        <button data-plug="capture.stop" onClick="{{ onStop }}" aria-label="Parar gravação" style="width:78px;height:78px;border-radius:50%;border:0;background:#00E5FF;box-shadow:0 0 0 3px #0A0A0F,0 0 0 5px rgba(0,229,255,0.55);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0" style-active="transform:scale(0.97)"><span style="width:26px;height:26px;border-radius:5px;background:#0A0A0F;display:block"></span></button>
+      </sc-if>
+      <button data-plug="capture.torch" onClick="{{ onTorch }}" aria-label="Lanterna" style="width:46px;height:46px;border-radius:50%;background:rgba(20,20,28,0.65);border:1px solid rgba(244,246,248,0.12);display:flex;align-items:center;justify-content:center;color:#F4F6F8;cursor:pointer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v3.2L13.2 9v10.4a1.2 1.2 0 0 1-2.4 0V9L9 6.2V3z"></path><path d="M12 11.5v2.5"></path></svg>
+      </button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ stPrompt }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(10,10,15,0.55);display:flex;align-items:center;justify-content:center;padding:24px">
+      <div style="width:300px;background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="13" height="11" rx="2"></rect><path d="M16 11l5-2.6v8.2L16 14"></path><circle cx="9.5" cy="12.5" r="2.4"></circle></svg>
+        <span style="font-size:14.5px;line-height:1.5">Precisamos da câmera para gravar o espaço.</span>
+        <button onClick="{{ onAllow }}" style="width:100%;height:48px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer" style-hover="background:#0091AD">Permitir</button>
+        <button data-plug="capture.fallback-file" onClick="{{ onFallback }}" style="width:100%;height:44px;background:none;border:0;color:#8A8F98;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer">Enviar vídeo do celular</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ stDenied }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div style="width:320px;background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:16px">
+        <span style="font-size:15px;font-weight:600">Câmera bloqueada no navegador</span>
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:32px;height:32px;border-radius:8px;background:#23242F;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></svg></span><span style="font-size:13px;line-height:1.45">Toque no cadeado (ou ⋮) na barra do navegador</span></div>
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:32px;height:32px;border-radius:8px;background:#23242F;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="4"></rect><circle cx="15.5" cy="12" r="2.4"></circle></svg></span><span style="font-size:13px;line-height:1.45">Abra as permissões do site</span></div>
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:32px;height:32px;border-radius:8px;background:#23242F;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="13" height="11" rx="2"></rect><path d="M16 11l5-2.6v8.2L16 14"></path></svg></span><span style="font-size:13px;line-height:1.45">Ative a câmera e recarregue</span></div>
+        <button data-plug="capture.fallback-file" onClick="{{ onFallback }}" style="width:100%;height:48px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer" style-hover="background:#0091AD">Enviar vídeo do celular</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ stUnsupported }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div style="width:300px;background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l16 16"></path><path d="M9.5 6H14a2 2 0 0 1 2 2v1l4-2.4v10.2M16 16.2A2 2 0 0 1 14 18H5a2 2 0 0 1-2-2V8a2 2 0 0 1 1.6-1.96"></path></svg>
+        <span style="font-size:14.5px;line-height:1.5">Este navegador não grava direto. Use “Enviar vídeo do celular”.</span>
+        <button data-plug="capture.fallback-file" onClick="{{ onFallback }}" style="width:100%;height:48px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer" style-hover="background:#0091AD">Enviar vídeo do celular</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ stHttps }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px">
+      <div style="width:300px;background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path><circle cx="12" cy="15.2" r="1.2" fill="#8A8F98" stroke="none"></circle></svg>
+        <span style="font-size:14.5px;line-height:1.5">A câmera exige conexão segura (https). Abra o link exatamente como o recebeu.</span>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ stStopping }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:12px;padding:12px 18px;font-size:14px;display:flex;align-items:center;gap:10px;white-space:nowrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8F98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h4v-4h4V9h4V5"></path></svg>
+      {{ stoppingText }}
+    </div>
+  </sc-if>
+  <sc-if value="{{ stHint }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(10,10,15,0.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#F4F6F8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7.5" width="16" height="9" rx="2"></rect><path d="M8 3.5c-2.6.7-4.3 2-5 3.8" stroke="#00E5FF"></path><path d="M4.6 3.2L3 7.3l4.1 1.4" stroke="#00E5FF"></path></svg>
+      <span style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:20px">Vire o celular</span>
+      <span style="font-size:13px;color:#8A8F98">O mapa fica melhor na horizontal.</span>
+      <button data-plug="capture.guide.dismiss" onClick="{{ onDismissHint }}" style="height:44px;padding:0 18px;border:1px solid rgba(244,246,248,0.16);border-radius:12px;background:none;color:#F4F6F8;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer" style-hover="border-color:#00E5FF">Continuar assim</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;permission-prompt&quot;,&quot;permission-denied&quot;,&quot;unsupported&quot;,&quot;https-required&quot;,&quot;idle&quot;,&quot;recording&quot;,&quot;stopping&quot;,&quot;portrait-hint&quot;],&quot;default&quot;:&quot;recording&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;orientation&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;portrait&quot;,&quot;landscape&quot;],&quot;default&quot;:&quot;portrait&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;elapsedS&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:42,&quot;min&quot;:0,&quot;max&quot;:120,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;onStart&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onStop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onTorch&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onFallback&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onAllow&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onDismissHint&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const st = p.state ?? 'idle';
+    const elapsed = Number(p.elapsedS ?? 0);
+    const isPortrait = (p.orientation ?? 'portrait') !== 'landscape';
+    const is = n => st === n;
+    const controls = is('idle') || is('recording') || is('stopping') || is('portrait-hint');
+    const mm = String(Math.floor(elapsed / 60)).padStart(2, '0'), ss = String(elapsed % 60).padStart(2, '0');
+    const tip = is('recording') ? (elapsed < 5 ? 'Ande devagar' : (elapsed < 15 ? 'Cubra o espaço inteiro' : null)) : null;
+    const total = Math.max(2, Math.ceil(elapsed / 20) + 1);
+    const sent = is('stopping') ? total : Math.max(1, total - 1);
+    return {
+      state: st,
+      showCam: controls || is('permission-prompt'),
+      showCounter: controls,
+      counter: mm + ':' + ss,
+      counterColor: elapsed >= 100 ? '#FFB020' : '#F4F6F8',
+      tipVisible: !!tip, tip: tip || '',
+      stPrompt: is('permission-prompt'), stDenied: is('permission-denied'),
+      stUnsupported: is('unsupported'), stHttps: is('https-required'),
+      stRecording: is('recording'), stStopping: is('stopping'), stHint: is('portrait-hint'),
+      ctrlPortrait: controls && isPortrait, ctrlLandscape: controls && !isPortrait,
+      recIsStart: is('idle') || is('portrait-hint'),
+      recIsStop: is('recording') || is('stopping'),
+      recPartsP: is('recording') && isPortrait, recPartsL: is('recording') && !isPortrait,
+      partsLabel: sent + '/' + total + ' partes',
+      stoppingText: elapsed >= 120 ? 'Limite de 2 min. Enviando.' : 'Fechando o vídeo…',
+      onStart: () => p.onStart && p.onStart(),
+      onStop: () => p.onStop && p.onStop(),
+      onTorch: () => p.onTorch && p.onTorch(),
+      onFallback: () => p.onFallback && p.onFallback(),
+      onAllow: () => p.onAllow && p.onAllow(),
+      onDismissHint: () => p.onDismissHint && p.onDismissHint()
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Space Grotesk';src:url('fonts/spacegrotesk.woff2') format('woff2');font-weight:300 700;font-display:swap}
+@font-face{font-family:'Inter';src:url('fonts/inter.woff2') format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('fonts/jbmono.woff2') format('woff2');font-weight:100 800;font-display:swap}
+html,body{height:100%}
+body{margin:0;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#0091AD}
+</style>
+</helmet>
+<div data-screen="admin" data-state="{{ effState }}" style="width:100%;height:100%;position:relative;overflow:hidden;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif;display:flex;flex-direction:column">
+  <sc-if value="{{ stLogin }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;background-image:repeating-linear-gradient(66deg,transparent 0 26px,rgba(20,20,28,0.85) 26px 27px)">
+      <div style="width:380px;background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;letter-spacing:0.16em;color:#F4F6F8;margin-bottom:6px" aria-label="Logikos Twins">
+          <svg viewBox="20 16 76 82" style="height:0.9em;width:0.8em;margin-right:0.1em" aria-hidden="true"><polyline points="58,22 30,90 86,90" fill="none" stroke="currentColor" stroke-width="13" stroke-linejoin="miter"></polyline></svg>
+          <svg viewBox="0 0 100 100" style="height:0.8em;width:0.8em;margin-right:0.14em" aria-hidden="true"><defs><mask id="lgkKh"><rect width="100" height="100" fill="white"></rect><g transform="translate(24,22.4) scale(0.52)"><path d="M40 55.3 A20 20 0 1 1 60 55.3 L67 88 L33 88 Z" fill="black"></path></g></mask></defs><circle cx="50" cy="50" r="44" fill="currentColor" mask="url(#lgkKh)"></circle></svg>
+          <span aria-hidden="true">GIKOS</span>
+          <em style="margin-left:0.9em;transform:translateY(-0.1em);font-family:'JetBrains Mono',monospace;font-size:0.44em;font-weight:500;font-style:normal;letter-spacing:0.34em;color:#00E5FF">TWINS</em>
+        </span>
+        <div style="font-size:13px;color:#8A8F98;text-align:center;margin-top:-8px">Painel do operador</div>
+        <input placeholder="E-mail" style="height:48px;background:#23242F;border:1px solid rgba(244,246,248,0.08);border-radius:12px;padding:0 14px;color:#F4F6F8;font-family:inherit;font-size:14px;outline:none">
+        <input placeholder="Senha" type="password" style="height:48px;background:#23242F;border:1px solid rgba(244,246,248,0.08);border-radius:12px;padding:0 14px;color:#F4F6F8;font-family:inherit;font-size:14px;outline:none">
+        <button data-plug="admin.login" onClick="{{ onLogin }}" style="height:48px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer" style-hover="background:#0091AD">Entrar</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ hasChrome }}" hint-placeholder-val="{{ true }}">
+    <div style="height:56px;border-bottom:1px solid rgba(244,246,248,0.16);display:flex;align-items:center;gap:28px;padding:0 24px;flex:none">
+      <span style="display:inline-flex;align-items:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:0.16em;color:#F4F6F8" aria-label="Logikos Twins">
+        <svg viewBox="20 16 76 82" style="height:0.9em;width:0.8em;margin-right:0.1em" aria-hidden="true"><polyline points="58,22 30,90 86,90" fill="none" stroke="currentColor" stroke-width="13" stroke-linejoin="miter"></polyline></svg>
+        <svg viewBox="0 0 100 100" style="height:0.8em;width:0.8em;margin-right:0.14em" aria-hidden="true"><defs><mask id="lgkKh2"><rect width="100" height="100" fill="white"></rect><g transform="translate(24,22.4) scale(0.52)"><path d="M40 55.3 A20 20 0 1 1 60 55.3 L67 88 L33 88 Z" fill="black"></path></g></mask></defs><circle cx="50" cy="50" r="44" fill="currentColor" mask="url(#lgkKh2)"></circle></svg>
+        <span aria-hidden="true">GIKOS</span>
+        <em style="margin-left:0.9em;transform:translateY(-0.1em);font-family:'JetBrains Mono',monospace;font-size:0.44em;font-weight:500;font-style:normal;letter-spacing:0.34em;color:#00E5FF">TWINS</em>
+      </span>
+      <div style="display:flex;gap:4px;height:100%">
+        <sc-if value="{{ navP }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goProjects }}" style="height:100%;padding:0 14px;background:none;border:0;border-bottom:2px solid #00E5FF;color:#00E5FF;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer">Projetos</button></sc-if>
+        <sc-if value="{{ navPN }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goProjects }}" style="height:100%;padding:0 14px;background:none;border:0;border-bottom:2px solid transparent;color:#8A8F98;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer" style-hover="color:#F4F6F8">Projetos</button></sc-if>
+        <sc-if value="{{ navJ }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goJobs }}" style="height:100%;padding:0 14px;background:none;border:0;border-bottom:2px solid #00E5FF;color:#00E5FF;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer">Jobs</button></sc-if>
+        <sc-if value="{{ navJN }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goJobs }}" style="height:100%;padding:0 14px;background:none;border:0;border-bottom:2px solid transparent;color:#8A8F98;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer" style-hover="color:#F4F6F8">Jobs</button></sc-if>
+        <sc-if value="{{ navL }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goLinks }}" style="height:100%;padding:0 14px;background:none;border:0;border-bottom:2px solid #00E5FF;color:#00E5FF;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer">Links</button></sc-if>
+        <sc-if value="{{ navLN }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goLinks }}" style="height:100%;padding:0 14px;background:none;border:0;border-bottom:2px solid transparent;color:#8A8F98;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer" style-hover="color:#F4F6F8">Links</button></sc-if>
+        <sc-if value="{{ navC }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goConfig }}" style="height:100%;padding:0 14px;background:none;border:0;border-bottom:2px solid #00E5FF;color:#00E5FF;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer">Config</button></sc-if>
+        <sc-if value="{{ navCN }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goConfig }}" style="height:100%;padding:0 14px;background:none;border:0;border-bottom:2px solid transparent;color:#8A8F98;font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer" style-hover="color:#F4F6F8">Config</button></sc-if>
+      </div>
+      <span style="flex:1"></span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">vitor@logikos · operador</span>
+    </div>
+    <div style="flex:1;overflow:auto;padding:26px 32px 60px;position:relative">
+      <sc-if value="{{ stProjects }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+          <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:22px;margin:0">Projetos</h1>
+          <span style="flex:1"></span>
+          <button data-plug="admin.project.create" onClick="{{ noop }}" style="height:44px;padding:0 18px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer" style-hover="background:#0091AD">Novo projeto</button>
+        </div>
+        <div style="border:1px solid rgba(244,246,248,0.08);border-radius:16px;overflow:hidden;background:#14141C">
+          <div style="display:grid;grid-template-columns:2fr 0.6fr 1fr 2fr;padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98"><span>CLIENTE</span><span>MAPAS</span><span>ÚLTIMA ATIVIDADE</span><span>LINK DE CAPTURA</span></div>
+          <sc-for list="{{ projRows }}" as="r" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:2fr 0.6fr 1fr 2fr;padding:14px 18px;border-top:1px solid rgba(244,246,248,0.06);align-items:center;cursor:pointer" style-hover="background:#181822">
+              <button onClick="{{ r.open }}" style="background:none;border:0;color:#F4F6F8;font-family:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer;padding:0">{{ r.cliente }}</button>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-variant-numeric:tabular-nums">{{ r.mapas }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A8F98">{{ r.at }}</span>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#8A8F98;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">{{ r.link }}</span>
+                <sc-if value="{{ r.first }}" hint-placeholder-val="{{ true }}"><button data-plug="admin.project.link.copy" onClick="{{ noop }}" style="height:32px;padding:0 10px;border:1px solid rgba(244,246,248,0.16);border-radius:8px;background:none;color:#F4F6F8;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer" style-hover="border-color:#00E5FF">Copiar link</button><button data-plug="admin.project.link.revoke" onClick="{{ noop }}" style="height:32px;padding:0 10px;background:none;border:0;color:#8A8F98;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer" style-hover="color:#FF5A36">Revogar</button></sc-if>
+                <sc-if value="{{ r.rest }}" hint-placeholder-val="{{ false }}"><button onClick="{{ noop }}" style="height:32px;padding:0 10px;border:1px solid rgba(244,246,248,0.16);border-radius:8px;background:none;color:#F4F6F8;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer" style-hover="border-color:#00E5FF">Copiar link</button><button onClick="{{ noop }}" style="height:32px;padding:0 10px;background:none;border:0;color:#8A8F98;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer" style-hover="color:#FF5A36">Revogar</button></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ stProjectDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;font-size:13px">
+          <button onClick="{{ goProjects }}" style="background:none;border:0;color:#8A8F98;font-family:inherit;font-size:13px;cursor:pointer;padding:0" style-hover="color:#00E5FF">Projetos</button>
+          <span style="color:#5C6470">/</span>
+          <span style="font-weight:500">CD Vila Anchieta</span>
+        </div>
+        <div style="background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:18px;display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98">LINK DE CAPTURA</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;flex:1">twins.logikos.app/p/vk29mq</span>
+          <button data-plug="admin.project.link.copy" onClick="{{ noop }}" style="height:36px;padding:0 12px;border:1px solid rgba(244,246,248,0.16);border-radius:8px;background:none;color:#F4F6F8;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="border-color:#00E5FF">Copiar link</button>
+          <button data-plug="admin.project.link.revoke" onClick="{{ noop }}" style="height:36px;padding:0 12px;background:none;border:0;color:#8A8F98;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="color:#FF5A36">Revogar</button>
+        </div>
+        <div style="border:1px solid rgba(244,246,248,0.08);border-radius:16px;overflow:hidden;background:#14141C">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98"><span>MAPA</span><span>ESTADO</span><span>PONTOS</span><span>CRIADO</span></div>
+          <sc-for list="{{ mapRows }}" as="m" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:14px 18px;border-top:1px solid rgba(244,246,248,0.06);align-items:center">
+              <span style="font-size:14px;font-weight:500">{{ m.name }}</span>
+              <span>
+                <sc-if value="{{ m.done }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:#3DDC84;color:#0A0A0F;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5.5 5.5L20 7"></path></svg>Pronto</span></sc-if>
+                <sc-if value="{{ m.proc }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border:1px solid rgba(244,246,248,0.16);color:#8A8F98;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h4v-4h4V9h4V5"></path></svg>Processando</span></sc-if>
+              </span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;font-variant-numeric:tabular-nums">{{ m.pts }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A8F98">{{ m.at }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ stJobs }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+          <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:22px;margin:0">Jobs</h1>
+          <span style="flex:1"></span>
+          <div data-plug="admin.job.filter" style="display:flex;align-items:center;gap:6px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98;margin-right:4px">ESTADO</span>
+            <sc-for list="{{ filterOpts }}" as="f" hint-placeholder-count="5">
+              <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ f.pick }}" style="height:32px;padding:0 12px;border-radius:16px;border:1px solid #00E5FF;background:#0A0A0F;color:#00E5FF;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer">{{ f.label }}</button></sc-if>
+              <sc-if value="{{ f.selN }}" hint-placeholder-val="{{ true }}"><button onClick="{{ f.pick }}" style="height:32px;padding:0 12px;border-radius:16px;border:1px solid rgba(244,246,248,0.16);background:#14141C;color:#8A8F98;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer" style-hover="color:#F4F6F8">{{ f.label }}</button></sc-if>
+            </sc-for>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(244,246,248,0.08);border-radius:16px;overflow:hidden;background:#14141C">
+          <div style="display:grid;grid-template-columns:100px 1.3fr 130px 150px 60px 60px 70px 130px 1.5fr;gap:10px;padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.14em;color:#8A8F98"><span>JOB</span><span>PROJETO</span><span>ESTADO</span><span>ETAPA</span><span>VÍDEO</span><span>PROC.</span><span style="text-align:right">GPU S</span><span style="text-align:right">CUSTO</span><span>PROVENIÊNCIA</span></div>
+          <sc-for list="{{ jobRows }}" as="jr" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:100px 1.3fr 130px 150px 60px 60px 70px 130px 1.5fr;gap:10px;padding:13px 18px;border-top:1px solid rgba(244,246,248,0.06);align-items:center;border-left:2px solid {{ jr.edge }}">
+              <sc-if value="{{ jr.first }}" hint-placeholder-val="{{ true }}"><button data-plug="admin.job.open" onClick="{{ jr.open }}" style="background:none;border:0;color:#00E5FF;font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:left;cursor:pointer;padding:0">{{ jr.id }}</button></sc-if>
+              <sc-if value="{{ jr.rest }}" hint-placeholder-val="{{ false }}"><button onClick="{{ jr.open }}" style="background:none;border:0;color:#00E5FF;font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:left;cursor:pointer;padding:0">{{ jr.id }}</button></sc-if>
+              <span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ jr.proj }}</span>
+              <span>
+                <sc-if value="{{ jr.cDone }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:#3DDC84;color:#0A0A0F;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5.5 5.5L20 7"></path></svg>Pronto</span></sc-if>
+                <sc-if value="{{ jr.cProc }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border:1px solid rgba(244,246,248,0.16);color:#8A8F98;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h4v-4h4V9h4V5"></path></svg>Processando</span></sc-if>
+                <sc-if value="{{ jr.cQueued }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border:1px solid #FFB020;color:#FFB020;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>Na fila</span></sc-if>
+                <sc-if value="{{ jr.cFailed }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:#FF5A36;color:#0A0A0F;font-size:11px;font-weight:600;border-radius:8px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 17H2L12 3z"></path><path d="M12 10v4.5"></path></svg>Falhou</span></sc-if>
+              </span>
+              <span style="font-size:12.5px;color:#8A8F98;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ jr.etapa }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums">{{ jr.video }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums">{{ jr.proc }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums;text-align:right">{{ jr.gpu }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:{{ jr.costColor }};white-space:nowrap">{{ jr.custo }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5C6470;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ jr.prov }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ stJobDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;font-size:13px">
+          <button onClick="{{ goJobs }}" style="background:none;border:0;color:#8A8F98;font-family:inherit;font-size:13px;cursor:pointer;padding:0" style-hover="color:#00E5FF">Jobs</button>
+          <span style="color:#5C6470">/</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500">TWN-8F3K</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:#3DDC84;color:#0A0A0F;font-size:11px;font-weight:600;border-radius:8px;margin-left:6px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5.5 5.5L20 7"></path></svg>Pronto</span>
+          <span style="font-size:13px;color:#8A8F98;margin-left:6px">CD Vila Anchieta · Piso térreo</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px;max-width:1100px">
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div style="background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:18px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98;margin-bottom:12px">ETAPAS</div>
+              <sc-for list="{{ detailStages }}" as="ds" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(244,246,248,0.05)">
+                  <span style="width:18px;height:18px;border-radius:4px;background:#3DDC84;display:flex;align-items:center;justify-content:center;flex:none"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A0A0F" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5.5 5.5L20 7"></path></svg></span>
+                  <span style="flex:1;font-size:13.5px">{{ ds.label }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A8F98;font-variant-numeric:tabular-nums">{{ ds.t }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;color:#8A8F98">VÍDEO</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;margin-top:4px">1:48</div></div>
+              <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;color:#8A8F98">PROCESSAMENTO</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;margin-top:4px">3:10</div></div>
+              <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;color:#8A8F98">GPU</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;margin-top:4px">186 s</div></div>
+              <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;color:#8A8F98">CUSTO ESTIMADO</div><div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;margin-top:4px">US$ 0,16 · R$ 0,86</div></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div style="background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:18px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98;margin-bottom:12px">PROVENIÊNCIA</div>
+              <sc-for list="{{ provRows }}" as="pv" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid rgba(244,246,248,0.05)">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;color:#8A8F98;width:74px;flex:none">{{ pv.k }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:12px;flex:1">{{ pv.v }}</span>
+                  <button onClick="{{ noop }}" title="Copiar (proposta de contrato: admin.job.provenance.copy)" aria-label="Copiar hash" style="width:28px;height:28px;background:none;border:0;color:#5C6470;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="color:#F4F6F8"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M4 15V6a2 2 0 0 1 2-2h9"></path></svg></button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98;margin-bottom:2px">AÇÕES</div>
+              <button data-plug="admin.job.rerun" onClick="{{ noop }}" style="height:42px;border:1px solid rgba(244,246,248,0.16);border-radius:10px;background:none;color:#F4F6F8;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#00E5FF">Reprocessar</button>
+              <button data-plug="admin.export.request" onClick="{{ noop }}" style="height:42px;border:1px solid rgba(244,246,248,0.16);border-radius:10px;background:none;color:#F4F6F8;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#00E5FF">Exportar PLY/LAS</button>
+              <button data-plug="admin.job.archive" onClick="{{ noop }}" style="height:42px;border:1px solid rgba(244,246,248,0.16);border-radius:10px;background:none;color:#8A8F98;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer" style-hover="color:#F4F6F8">Arquivar</button>
+              <button onClick="{{ openConfirm }}" style="height:42px;border:1px solid #FF5A36;border-radius:10px;background:none;color:#FF5A36;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer">Apagar arquivos…</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ stLinks }}" hint-placeholder-val="{{ false }}">
+        <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:22px;margin:0 0 20px">Links compartilhados</h1>
+        <div style="border:1px solid rgba(244,246,248,0.08);border-radius:16px;overflow:hidden;background:#14141C;max-width:1000px">
+          <div style="display:grid;grid-template-columns:1.6fr 1.2fr 1fr 1fr 100px;padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98"><span>MAPA</span><span>VALIDADE</span><span>VISUALIZAÇÕES</span><span>ESTADO</span><span></span></div>
+          <sc-for list="{{ linkRows }}" as="lr" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:1.6fr 1.2fr 1fr 1fr 100px;padding:14px 18px;border-top:1px solid rgba(244,246,248,0.06);align-items:center">
+              <span style="font-size:13.5px;font-weight:500">{{ lr.mapa }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A8F98">{{ lr.validade }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;font-variant-numeric:tabular-nums">{{ lr.views }}</span>
+              <span>
+                <sc-if value="{{ lr.ativo }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid rgba(244,246,248,0.16);color:#F4F6F8;font-size:11px;font-weight:500;border-radius:8px"><span style="width:6px;height:6px;background:#3DDC84;display:block"></span>ativo</span></sc-if>
+                <sc-if value="{{ lr.expirado }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid rgba(244,246,248,0.16);color:#FFB020;font-size:11px;font-weight:500;border-radius:8px"><span style="width:6px;height:6px;background:#FFB020;display:block"></span>expirado</span></sc-if>
+                <sc-if value="{{ lr.revogado }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid rgba(244,246,248,0.16);color:#FF5A36;font-size:11px;font-weight:500;border-radius:8px"><span style="width:6px;height:6px;background:#FF5A36;display:block"></span>revogado</span></sc-if>
+              </span>
+              <sc-if value="{{ lr.first }}" hint-placeholder-val="{{ true }}"><button data-plug="admin.link.revoke" onClick="{{ noop }}" style="height:32px;padding:0 10px;background:none;border:0;color:#8A8F98;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;text-align:right" style-hover="color:#FF5A36">Revogar</button></sc-if>
+              <sc-if value="{{ lr.rest }}" hint-placeholder-val="{{ false }}"><button onClick="{{ noop }}" style="height:32px;padding:0 10px;background:none;border:0;color:#8A8F98;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;text-align:right" style-hover="color:#FF5A36">Revogar</button></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ stConfig }}" hint-placeholder-val="{{ false }}">
+        <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:22px;margin:0 0 20px">Config do piloto</h1>
+        <div style="background:#14141C;border:1px solid rgba(244,246,248,0.08);border-radius:16px;padding:22px;max-width:560px;display:flex;flex-direction:column;gap:14px">
+          <sc-for list="{{ cfgRows }}" as="cf" hint-placeholder-count="7">
+            <div style="display:flex;align-items:center;gap:14px">
+              <span style="flex:1;font-size:13.5px;color:#F4F6F8">{{ cf.label }}</span>
+              <sc-if value="{{ cf.enabled }}" hint-placeholder-val="{{ true }}"><input value="{{ cf.v }}" readOnly="{{ true }}" style="width:120px;height:40px;background:#23242F;border:1px solid rgba(244,246,248,0.08);border-radius:8px;padding:0 12px;color:#F4F6F8;font-family:'JetBrains Mono',monospace;font-size:13px;text-align:right;outline:none"></sc-if>
+              <sc-if value="{{ cf.disabled }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5C6470;letter-spacing:0.08em">não ativado no piloto</span><input value="{{ cf.v }}" disabled="{{ true }}" style="width:120px;height:40px;background:#181820;border:1px solid rgba(244,246,248,0.05);border-radius:8px;padding:0 12px;color:#5C6470;font-family:'JetBrains Mono',monospace;font-size:13px;text-align:right;outline:none"></sc-if>
+            </div>
+          </sc-for>
+          <button data-plug="admin.config.save" onClick="{{ noop }}" style="height:46px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px" style-hover="background:#0091AD">Salvar</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ stConfirm }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;background:rgba(10,10,15,0.72);display:flex;align-items:center;justify-content:center;z-index:5">
+          <div style="width:440px;background:#14141C;border:1px solid #FF5A36;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px">
+            <span style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:18px">Apagar arquivos do job TWN-8F3K</span>
+            <span style="font-size:13.5px;color:#8A8F98;line-height:1.5">Remove o vídeo e todos os artefatos do armazenamento. Ação irreversível.</span>
+            <label style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#8A8F98">DIGITE O ID DO JOB PARA CONFIRMAR</label>
+            <input value="{{ confirmVal }}" onChange="{{ onConfirmInput }}" placeholder="TWN-…" style="height:44px;background:#23242F;border:1px solid rgba(244,246,248,0.08);border-radius:8px;padding:0 12px;color:#F4F6F8;font-family:'JetBrains Mono',monospace;font-size:13.5px;outline:none">
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
+              <button onClick="{{ closeConfirm }}" style="height:44px;padding:0 16px;border:1px solid rgba(244,246,248,0.16);border-radius:10px;background:none;color:#F4F6F8;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer">Cancelar</button>
+              <button data-plug="admin.job.purge" onClick="{{ closeConfirm }}" style="height:44px;padding:0 18px;border-radius:10px;background:#FF5A36;color:#0A0A0F;border:0;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">Apagar arquivos</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:860},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;login&quot;,&quot;projects&quot;,&quot;project-detail&quot;,&quot;jobs&quot;,&quot;job-detail&quot;,&quot;links&quot;,&quot;config&quot;,&quot;confirm-destructive&quot;],&quot;default&quot;:&quot;projects&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Estado&quot;}}">
+class Component extends DCLogic {
+  state = { view: this.props.state ?? 'projects', filterSel: 'Todos', confirmVal: '' };
+  go(v) { this.setState({ view: v }); }
+  renderVals() {
+    const v = this.state.view;
+    const noop = () => {};
+    const projRows = [
+      { cliente: 'CD Vila Anchieta', mapas: 6, at: 'hoje · 14:32', link: 'twins.logikos.app/p/vk29mq' },
+      { cliente: 'Alicerce Pré-Moldados', mapas: 4, at: 'ontem · 17:04', link: 'twins.logikos.app/p/ab84tz' },
+      { cliente: 'Metalúrgica Andrade', mapas: 2, at: '28/08 · 09:12', link: 'twins.logikos.app/p/qp51xn' }
+    ].map((r, i) => ({ ...r, first: i === 0, rest: i !== 0, open: () => this.go('project-detail') }));
+    const jobsData = [
+      { id: 'TWN-8F3K', proj: 'CD Vila Anchieta', st: 'done', etapa: '—', video: '1:48', proc: '3:10', gpu: '186', custo: 'US$ 0,16 · R$ 0,86', alert: false },
+      { id: 'TWN-7Q2M', proj: 'CD Vila Anchieta', st: 'proc', etapa: 'Reconstruindo o espaço', video: '2:00', proc: '1:12', gpu: '72', custo: 'US$ 0,06 · R$ 0,32', alert: false },
+      { id: 'TWN-6T9C', proj: 'Alicerce Pré-Moldados', st: 'queued', etapa: '—', video: '1:24', proc: '—', gpu: '—', custo: '—', alert: false },
+      { id: 'TWN-5R1B', proj: 'Metalúrgica Andrade', st: 'failed', etapa: '—', video: '0:14', proc: '0:26', gpu: '12', custo: 'US$ 0,01 · R$ 0,05', alert: false },
+      { id: 'TWN-4N8V', proj: 'Alicerce Pré-Moldados', st: 'done', etapa: '—', video: '2:00', proc: '9:44', gpu: '1.140', custo: 'US$ 0,98 · R$ 5,29', alert: true },
+      { id: 'TWN-3K5D', proj: 'CD Vila Anchieta', st: 'done', etapa: '—', video: '1:02', proc: '2:05', gpu: '118', custo: 'US$ 0,10 · R$ 0,54', alert: false }
+    ];
+    const prov = 'wrk 8f3ka92 · eng 1f480ae · img 6b21d04 · pesos c9d4e1f';
+    const jobRows = jobsData.map((r, i) => ({
+      ...r, first: i === 0, rest: i !== 0, open: () => this.go('job-detail'),
+      cDone: r.st === 'done', cProc: r.st === 'proc', cQueued: r.st === 'queued', cFailed: r.st === 'failed',
+      edge: r.alert ? '#FFB020' : 'transparent',
+      costColor: r.alert ? '#FFB020' : '#F4F6F8',
+      prov: r.st === 'queued' ? '—' : prov
+    }));
+    const filterOpts = ['Todos', 'Na fila', 'Processando', 'Pronto', 'Falhou'].map(f => ({ label: f, sel: this.state.filterSel === f, selN: this.state.filterSel !== f, pick: () => this.setState({ filterSel: f }) }));
+    const mapRows = [
+      { name: 'Piso térreo', done: true, proc: false, pts: '1,2 M', at: '12/08 · 14:32' },
+      { name: 'Mezanino', done: false, proc: true, pts: '—', at: 'hoje · 09:10' },
+      { name: 'Doca 3', done: true, proc: false, pts: '840 k', at: '30/07 · 17:44' }
+    ];
+    const linkRows = [
+      { mapa: 'Piso térreo', validade: 'até 09/09/2026', views: 12, st: 'ativo' },
+      { mapa: 'Doca 3', validade: 'expirou 20/08/2026', views: 31, st: 'expirado' },
+      { mapa: 'Mezanino', validade: 'até 04/09/2026', views: 3, st: 'revogado' }
+    ].map((r, i) => ({ ...r, first: i === 0, rest: i !== 0, ativo: r.st === 'ativo', expirado: r.st === 'expirado', revogado: r.st === 'revogado' }));
+    const detailStages = [
+      { label: 'Extraindo frames', t: '0:22' }, { label: 'Borrando rostos', t: '0:31' },
+      { label: 'Reconstruindo o espaço', t: '1:44' }, { label: 'Montando a nuvem', t: '0:19' }, { label: 'Publicando', t: '0:14' }
+    ];
+    const provRows = [
+      { k: 'WORKER', v: '8f3ka92' }, { k: 'ENGINE', v: '1f480ae' }, { k: 'IMAGE', v: 'sha256:6b21d04' }, { k: 'WEIGHTS', v: 'c9d4e1f' }
+    ];
+    const cfgRows = [
+      { label: 'Duração máx. do vídeo (s)', v: '120', enabled: true, disabled: false },
+      { label: 'Tamanho máx. (MB)', v: '200', enabled: true, disabled: false },
+      { label: 'Tarifa GPU (US$/s)', v: '0,00086', enabled: true, disabled: false },
+      { label: 'Validade padrão do link (dias)', v: '7', enabled: true, disabled: false },
+      { label: 'Cotação US$ → R$', v: '5,40', enabled: true, disabled: false },
+      { label: 'Alerta de custo por job (US$)', v: '0,75', enabled: true, disabled: false },
+      { label: 'Retenção do vídeo bruto (dias)', v: '30', enabled: false, disabled: true }
+    ];
+    return {
+      effState: v,
+      stLogin: v === 'login', hasChrome: v !== 'login',
+      stProjects: v === 'projects', stProjectDetail: v === 'project-detail',
+      stJobs: v === 'jobs', stJobDetail: v === 'job-detail' || v === 'confirm-destructive',
+      stLinks: v === 'links', stConfig: v === 'config', stConfirm: v === 'confirm-destructive',
+      navP: v === 'projects' || v === 'project-detail', navPN: !(v === 'projects' || v === 'project-detail'),
+      navJ: v === 'jobs' || v === 'job-detail' || v === 'confirm-destructive', navJN: !(v === 'jobs' || v === 'job-detail' || v === 'confirm-destructive'),
+      navL: v === 'links', navLN: v !== 'links',
+      navC: v === 'config', navCN: v !== 'config',
+      goProjects: () => this.go('projects'), goJobs: () => this.go('jobs'),
+      goLinks: () => this.go('links'), goConfig: () => this.go('config'),
+      onLogin: () => this.go('projects'),
+      openConfirm: () => this.go('confirm-destructive'),
+      closeConfirm: () => this.setState({ view: 'job-detail', confirmVal: '' }),
+      confirmVal: this.state.confirmVal,
+      onConfirmInput: e => this.setState({ confirmVal: e.target.value }),
+      projRows, jobRows, filterOpts, mapRows, linkRows, detailStages, provRows, cfgRows, noop
+    };
+  }
+}
+</script>
+</body>
+</html>

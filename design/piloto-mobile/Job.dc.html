@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Space Grotesk';src:url('fonts/spacegrotesk.woff2') format('woff2');font-weight:300 700;font-display:swap}
+@font-face{font-family:'Inter';src:url('fonts/inter.woff2') format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url('fonts/jbmono.woff2') format('woff2');font-weight:100 800;font-display:swap}
+html,body{height:100%}
+body{margin:0;background:#0A0A0F;color:#F4F6F8;font-family:Inter,system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#0091AD}
+</style>
+</helmet>
+<div data-screen="job" data-state="{{ state }}" data-plug="job.poll" style="width:100%;height:100%;position:relative;overflow:hidden;background-color:#0A0A0F;background-image:repeating-linear-gradient(66deg,transparent 0 26px,rgba(20,20,28,0.85) 26px 27px);color:#F4F6F8;font-family:Inter,system-ui,sans-serif;display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px;flex:none">
+    <svg width="22" height="22" viewBox="0 0 100 100" style="color:#F4F6F8;flex:none" aria-hidden="true"><circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="5.5"></circle><polyline points="27,79 50,27 73,79" fill="none" stroke="currentColor" stroke-width="10" stroke-linejoin="miter"></polyline></svg>
+    <span style="font-size:13px;font-weight:500;color:#8A8F98">{{ projectName }}</span>
+    <span style="flex:1"></span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A8F98">{{ jobId }}</span>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px 48px;gap:18px">
+    <sc-if value="{{ stUploading }}" hint-placeholder-val="{{ true }}">
+      <svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true"><sc-for list="{{ segs }}" as="g" hint-placeholder-count="12"><path d="{{ g.d }}" stroke="{{ g.c }}" stroke-width="7" fill="none"></path></sc-for></svg>
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:20px">Enviando o vídeo</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-variant-numeric:tabular-nums">{{ bytes }}</div>
+      <div style="font-size:12.5px;color:#8A8F98;text-align:center;max-width:240px;line-height:1.5">Não feche esta página até terminar o envio.</div>
+    </sc-if>
+    <sc-if value="{{ stPaused }}" hint-placeholder-val="{{ false }}">
+      <svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true"><sc-for list="{{ segs }}" as="g" hint-placeholder-count="12"><path d="{{ g.d }}" stroke="{{ g.c }}" stroke-width="7" fill="none"></path></sc-for></svg>
+      <div style="display:flex;align-items:center;gap:8px;border:1px solid #FFB020;color:#FFB020;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:500">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l16 16M8.5 8.7A8.4 8.4 0 0 0 4 12m4.9 3.2a4.4 4.4 0 0 1 6.2 0M12 8a8.4 8.4 0 0 1 8 4"></path><circle cx="12" cy="18.6" r="1.2" fill="currentColor" stroke="none"></circle></svg>
+        Sem rede — retomando quando voltar
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8A8F98;font-variant-numeric:tabular-nums">{{ bytes }}</div>
+    </sc-if>
+    <sc-if value="{{ stQueued }}" hint-placeholder-val="{{ false }}">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:22px">Na fila</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-weight:500;font-size:28px;font-variant-numeric:tabular-nums">posição {{ queuePos }}</div>
+      <div style="font-size:12.5px;color:#8A8F98;text-align:center;line-height:1.5">Você pode voltar por este link depois.</div>
+      <button data-plug="job.cancel" onClick="{{ onCancel }}" style="height:48px;padding:0 24px;border:1px solid rgba(244,246,248,0.16);border-radius:12px;background:none;color:#F4F6F8;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-top:6px" style-hover="border-color:#00E5FF">Cancelar</button>
+    </sc-if>
+    <sc-if value="{{ stProcessing }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%;max-width:300px;display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ stages }}" as="sg" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 4px">
+            <sc-if value="{{ sg.done }}" hint-placeholder-val="{{ false }}"><span style="width:20px;height:20px;border-radius:4px;background:#3DDC84;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0A0A0F" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5.5 5.5L20 7"></path></svg></span></sc-if>
+            <sc-if value="{{ sg.active }}" hint-placeholder-val="{{ false }}"><span style="width:20px;height:20px;border-radius:4px;border:1.5px solid #8A8F98;display:flex;align-items:center;justify-content:center;flex:none"><span style="width:8px;height:8px;background:#8A8F98;display:block"></span></span></sc-if>
+            <sc-if value="{{ sg.pending }}" hint-placeholder-val="{{ true }}"><span style="width:20px;height:20px;border-radius:4px;border:1.5px solid #2A2B36;flex:none;display:block"></span></sc-if>
+            <sc-if value="{{ sg.lit }}" hint-placeholder-val="{{ true }}"><span style="flex:1;font-size:14.5px">{{ sg.label }}</span></sc-if>
+            <sc-if value="{{ sg.dim }}" hint-placeholder-val="{{ false }}"><span style="flex:1;font-size:14.5px;color:#5C6470">{{ sg.label }}</span></sc-if>
+            <sc-if value="{{ sg.active }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A8F98;font-variant-numeric:tabular-nums">{{ elapsedLabel }}</span></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ stCompleted }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;background:#3DDC84;color:#0A0A0F;border-radius:8px;padding:8px 14px;font-size:14px;font-weight:600">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5.5 5.5L20 7"></path></svg>
+        Mapa pronto
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#8A8F98;font-variant-numeric:tabular-nums;text-align:center">{{ resultLine }}</div>
+      <button data-plug="job.map.open" onClick="{{ onOpenMap }}" style="width:100%;max-width:300px;height:52px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#0091AD" style-active="transform:scale(0.97)">Abrir mapa</button>
+    </sc-if>
+    <sc-if value="{{ stFailed }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;background:#FF5A36;color:#0A0A0F;border-radius:8px;padding:8px 14px;font-size:14px;font-weight:600">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 17H2L12 3z"></path><path d="M12 10v4.5"></path></svg>
+        Falhou
+      </div>
+      <div style="font-size:15px;text-align:center;max-width:280px;line-height:1.55">{{ errorMsg }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A8F98">job {{ jobId }}</div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button onClick="{{ onRecapture }}" style="height:48px;padding:0 18px;border:1px solid rgba(244,246,248,0.16);border-radius:12px;background:none;color:#F4F6F8;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer" style-hover="border-color:#00E5FF">Gravar de novo</button>
+        <button data-plug="job.retry" onClick="{{ onRetry }}" style="height:48px;padding:0 20px;border-radius:12px;background:#00E5FF;color:#0A0A0F;border:0;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#0091AD">Tentar de novo</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ stCancelled }}" hint-placeholder-val="{{ false }}">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:22px">Cancelado.</div>
+      <button onClick="{{ onRecapture }}" style="height:48px;padding:0 22px;border:1px solid rgba(244,246,248,0.16);border-radius:12px;background:none;color:#F4F6F8;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer" style-hover="border-color:#00E5FF">Gravar novo mapa</button>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;uploading&quot;,&quot;upload-paused-offline&quot;,&quot;queued&quot;,&quot;processing&quot;,&quot;completed&quot;,&quot;failed&quot;,&quot;cancelled&quot;],&quot;default&quot;:&quot;processing&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;errorCode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;video-too-short&quot;,&quot;video-too-long&quot;,&quot;no-motion&quot;,&quot;gpu-unavailable&quot;,&quot;timeout&quot;,&quot;internal&quot;],&quot;default&quot;:&quot;no-motion&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;stageIndex&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:2,&quot;min&quot;:0,&quot;max&quot;:4,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;elapsedS&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:102,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Estado&quot;},&quot;uploadedMb&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:12.4,&quot;tsType&quot;:&quot;number&quot;},&quot;totalMb&quot;:{&quot;editor&quot;:&quot;float&quot;,&quot;default&quot;:48,&quot;tsType&quot;:&quot;number&quot;},&quot;queuePos&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:2,&quot;tsType&quot;:&quot;number&quot;},&quot;onCancel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onRetry&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onOpenMap&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onRecapture&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const st = p.state ?? 'uploading';
+    const is = n => st === n;
+    const fmt1 = n => n.toFixed(1).replace('.', ',');
+    const upMb = Number(p.uploadedMb ?? 12.4), totMb = Number(p.totalMb ?? 48);
+    const frac = Math.min(1, totMb ? upMb / totMb : 0);
+    const filled = Math.round(frac * 12);
+    const segs = [];
+    for (let i = 0; i < 12; i++) {
+      const a0 = (-90 + i * 30 + 3) * Math.PI / 180, a1 = (-90 + i * 30 + 27) * Math.PI / 180, r = 56;
+      const d = 'M' + (66 + r * Math.cos(a0)).toFixed(1) + ' ' + (66 + r * Math.sin(a0)).toFixed(1) + ' A' + r + ' ' + r + ' 0 0 1 ' + (66 + r * Math.cos(a1)).toFixed(1) + ' ' + (66 + r * Math.sin(a1)).toFixed(1);
+      segs.push({ d, c: i < filled ? '#F4F6F8' : 'rgba(244,246,248,0.14)' });
+    }
+    const names = ['Extraindo frames', 'Borrando rostos', 'Reconstruindo o espaço', 'Montando a nuvem', 'Publicando'];
+    const idx = Number(p.stageIndex ?? 2);
+    const stages = names.map((label, i) => ({ label, done: i < idx, active: i === idx, pending: i > idx, dim: i > idx, lit: i <= idx }));
+    const el = Number(p.elapsedS ?? 102);
+    const t = Math.floor(el / 60) + ':' + String(el % 60).padStart(2, '0');
+    const r = p.result ?? { points: '1,2 M', video: '1:48', took: '3:10' };
+    const errs = {
+      'video-too-short': 'Vídeo curto demais. Grave pelo menos 20 s.',
+      'video-too-long': 'Vídeo acima de 2 min.',
+      'no-motion': 'O vídeo quase não se moveu. Ande pelo espaço enquanto grava.',
+      'gpu-unavailable': 'Sem GPU disponível agora. Tente em alguns minutos.',
+      'timeout': 'Passou do tempo limite. Tente com um vídeo mais curto.',
+      'internal': 'Falha nossa. Já ficamos sabendo.'
+    };
+    return {
+      state: st,
+      projectName: p.projectName ?? 'Galpão Vila Anchieta',
+      jobId: p.jobId ?? 'TWN-8F3K',
+      stUploading: is('uploading'), stPaused: is('upload-paused-offline'), stQueued: is('queued'),
+      stProcessing: is('processing'), stCompleted: is('completed'), stFailed: is('failed'), stCancelled: is('cancelled'),
+      segs, bytes: fmt1(upMb) + ' MB / ' + fmt1(totMb) + ' MB',
+      queuePos: p.queuePos ?? 2,
+      stages, elapsedLabel: 'decorrido ' + t,
+      resultLine: r.points + ' pontos · vídeo ' + r.video + ' · processado em ' + r.took,
+      errorMsg: errs[p.errorCode ?? 'no-motion'],
+      onCancel: () => p.onCancel && p.onCancel(),
+      onRetry: () => p.onRetry && p.onRetry(),
+      onOpenMap: () => p.onOpenMap && p.onOpenMap(),
+      onRecapture: () => p.onRecapture && p.onRecapture()
+    };
+  }
+}
+</script>
+</body>
+</html>
