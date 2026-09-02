@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  findAuthorized,
-  maxUploadParts,
-  presignPart,
-  InvalidStateError,
-} from "@/lib/services/scans";
+import { maxUploadParts, presignPart, InvalidStateError } from "@/lib/services/scans";
+import { authorizeRead } from "@/lib/services/share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -36,15 +32,22 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   }
 
   // Token errado, scan inexistente e link vencido respondem IGUAL (404).
-  const scan = await findAuthorized(id, parsed.data.shareToken);
-  if (!scan) {
+  const auth = await authorizeRead(id, parsed.data.shareToken);
+  if (!auth) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }
+  // Capability no SERVIDOR (#47): convidado é somente-leitura.
+  if (auth.role === "guest") {
+    return NextResponse.json({ error: "link somente-leitura" }, { status: 403 });
+  }
+  const scan = auth.scan;
 
   const cap = maxUploadParts();
   if (parsed.data.partNumber > cap) {
     return NextResponse.json(
-      { error: `parte ${parsed.data.partNumber} excede o teto do produto (${cap} partes)` },
+      {
+        error: `parte ${parsed.data.partNumber} excede o teto do produto (${cap} partes)`,
+      },
       { status: 413 },
     );
   }

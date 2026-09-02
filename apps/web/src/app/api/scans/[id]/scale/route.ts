@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { findAuthorized } from "@/lib/services/scans";
+import { authorizeRead } from "@/lib/services/share-links";
 
 export const dynamic = "force-dynamic";
 
@@ -33,10 +33,15 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
     );
   }
 
-  const scan = await findAuthorized(id, parsed.data.shareToken);
-  if (!scan) {
+  const auth = await authorizeRead(id, parsed.data.shareToken);
+  if (!auth) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }
+  // Capability no SERVIDOR (#47): convidado é somente-leitura.
+  if (auth.role === "guest") {
+    return NextResponse.json({ error: "link somente-leitura" }, { status: 403 });
+  }
+  const scan = auth.scan;
 
   const { factor, method, refPoints } = parsed.data;
   const updated = await db.scan.update({

@@ -101,7 +101,9 @@ export function AdminView(p: AdminViewProps) {
             {t("admin", "loginSubmit")}
           </button>
         </form>
-        <p className="mt-3 text-xs leading-relaxed text-faint">{t("admin", "loginHint")}</p>
+        <p className="mt-3 text-xs leading-relaxed text-faint">
+          {t("admin", "loginHint")}
+        </p>
       </main>
     );
   }
@@ -170,7 +172,10 @@ export function AdminView(p: AdminViewProps) {
             .replace("{lim}", String(p.maxPerDay))
             .replace("{custo}", p.totalCost.toFixed(2))}
         </p>
-        <nav className="mt-4 flex gap-1 border-b border-line" aria-label={t("admin", "title")}>
+        <nav
+          className="mt-4 flex gap-1 border-b border-line"
+          aria-label={t("admin", "title")}
+        >
           {nav.map((label, i) => {
             const [plug, handler] = navPlugs[i]!;
             const ativa =
@@ -197,7 +202,9 @@ export function AdminView(p: AdminViewProps) {
       {view === "projects" && (
         <section>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <h2 className="text-sm font-semibold text-mist">{t("admin", "projectsTitle")}</h2>
+            <h2 className="text-sm font-semibold text-mist">
+              {t("admin", "projectsTitle")}
+            </h2>
             <div className="ml-auto flex gap-2">
               <input
                 value={novoNome}
@@ -227,7 +234,10 @@ export function AdminView(p: AdminViewProps) {
                 >
                   <span className="text-sm font-medium">{pr.name}</span>
                   <span className="font-mono text-[11px] text-faint">
-                    {t("admin", "projectLink")} ·{pr.revoked ? ` ${t("admin", "projectRevoked")}` : ` /p/${pr.captureToken.slice(0, 8)}…`}
+                    {t("admin", "projectLink")} ·
+                    {pr.revoked
+                      ? ` ${t("admin", "projectRevoked")}`
+                      : ` /p/${pr.captureToken.slice(0, 8)}…`}
                   </span>
                   <span className="ml-auto flex gap-2">
                     <button
@@ -236,7 +246,9 @@ export function AdminView(p: AdminViewProps) {
                       disabled={pr.revoked}
                       className="rounded-lg border border-line-strong px-3 py-1.5 font-mono text-xs text-cyan disabled:opacity-40"
                     >
-                      {copiedId === pr.id ? t("admin", "projectCopied") : t("admin", "projectCopy")}
+                      {copiedId === pr.id
+                        ? t("admin", "projectCopied")
+                        : t("admin", "projectCopy")}
                     </button>
                     <button
                       data-plug="admin.project.link.revoke"
@@ -271,122 +283,132 @@ export function AdminView(p: AdminViewProps) {
       )}
 
       {view === "jobs" && (
-      <section>
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-mist">{t("admin", "tableTitle")}</h2>
-          <div
-            data-plug="admin.job.filter"
-            role="group"
-            aria-label={t("admin", "filterAria")}
-            className="flex flex-wrap gap-1.5"
-          >
-            {(Object.keys(FILTRO_STATUS) as Filtro[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFiltro(f)}
-                className={`h-8 rounded-full border px-3 font-mono text-[11px] transition ${
-                  filtro === f
-                    ? "border-cyan bg-cyan/15 text-cyan"
-                    : "border-line text-mist hover:border-line-strong"
-                }`}
-              >
-                {t("admin", "filters")[f]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* D-3 (390 px): cards por linha no mobile; tabela de verdade em md+. */}
-        <div className="flex flex-col gap-2 md:hidden">
-          {rows.map((r) => (
-            <div key={r.id} className="rounded-lg border border-line bg-graphite p-3">
-              <div className="flex items-center gap-2">
-                <i className={`h-2 w-2 rounded-full ${STATUS_DOT[r.status] ?? "bg-mist"}`} />
-                <span className="font-mono text-xs">{r.id.slice(0, 8)}</span>
-                <span className="truncate text-sm">{r.title ?? "—"}</span>
-                <span className="ml-auto font-mono text-xs">
-                  {r.costUsd != null ? custoCell(r.costUsd, p.costAlertUsd) : "—"}
-                </span>
-              </div>
-              <div className="mt-2 flex items-center gap-2 font-mono text-[11px] text-mist">
-                {r.createdAt}
-                <span className="ml-auto flex gap-3">
-                  <button
-                    data-plug="admin.job.provenance.copy"
-                    onClick={() => copyProv(r)}
-                    className="text-cyan"
-                  >
-                    {copiedId === r.id ? t("admin", "copied") : t("admin", "copyProv")}
-                  </button>
-                  <a data-plug="admin.job.open" className="text-cyan underline" href={r.href}>
-                    {t("admin", "open")}
-                  </a>
-                </span>
-              </div>
+        <section>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-mist">
+              {t("admin", "tableTitle")}
+            </h2>
+            <div
+              data-plug="admin.job.filter"
+              role="group"
+              aria-label={t("admin", "filterAria")}
+              className="flex flex-wrap gap-1.5"
+            >
+              {(Object.keys(FILTRO_STATUS) as Filtro[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFiltro(f)}
+                  className={`h-8 rounded-full border px-3 font-mono text-[11px] transition ${
+                    filtro === f
+                      ? "border-cyan bg-cyan/15 text-cyan"
+                      : "border-line text-mist hover:border-line-strong"
+                  }`}
+                >
+                  {t("admin", "filters")[f]}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
 
-        <div className="hidden overflow-x-auto rounded-lg border border-line md:block">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-graphite font-mono text-[10px] tracking-wider text-mist uppercase">
-              <tr>
-                <th className="px-3 py-2.5">{t("admin", "cols").id}</th>
-                <th className="px-3 py-2.5">{t("admin", "cols").titulo}</th>
-                <th className="px-3 py-2.5">{t("admin", "cols").status}</th>
-                <th className="px-3 py-2.5">{t("admin", "cols").criado}</th>
-                <th className="px-3 py-2.5">{t("admin", "cols").video}</th>
-                <th className="px-3 py-2.5">{t("admin", "cols").custo}</th>
-                <th className="px-3 py-2.5"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className="border-t border-line">
-                  <td className="px-3 py-2.5 font-mono">{r.id.slice(0, 8)}</td>
-                  <td className="max-w-40 truncate px-3 py-2.5">{r.title ?? "—"}</td>
-                  <td className="px-3 py-2.5">
-                    <span className="inline-flex items-center gap-1.5">
-                      <i
-                        className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[r.status] ?? "bg-mist"}`}
-                      />
-                      {r.status}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-mist">{r.createdAt}</td>
-                  <td className="px-3 py-2.5 text-mist">
-                    {r.videoDeleted
-                      ? t("admin", "videoDeleted")
-                      : r.hasVideo
-                        ? t("admin", "videoOk")
-                        : "—"}
-                  </td>
-                  <td className="px-3 py-2.5 font-mono">
+          {/* D-3 (390 px): cards por linha no mobile; tabela de verdade em md+. */}
+          <div className="flex flex-col gap-2 md:hidden">
+            {rows.map((r) => (
+              <div key={r.id} className="rounded-lg border border-line bg-graphite p-3">
+                <div className="flex items-center gap-2">
+                  <i
+                    className={`h-2 w-2 rounded-full ${STATUS_DOT[r.status] ?? "bg-mist"}`}
+                  />
+                  <span className="font-mono text-xs">{r.id.slice(0, 8)}</span>
+                  <span className="truncate text-sm">{r.title ?? "—"}</span>
+                  <span className="ml-auto font-mono text-xs">
                     {r.costUsd != null ? custoCell(r.costUsd, p.costAlertUsd) : "—"}
-                  </td>
-                  <td className="flex gap-3 px-3 py-2.5">
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center gap-2 font-mono text-[11px] text-mist">
+                  {r.createdAt}
+                  <span className="ml-auto flex gap-3">
                     <button
                       data-plug="admin.job.provenance.copy"
                       onClick={() => copyProv(r)}
-                      className="font-mono text-cyan"
-                      title={t("admin", "copyProv")}
+                      className="text-cyan"
                     >
                       {copiedId === r.id ? t("admin", "copied") : t("admin", "copyProv")}
                     </button>
                     <a
                       data-plug="admin.job.open"
-                      className="text-cyan underline decoration-dotted underline-offset-2 hover:text-cyan-deep"
+                      className="text-cyan underline"
                       href={r.href}
                     >
                       {t("admin", "open")}
                     </a>
-                  </td>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto rounded-lg border border-line md:block">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-graphite font-mono text-[10px] tracking-wider text-mist uppercase">
+                <tr>
+                  <th className="px-3 py-2.5">{t("admin", "cols").id}</th>
+                  <th className="px-3 py-2.5">{t("admin", "cols").titulo}</th>
+                  <th className="px-3 py-2.5">{t("admin", "cols").status}</th>
+                  <th className="px-3 py-2.5">{t("admin", "cols").criado}</th>
+                  <th className="px-3 py-2.5">{t("admin", "cols").video}</th>
+                  <th className="px-3 py-2.5">{t("admin", "cols").custo}</th>
+                  <th className="px-3 py-2.5"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-t border-line">
+                    <td className="px-3 py-2.5 font-mono">{r.id.slice(0, 8)}</td>
+                    <td className="max-w-40 truncate px-3 py-2.5">{r.title ?? "—"}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="inline-flex items-center gap-1.5">
+                        <i
+                          className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[r.status] ?? "bg-mist"}`}
+                        />
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 font-mono text-mist">{r.createdAt}</td>
+                    <td className="px-3 py-2.5 text-mist">
+                      {r.videoDeleted
+                        ? t("admin", "videoDeleted")
+                        : r.hasVideo
+                          ? t("admin", "videoOk")
+                          : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 font-mono">
+                      {r.costUsd != null ? custoCell(r.costUsd, p.costAlertUsd) : "—"}
+                    </td>
+                    <td className="flex gap-3 px-3 py-2.5">
+                      <button
+                        data-plug="admin.job.provenance.copy"
+                        onClick={() => copyProv(r)}
+                        className="font-mono text-cyan"
+                        title={t("admin", "copyProv")}
+                      >
+                        {copiedId === r.id
+                          ? t("admin", "copied")
+                          : t("admin", "copyProv")}
+                      </button>
+                      <a
+                        data-plug="admin.job.open"
+                        className="text-cyan underline decoration-dotted underline-offset-2 hover:text-cyan-deep"
+                        href={r.href}
+                      >
+                        {t("admin", "open")}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </main>
   );
@@ -397,7 +419,9 @@ function custoCell(v: number, limiar: number) {
   return (
     <span
       className={acima ? "font-semibold text-danger" : undefined}
-      title={acima ? t("admin", "aboveThreshold").replace("{v}", String(limiar)) : undefined}
+      title={
+        acima ? t("admin", "aboveThreshold").replace("{v}", String(limiar)) : undefined
+      }
     >
       ${v.toFixed(3)}
     </span>

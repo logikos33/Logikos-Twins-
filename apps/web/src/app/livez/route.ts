@@ -10,7 +10,6 @@ export const dynamic = "force-dynamic";
 export function GET() {
   return NextResponse.json({
     status: "ok",
-    commit:
-      process.env.GIT_COMMIT_SHA ?? process.env.RAILWAY_GIT_COMMIT_SHA ?? "unknown",
+    commit: process.env.GIT_COMMIT_SHA ?? process.env.RAILWAY_GIT_COMMIT_SHA ?? "unknown",
   });
 }

@@ -34,7 +34,9 @@ const DETECTIONS = {
   ],
 };
 const ANNOTATIONS = {
-  annotations: [{ id: "a1", type: "pin", position: [0, 1, 0], data: { text: "Vazamento" } }],
+  annotations: [
+    { id: "a1", type: "pin", position: [0, 1, 0], data: { text: "Vazamento" } },
+  ],
 };
 
 beforeEach(() => {
@@ -42,11 +44,15 @@ beforeEach(() => {
     "fetch",
     vi.fn(async (url: RequestInfo | URL) => {
       const u = String(url);
+      if (u.includes("/share")) return jsonRes({ links: [] });
       if (u.includes("/annotations")) return jsonRes(ANNOTATIONS);
       if (u.includes("/detections")) return jsonRes(DETECTIONS);
       if (u.includes("poses")) return jsonRes({ frames: [], keyframes: [] });
       // HEAD da nuvem (Content-Length do chip de LOD)
-      return new Response(null, { status: 200, headers: { "content-length": "9437184" } });
+      return new Response(null, {
+        status: 200,
+        headers: { "content-length": "9437184" },
+      });
     }),
   );
 });
@@ -80,7 +86,7 @@ async function renderReady() {
 
 /** Estados do contrato SEM engenharia ainda (issue #47) — nomeados de propósito:
  *  se o contrato mudar, este teste quebra e força a revisão. */
-const PENDENTES_47 = ["loading-full", "share"];
+const PENDENTES_47 = ["loading-full"];
 
 describe("gate de plugs — tela viewer (contrato v1.2)", () => {
   const tela = contractScreen("viewer");
@@ -93,6 +99,7 @@ describe("gate de plugs — tela viewer (contrato v1.2)", () => {
       "tool-annotate",
       "tool-search",
       "layers",
+      "share",
       "error",
     ];
     expect([...cobertos, ...PENDENTES_47].sort()).toEqual([...tela.states].sort());
@@ -155,6 +162,19 @@ describe("gate de plugs — tela viewer (contrato v1.2)", () => {
     expect(container.querySelectorAll('[data-plug="layers.set"]')).toHaveLength(4);
   });
 
+  it("share: sheet do dono com validade/criar — o link do DONO nunca é compartilhado", async () => {
+    const { container } = await renderReady();
+    fireEvent.click(container.querySelector('[data-plug="share.create"]')!);
+    await waitFor(() =>
+      expect(container.querySelector('[data-state="share"]')).not.toBeNull(),
+    );
+    expect(container.querySelectorAll('[data-plug="share.validity.set"]')).toHaveLength(
+      3,
+    );
+    // nada na sheet aponta para /scan/<id>?token= (o link do dono)
+    expect(container.innerHTML).not.toContain("/scan/s1?token=");
+  });
+
   it("zero data-plug fora do contrato em todos os estados exercitados", async () => {
     const { container, getByText } = await renderReady();
     for (const acao of [
@@ -163,8 +183,8 @@ describe("gate de plugs — tela viewer (contrato v1.2)", () => {
       () => fireEvent.click(container.querySelector('[data-plug="layers.toggle"]')!),
     ]) {
       act(acao);
-      const plugs = [...container.querySelectorAll("[data-plug]")].map(
-        (e) => e.getAttribute("data-plug")!,
+      const plugs = [...container.querySelectorAll("[data-plug]")].map((e) =>
+        e.getAttribute("data-plug")!,
       );
       const foreign = checkPlugs(container, "viewer", "x", []).foreign;
       expect(foreign, plugs.join(",")).toEqual([]);

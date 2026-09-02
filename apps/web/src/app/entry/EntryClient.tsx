@@ -100,7 +100,9 @@ export function EntryClient({ state, projectName, maps, captureHref }: EntryProp
               <span aria-hidden="true" className="text-mist">
                 ?
               </span>
-              <span className="text-[13.5px] font-medium">{t("entry", "guideTitle")}</span>
+              <span className="text-[13.5px] font-medium">
+                {t("entry", "guideTitle")}
+              </span>
               <span
                 aria-hidden="true"
                 className="ml-auto text-mist"

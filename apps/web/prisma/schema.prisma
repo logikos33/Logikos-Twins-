@@ -66,6 +66,8 @@ model Scan {
   // marca quando a faxina apagou, e null significa "ainda existe".
   videoDeletedAt DateTime? @map("video_deleted_at") @db.Timestamptz()
 
+  shareLinks ShareLink[]
+
   // Multipart em andamento — precisa sobreviver entre requisições, porque cada
   // parte é assinada num request separado durante a gravação.
   uploadId String? @map("upload_id")
@@ -92,6 +94,20 @@ model Scan {
 
   @@index([status, createdAt])
   @@map("scans")
+}
+
+model ShareLink {
+  id        String    @id @default(uuid()) @db.Uuid
+  scanId    String    @map("scan_id") @db.Uuid
+  scan      Scan      @relation(fields: [scanId], references: [id])
+  // Token do CONVIDADO — capacidade somente-leitura, checada no servidor.
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz()
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz()
+  views     Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("share_links")
 }
 
 model Annotation {

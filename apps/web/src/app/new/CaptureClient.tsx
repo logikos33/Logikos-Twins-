@@ -31,7 +31,8 @@ export function CaptureClient({
   captureToken?: string;
 }) {
   const router = useRouter();
-  const { state, videoRef, openCamera, start, stop, toggleTorch } = useRecorder(maxSeconds);
+  const { state, videoRef, openCamera, start, stop, toggleTorch } =
+    useRecorder(maxSeconds);
   const [showFallback, setShowFallback] = useState(false);
   const [blurFaces, setBlurFaces] = useState(false);
   const [instrOpen, setInstrOpen] = useState(true);
@@ -48,6 +49,7 @@ export function CaptureClient({
   useEffect(() => {
     const local = ["localhost", "127.0.0.1"].includes(window.location.hostname);
     if (window.location.protocol !== "https:" && !local) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- detecção de contexto (http sem câmera) só existe no cliente; roda uma vez no mount
       setInsecure(true);
       return;
     }

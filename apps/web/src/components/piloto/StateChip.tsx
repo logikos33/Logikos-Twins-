@@ -10,15 +10,29 @@ import type { JobStateKind } from "@/lib/piloto/job-state";
 
 const CHIP: Record<JobStateKind, { palavra: string; cor: string; icone: string }> = {
   uploading: { palavra: "enviando", cor: "var(--color-record)", icone: "●" },
-  "upload-paused-offline": { palavra: "envio pausado — offline", cor: "var(--color-warning)", icone: "⏸" },
+  "upload-paused-offline": {
+    palavra: "envio pausado — offline",
+    cor: "var(--color-warning)",
+    icone: "⏸",
+  },
   queued: { palavra: "na fila", cor: "var(--color-status-processing)", icone: "≡" },
-  processing: { palavra: "reconstruindo", cor: "var(--color-status-processing)", icone: "▣" },
+  processing: {
+    palavra: "reconstruindo",
+    cor: "var(--color-status-processing)",
+    icone: "▣",
+  },
   completed: { palavra: "pronto", cor: "var(--color-success)", icone: "✓" },
   failed: { palavra: "falhou", cor: "var(--color-danger)", icone: "✕" },
   cancelled: { palavra: "cancelado", cor: "var(--color-faint)", icone: "⊘" },
 };
 
-export function StateChip({ kind, stage }: { kind: JobStateKind; stage?: string | null }) {
+export function StateChip({
+  kind,
+  stage,
+}: {
+  kind: JobStateKind;
+  stage?: string | null;
+}) {
   const c = CHIP[kind];
   return (
     <span
@@ -28,7 +42,9 @@ export function StateChip({ kind, stage }: { kind: JobStateKind; stage?: string 
     >
       <span aria-hidden="true">{c.icone}</span>
       {c.palavra}
-      {kind === "processing" && stage ? <span className="text-faint">· {stage}</span> : null}
+      {kind === "processing" && stage ? (
+        <span className="text-faint">· {stage}</span>
+      ) : null}
     </span>
   );
 }

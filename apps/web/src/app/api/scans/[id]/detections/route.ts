@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { findAuthorized, findById } from "@/lib/services/scans";
+import { authorizeRead } from "@/lib/services/share-links";
+import { findById } from "@/lib/services/scans";
 import { isValidWebhookToken } from "@/lib/services/processing";
 
 export const dynamic = "force-dynamic";
@@ -75,7 +76,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
 
   // findAuthorized = token certo E link não vencido — este GET tinha ESCAPADO
   // do rewiring do PR #27 (achado da varredura da Camada A).
-  const scan = await findAuthorized(id, token);
+  const auth = await authorizeRead(id, token);
+  const scan = auth?.scan;
   if (!scan) {
     return NextResponse.json({ error: "scan não encontrado" }, { status: 404 });
   }

@@ -42,11 +42,14 @@ export default async function AdminPage() {
   const dayStart = new Date();
   dayStart.setUTCHours(0, 0, 0, 0);
 
-  let totalCost = 0;
+  const totalCost = scans.reduce((sum, s) => {
+    const m = (s.metrics ?? {}) as Record<string, unknown>;
+    const c = m["cost_usd_est"];
+    return sum + (typeof c === "number" ? c : 0);
+  }, 0);
   const rows: AdminRow[] = scans.map((s) => {
     const m = (s.metrics ?? {}) as Record<string, unknown>;
     const cost = typeof m["cost_usd_est"] === "number" ? m["cost_usd_est"] : null;
-    if (cost) totalCost += cost;
     return {
       id: s.id,
       title: s.title,

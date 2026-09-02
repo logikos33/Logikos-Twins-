@@ -292,7 +292,18 @@
     "lodChip": "nuvem · {mb} MB",
     "lodFullSoon": "nuvem cheia — em breve",
     "lodAria": "Qualidade da nuvem",
-    "tagAria": "Etiqueta da anotação"
+    "tagAria": "Etiqueta da anotação",
+    "shareSheetTitle": "Compartilhar somente-leitura",
+    "shareValidity": "Validade",
+    "shareDay1": "1 dia",
+    "shareDay7": "7 dias",
+    "shareDay30": "30 dias",
+    "shareCreate": "Gerar link",
+    "shareCopy": "Copiar",
+    "shareWhatsapp": "WhatsApp",
+    "shareRevoke": "Revogar",
+    "shareViews": "{n} visualizações",
+    "shareNone": "Nenhum link ativo. Gere um com validade."
   },
   "shared": {
     "readOnlyChip": "Somente leitura",
@@ -302,7 +313,9 @@
     "tools": [
       "Buscar",
       "Camadas"
-    ]
+    ],
+    "loading": "Carregando o mapa compartilhado…",
+    "readOnlyBadge": "somente leitura"
   },
   "admin": {
     "login": {

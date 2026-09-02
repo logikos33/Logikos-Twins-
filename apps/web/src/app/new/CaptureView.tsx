@@ -124,7 +124,9 @@ export function CaptureView(p: CaptureViewProps) {
           >
             <IconX className="h-[22px] w-[22px]" />
           </Link>
-          <span className="k-label text-[10px] text-mist">{t("capture", "screenLabel")}</span>
+          <span className="k-label text-[10px] text-mist">
+            {t("capture", "screenLabel")}
+          </span>
           <button
             aria-label={t("capture", "reopenGuide")}
             onClick={() => p.onToggleInstr(true)}
@@ -206,9 +208,7 @@ export function CaptureView(p: CaptureViewProps) {
                 </li>
               ))}
             </ol>
-            {p.errorDetail && (
-              <p className="mt-3 text-xs text-faint">{p.errorDetail}</p>
-            )}
+            {p.errorDetail && <p className="mt-3 text-xs text-faint">{p.errorDetail}</p>}
             <button
               data-plug="capture.fallback-file"
               onClick={p.onFallback}
@@ -244,7 +244,9 @@ export function CaptureView(p: CaptureViewProps) {
         {p.state === "portrait-hint" && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-ink/80 p-6 text-center">
             <IconPhoneH className="h-10 w-10 rotate-90 text-cyan" />
-            <p className="font-display text-lg font-medium">{t("capture", "portraitHint")}</p>
+            <p className="font-display text-lg font-medium">
+              {t("capture", "portraitHint")}
+            </p>
             <p className="text-sm text-mist">{t("capture", "portraitHintSub")}</p>
             <button
               data-plug="capture.guide.dismiss"
@@ -285,7 +287,9 @@ export function CaptureView(p: CaptureViewProps) {
 
         {p.instrOpen && controls && (
           <div className="absolute inset-x-2.5 bottom-[calc(env(safe-area-inset-bottom,0px)+16px)] z-20 rounded-xl border border-line bg-graphite/95 p-4 shadow-sheet backdrop-blur-md sm:right-6 sm:left-auto sm:w-[380px] sm:bottom-6">
-            <h2 className="font-display text-[17px] font-bold">{t("capture", "instrTitle")}</h2>
+            <h2 className="font-display text-[17px] font-bold">
+              {t("capture", "instrTitle")}
+            </h2>
             <ul className="mt-2.5 space-y-2 text-[13px]">
               <li className="flex items-center gap-2.5">
                 <IconPhoneH className="h-5 w-5 flex-none text-cyan" />
@@ -298,7 +302,9 @@ export function CaptureView(p: CaptureViewProps) {
                 <IconSteps className="h-5 w-5 flex-none text-cyan" />
                 <span>
                   <b className="font-semibold">{t("capture", "instrPace")}</b>{" "}
-                  <span className="font-mono text-mist">{t("capture", "instrPaceSub")}</span>
+                  <span className="font-mono text-mist">
+                    {t("capture", "instrPaceSub")}
+                  </span>
                 </span>
               </li>
               <li className="flex items-center gap-2.5">
@@ -324,7 +330,9 @@ export function CaptureView(p: CaptureViewProps) {
             <div className="-mx-4 my-3 h-px bg-line" />
             <label className="flex min-h-(--tap) cursor-pointer items-center justify-between gap-3">
               <span>
-                <span className="block text-sm font-medium">{t("capture", "blurTitle")}</span>
+                <span className="block text-sm font-medium">
+                  {t("capture", "blurTitle")}
+                </span>
                 <span className="block text-xs text-mist">{t("capture", "blurSub")}</span>
               </span>
               <span className="relative h-[30px] w-[50px] flex-none">

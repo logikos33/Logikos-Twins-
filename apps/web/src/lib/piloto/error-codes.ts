@@ -27,17 +27,22 @@ export type ErrorCode = (typeof ERROR_CODES)[number];
 
 /** Mensagem de PRODUTO por código — a string técnica fica no log/metrics. */
 export const ERROR_MESSAGES: Record<ErrorCode, string> = {
-  "invalid-body": "O aplicativo enviou dados que o servidor não entendeu. Recarregue a página.",
-  "not-found": "Scan não encontrado. O link pode estar incompleto, vencido ou o scan foi removido.",
+  "invalid-body":
+    "O aplicativo enviou dados que o servidor não entendeu. Recarregue a página.",
+  "not-found":
+    "Scan não encontrado. O link pode estar incompleto, vencido ou o scan foi removido.",
   "unauthorized-webhook": "Chamada interna não autorizada.",
-  "limit-exceeded": "Um limite do piloto foi atingido (tamanho, duração ou scans por dia).",
+  "limit-exceeded":
+    "Um limite do piloto foi atingido (tamanho, duração ou scans por dia).",
   "unsupported-media": "Formato de vídeo não suportado — use MP4, WebM ou MOV.",
   "upload-conflict": "Este scan não aceita mais envio — grave um novo.",
   "dispatch-failed":
     "O vídeo chegou, mas o processamento não pôde ser iniciado. Tente de novo em instantes.",
-  "processing-failed": "O processamento falhou. Grave de novo — se repetir, fale com o operador.",
+  "processing-failed":
+    "O processamento falhou. Grave de novo — se repetir, fale com o operador.",
   "upload-abandoned": "A gravação foi abandonada antes do envio terminar.",
-  "viewer-load-failed": "Não foi possível carregar o mapa. O link continua válido — tente de novo.",
+  "viewer-load-failed":
+    "Não foi possível carregar o mapa. O link continua válido — tente de novo.",
   "internal-error": "Algo falhou do nosso lado. Tente de novo em instantes.",
   unknown: "Algo inesperado aconteceu. Tente de novo — se repetir, fale com o operador.",
 };
@@ -48,8 +53,10 @@ const SCAN_ERROR_PATTERNS: ReadonlyArray<readonly [RegExp, ErrorCode]> = [
   [/Gravação abandonada/i, "upload-abandoned"],
   [/excede o limite/i, "limit-exceeded"],
   // Famílias técnicas do worker (chegam verbatim do pipeline — issue de contrato):
-  [/ffmpeg|normaliz|frame|extra[çc]|blur|YuNet|infer|motor|GPU|CUDA|sm75|artifact|NPZ|npz|upload|boto|S3/i,
-    "processing-failed"],
+  [
+    /ffmpeg|normaliz|frame|extra[çc]|blur|YuNet|infer|motor|GPU|CUDA|sm75|artifact|NPZ|npz|upload|boto|S3/i,
+    "processing-failed",
+  ],
 ];
 
 /** errorMsg persistido do scan → código do contrato. Total, com fallback legível. */

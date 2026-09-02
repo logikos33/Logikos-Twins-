@@ -44,7 +44,11 @@ export function fromScanStatus(
     | "postprocessing"
     | "done"
     | "error",
-  opts: { sentParts?: number; stage?: ProcessingStage | null; errorCode?: ErrorCode } = {},
+  opts: {
+    sentParts?: number;
+    stage?: ProcessingStage | null;
+    errorCode?: ErrorCode;
+  } = {},
 ): JobState {
   switch (status) {
     case "recording":

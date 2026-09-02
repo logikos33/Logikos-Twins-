@@ -61,8 +61,11 @@ export function checkPlugs(
 export function assertPlugs(check: PlugCheck): void {
   const problemas: string[] = [];
   if (check.missing.length) problemas.push(`faltando: ${check.missing.join(", ")}`);
-  if (check.duplicated.length) problemas.push(`duplicados: ${check.duplicated.join(", ")}`);
-  if (check.foreign.length) problemas.push(`FORA DO CONTRATO: ${check.foreign.join(", ")}`);
+  if (check.duplicated.length)
+    problemas.push(`duplicados: ${check.duplicated.join(", ")}`);
+  if (check.foreign.length)
+    problemas.push(`FORA DO CONTRATO: ${check.foreign.join(", ")}`);
   if (!check.rootOk) problemas.push("raiz sem data-screen/data-state corretos");
-  if (problemas.length) throw new Error(`gate de plugs reprovou — ${problemas.join(" · ")}`);
+  if (problemas.length)
+    throw new Error(`gate de plugs reprovou — ${problemas.join(" · ")}`);
 }
