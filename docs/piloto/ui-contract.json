@@ -86,6 +86,7 @@
         "permission-denied",
         "unsupported",
         "https-required",
+        "in-app-browser",
         "idle",
         "recording",
         "stopping",
@@ -96,7 +97,8 @@
         "capture.stop",
         "capture.torch",
         "capture.fallback-file",
-        "capture.guide.dismiss"
+        "capture.guide.dismiss",
+        "capture.open-external"
       ],
       "limits": {
         "maxDurationS": 120,

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PartBuffer } from "./partBuffer";
 import { UploadQueue, type PartUploadResult } from "./uploadQueue";
 import { makeUploadPart } from "./upload-part";
+import { MIME_CANDIDATES, pickMimeType } from "./support";
 
 /**
  * Orquestra a captura ao vivo (ADR-0008):
@@ -37,6 +38,9 @@ export type RecorderState = {
   shareToken: string | null;
   /** Navegador não suporta captura — a página mostra o fallback de arquivo. */
   unsupported: boolean;
+  /** Motivo TÉCNICO do unsupported/denied (err.name, mime) — nunca vai à UI
+   *  aberta; aparece recolhido no fallback e na /diag para diagnóstico. */
+  reason: string | null;
   /** Permissão de câmera negada (NotAllowedError) — estado próprio no contrato. */
   denied: boolean;
   /** Lanterna ligada (quando o hardware suporta torch). */
@@ -44,24 +48,6 @@ export type RecorderState = {
 };
 
 const TIMESLICE_MS = 3000;
-
-// Ordem de preferência de container: o worker normaliza tudo (D3), mas H.264
-// poupa a conversão. `isTypeSupported` decide por navegador.
-const MIME_CANDIDATES = [
-  "video/mp4;codecs=avc1",
-  "video/mp4",
-  "video/webm;codecs=vp9",
-  "video/webm;codecs=vp8",
-  "video/webm",
-];
-
-function pickMimeType(): string | null {
-  if (typeof MediaRecorder === "undefined") return null;
-  for (const candidate of MIME_CANDIDATES) {
-    if (MediaRecorder.isTypeSupported(candidate)) return candidate;
-  }
-  return null;
-}
 
 async function api<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -88,6 +74,7 @@ export function useRecorder(maxSeconds: number) {
     scanId: null,
     shareToken: null,
     unsupported: false,
+    reason: null,
   });
 
   const streamRef = useRef<MediaStream | null>(null);
@@ -117,6 +104,7 @@ export function useRecorder(maxSeconds: number) {
       patch({
         unsupported: true,
         phase: "error",
+        reason: "getUserMedia:ausente",
         error: "Câmera não disponível neste navegador.",
       });
       return;
@@ -125,6 +113,10 @@ export function useRecorder(maxSeconds: number) {
       patch({
         unsupported: true,
         phase: "error",
+        reason:
+          typeof MediaRecorder === "undefined"
+            ? "MediaRecorder:ausente"
+            : `mime:nenhum de ${MIME_CANDIDATES.length} aceito`,
         error: "Gravação de vídeo não suportada neste navegador.",
       });
       return;
@@ -150,13 +142,26 @@ export function useRecorder(maxSeconds: number) {
       }
       patch({ phase: "ready" });
     } catch (err) {
-      const negada = err instanceof DOMException && err.name === "NotAllowedError";
+      const nome = err instanceof DOMException ? err.name : "Error";
+      if (nome === "NotAllowedError" || nome === "SecurityError") {
+        // SecurityError: política do navegador/webview bloqueou — o caminho de
+        // recuperação é o mesmo da permissão negada (reabrir permissões).
+        patch({
+          phase: "error",
+          denied: true,
+          reason: nome,
+          error:
+            "Permissão de câmera negada. Libere a câmera nas configurações do navegador.",
+        });
+        return;
+      }
+      // NotFoundError (sem câmera), NotSupportedError, NotReadableError,
+      // OverconstrainedError… → sem captura ao vivo AQUI; fallback de câmera nativa.
       patch({
         phase: "error",
-        denied: negada,
-        error: negada
-          ? "Permissão de câmera negada. Libere a câmera nas configurações do navegador."
-          : `Não foi possível abrir a câmera: ${String(err)}`,
+        unsupported: true,
+        reason: nome,
+        error: `Não foi possível abrir a câmera: ${String(err)}`,
       });
     }
   }, [patch]);

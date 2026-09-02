@@ -8,6 +8,7 @@ import {
   UploadPartCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  ListMultipartUploadsCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -231,6 +232,20 @@ export async function abortMultipart(key: string, uploadId: string): Promise<voi
       Key: key,
       UploadId: uploadId,
     }),
+  );
+}
+
+/** Multiparts pendentes do bucket — para a limpeza de uploads abandonados. */
+export async function listPendingMultiparts(): Promise<
+  { key: string; uploadId: string; initiatedAt: Date | null }[]
+> {
+  const res = await client().send(
+    new ListMultipartUploadsCommand({ Bucket: env().S3_BUCKET }),
+  );
+  return (res.Uploads ?? []).flatMap((u) =>
+    u.Key && u.UploadId
+      ? [{ key: u.Key, uploadId: u.UploadId, initiatedAt: u.Initiated ?? null }]
+      : [],
   );
 }
 

@@ -93,6 +93,7 @@ export default function DevStatesPage() {
               "permission-denied",
               "unsupported",
               "https-required",
+              "in-app-browser",
               "idle",
               "recording",
               "stopping",
@@ -104,6 +105,7 @@ export default function DevStatesPage() {
               <div className="h-[560px] overflow-hidden rounded-xl border border-line">
                 <CaptureView
                   state={st}
+                  onOpenExternal={() => undefined}
                   elapsedS={st === "stopping" ? 120 : 42}
                   maxSeconds={120}
                   partsSent={5}

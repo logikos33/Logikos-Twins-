@@ -765,3 +765,24 @@ credencial R2 do bucket; daqui em diante toda resposta de PATCH é filtrada.
   livre (aguardar); `initializing preso` = imagem/template.
 - e2e da rodada: cancel+retry pelas rotas novas do #45 destravou o scan em
   produção; job terminou em 66,4 s de exec, US$ 0,0461, VRAM 13,5 GB.
+
+## [2026-09-03] Rodada "gravar no celular": uma tela por causa, capture=environment, higiene de multipart
+
+- AUDITORIA: a gravação do Vitor de 02/09 SUBIU EM PARTE — scan `ceaf8b0a` com 4
+  partes/27,4 MB pendentes no R2 e `complete` nunca chamado. Ou seja: além do
+  webview (1ª tentativa, tela "não grava"), há um 2º modo de falha real: fechar
+  a aba antes de PARAR perde a gravação em silêncio. Dois órfãos de teste
+  (01/09) abortados; limpeza agora é automática (`upload-hygiene.ts`, 5 min,
+  multipart >24 h + scan recording/uploading >24 h → error).
+- DETECÇÃO: `support.ts` puro com ordem-contrato (https → webview → APIs → ok),
+  `isSecureContext` no lugar de `location.protocol`, estado NOVO
+  `in-app-browser` no contrato (+ plug `capture.open-external`). Cada
+  `err.name` do getUserMedia com seu destino; motivo técnico em `state.reason`.
+- FALLBACK: `capture="environment"` (não existia — o toque abria a GALERIA);
+  texto "Gravar com a câmera do celular"; duração validada no cliente via
+  metadata ANTES de subir (antes: `durationS: null` = o 422 do servidor NUNCA
+  disparava no fallback); FileFallback entrou no gate no-hardcode (tinha
+  literais e magenta).
+- PROVA 150 MB pelo proxy em produção: 18×8 MB, 32,3 s, 37,2 Mbps, memória pico
+  0,18 GB — sem complete (GPU US$ 0), lixo limpo.
+- `/diag` público e zero-coleta para o print do Vitor.
