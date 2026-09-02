@@ -23,7 +23,13 @@ import { t } from "@/lib/piloto/strings";
 const INSTR_KEY = "twins.instr.dismissed";
 const HINT_KEY = "twins.portrait.dismissed";
 
-export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
+export function CaptureClient({
+  maxSeconds,
+  captureToken,
+}: {
+  maxSeconds: number;
+  captureToken?: string;
+}) {
   const router = useRouter();
   const { state, videoRef, openCamera, start, stop, toggleTorch } = useRecorder(maxSeconds);
   const [showFallback, setShowFallback] = useState(false);
@@ -72,6 +78,7 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
   if (showFallback || state.unsupported) {
     return (
       <FileFallback
+        captureToken={captureToken}
         reason={state.unsupported ? tUnsupportedReason() : undefined}
         onBack={state.unsupported ? undefined : () => setShowFallback(false)}
       />
@@ -104,7 +111,7 @@ export function CaptureClient({ maxSeconds }: { maxSeconds: number }) {
       instrOpen={instrOpen && (state.phase === "ready" || state.phase === "idle")}
       blurFaces={blurFaces}
       errorDetail={state.phase === "error" ? state.error : null}
-      onStart={() => void start(blurFaces)}
+      onStart={() => void start(blurFaces, captureToken)}
       onStop={() => void stop()}
       onTorch={() => void toggleTorch()}
       onFallback={() => setShowFallback(true)}

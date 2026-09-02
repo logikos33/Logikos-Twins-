@@ -27,9 +27,11 @@ export interface EntryProps {
   state: EntryState;
   projectName: string;
   maps: EntryMap[];
+  /** Destino do CTA de gravar (rota pública /p/:token/capturar; default /new). */
+  captureHref?: string;
 }
 
-export function EntryClient({ state, projectName, maps }: EntryProps) {
+export function EntryClient({ state, projectName, maps, captureHref }: EntryProps) {
   const router = useRouter();
   const [guideOpen, setGuideOpen] = useState(false);
 
@@ -81,7 +83,7 @@ export function EntryClient({ state, projectName, maps }: EntryProps) {
         <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-4 pb-6 pt-3.5">
           <button
             data-plug="entry.capture.open"
-            onClick={() => router.push("/new")}
+            onClick={() => router.push(captureHref ?? "/new")}
             className="flex h-[52px] items-center justify-center gap-2 rounded-xl bg-cyan text-[15px] font-semibold text-ink active:scale-[0.97]"
           >
             <span aria-hidden="true">▣</span>

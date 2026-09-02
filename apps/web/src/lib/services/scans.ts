@@ -42,6 +42,7 @@ export async function createScan(params: {
   title?: string;
   mimeType: string;
   blurFaces?: boolean;
+  projectId?: string;
 }): Promise<CreatedScan> {
   const ext = extForMime(params.mimeType);
   if (!ext) {
@@ -57,6 +58,7 @@ export async function createScan(params: {
       videoExt: ext,
       extractFps: env().EXTRACT_FPS,
       blurFaces: params.blurFaces ?? false,
+      projectId: params.projectId ?? null,
       status: "recording",
     },
   });

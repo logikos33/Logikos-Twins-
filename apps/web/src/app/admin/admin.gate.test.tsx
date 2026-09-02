@@ -18,6 +18,15 @@ const ROW: AdminRow = {
 };
 
 const BASE = {
+  projects: [
+    {
+      id: "p1",
+      name: "Galpão Vila Anchieta",
+      captureToken: "tok_projeto_1",
+      createdAt: "2026-09-02",
+      revoked: false,
+    },
+  ],
   rows: [ROW, { ...ROW, id: "efgh5678-y", costUsd: 0.1, status: "error" }],
   today: 2,
   maxPerDay: 20,
@@ -28,7 +37,6 @@ const BASE = {
 
 /** Estados do contrato SEM tela ainda — nomeados: mudança no contrato quebra aqui. */
 const PENDENTES = {
-  projects: 38,
   "project-detail": 38,
   "job-detail": 45,
   links: 47,
@@ -42,7 +50,7 @@ describe("gate de plugs — tela admin (contrato v1.2)", () => {
   const tela = contractScreen("admin");
 
   it("estados cobertos + pendentes nomeados = contrato", () => {
-    expect(["login", "jobs", ...Object.keys(PENDENTES)].sort()).toEqual(
+    expect(["login", "jobs", "projects", ...Object.keys(PENDENTES)].sort()).toEqual(
       [...tela.states].sort(),
     );
   });
@@ -74,6 +82,23 @@ describe("gate de plugs — tela admin (contrato v1.2)", () => {
     expect(
       container.querySelectorAll('[data-plug="admin.job.provenance.copy"]').length,
     ).toBeGreaterThanOrEqual(2);
+  });
+
+  it("projects: nav ativa + create e copy/revoke POR ITEM", () => {
+    const { container } = render(<AdminView authed {...BASE} />);
+    fireEvent.click(container.querySelector('[data-plug="admin.nav.projects"]')!);
+    const check = checkPlugs(container, "admin", "projects", [
+      "admin.nav.projects",
+      "admin.nav.jobs",
+      "admin.nav.links",
+      "admin.nav.config",
+      "admin.project.create",
+      "admin.project.link.copy",
+      "admin.project.link.revoke",
+    ]);
+    expect(check.missing).toEqual([]);
+    expect(check.foreign).toEqual([]);
+    expect(check.rootOk).toBe(true);
   });
 
   it("filtro funciona: 'Falhou' deixa só a linha error", () => {

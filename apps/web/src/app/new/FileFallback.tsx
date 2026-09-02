@@ -34,9 +34,11 @@ async function api<T>(path: string, body: unknown): Promise<T> {
 }
 
 export function FileFallback({
+  captureToken,
   reason,
   onBack,
 }: {
+  captureToken?: string;
   reason?: string;
   onBack?: () => void;
 }) {
@@ -55,6 +57,7 @@ export function FileFallback({
     try {
       const mimeType = file.type || "video/mp4";
       const created = await api<{ scanId: string; shareToken: string }>("/api/scans", {
+        captureToken,
         mimeType,
         title: file.name.replace(/\.[^.]+$/, ""),
       });

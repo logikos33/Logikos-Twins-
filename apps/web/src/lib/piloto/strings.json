@@ -422,7 +422,17 @@
     "copied": "copiado ✓",
     "videoDeleted": "apagado (retenção)",
     "videoOk": "ok",
-    "aboveThreshold": "acima do limiar de US$ {v}"
+    "aboveThreshold": "acima do limiar de US$ {v}",
+    "projectsTitle": "Projetos",
+    "projectNew": "Novo projeto",
+    "projectName": "Nome do cliente/espaço",
+    "projectCreate": "Criar",
+    "projectLink": "link de captura",
+    "projectCopy": "Copiar link",
+    "projectCopied": "copiado ✓",
+    "projectRevoke": "Revogar",
+    "projectRevoked": "revogado",
+    "projectEmpty": "Nenhum projeto ainda. Crie o primeiro e envie o link ao cliente."
   },
   "devStates": {
     "title": "Estados — QA e cobertura do contrato",
