@@ -33,7 +33,8 @@ const BASE = {
   totalCost: 1.0,
   costAlertUsd: 0.75,
   errors: [{ id: "efgh5678-y", createdAt: "2026-09-02 05:10", msg: "ffmpeg falhou" }],
-  config: { usdBrlRate: 5.5, gpuUsdPerS: 0.000694 },
+  config: { usdBrlRate: 5.5, gpuUsdPerS: 0.000694, costAlertUsd: 2 },
+  watchdogAlert: null,
 };
 
 /** Estados do contrato SEM tela ainda — nomeados: mudança no contrato quebra aqui. */
@@ -106,7 +107,7 @@ describe("gate de plugs — tela admin (contrato v1.2)", () => {
     fireEvent.click(getAllByText("Config")[0]!);
     expect(container.querySelector('[data-state="config"]')).not.toBeNull();
     expect(container.querySelector('[data-plug="admin.config.save"]')).not.toBeNull();
-    expect(container.querySelectorAll('input[type="number"]')).toHaveLength(2);
+    expect(container.querySelectorAll('input[type="number"]')).toHaveLength(3);
   });
 
   it("filtro funciona: 'Falhou' deixa só a linha error", () => {

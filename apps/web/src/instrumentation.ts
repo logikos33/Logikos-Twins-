@@ -13,6 +13,7 @@ export async function register(): Promise<void> {
   const { reconcileStuckScans } = await import("@/lib/services/processing");
   const { runRetention } = await import("@/lib/services/retention");
   const { runUploadHygiene } = await import("@/lib/services/upload-hygiene");
+  const { runWatchdog } = await import("@/lib/services/watchdog");
 
   const INTERVAL_MS = 60_000;
   setInterval(() => {
@@ -29,6 +30,7 @@ export async function register(): Promise<void> {
   const RETENTION_INTERVAL_MS = 5 * 60_000;
   setInterval(() => {
     void runUploadHygiene();
+    runWatchdog().catch((err) => console.error("watchdog falhou:", err));
     runRetention()
       .then((n) => {
         if (n > 0) console.warn(`retenção: ${n} vídeo(s) bruto(s) apagado(s)`);

@@ -61,12 +61,14 @@ function readDuration(file: File): Promise<number | null> {
 export function FileFallback({
   captureToken,
   maxSeconds,
+  minSeconds = 20,
   reason,
   technicalReason,
   onBack,
 }: {
   captureToken?: string;
   maxSeconds: number;
+  minSeconds?: number;
   reason?: string;
   technicalReason?: string | null;
   onBack?: () => void;
@@ -85,10 +87,21 @@ export function FileFallback({
 
     // Limites do produto ANTES de gastar rede — errorCode limit-exceeded.
     const durationS = await readDuration(file);
-    const limite = checkFileLimits(file.size, durationS, maxSeconds, MAX_FILE_MB);
+    const limite = checkFileLimits(
+      file.size,
+      durationS,
+      maxSeconds,
+      MAX_FILE_MB,
+      minSeconds,
+    );
     if (limite === "too-big") {
       setPhase("error");
       setError(t("capture", "fallbackTooBig").replace("{mb}", String(MAX_FILE_MB)));
+      return;
+    }
+    if (limite === "too-short") {
+      setPhase("error");
+      setError(t("job", "errors")["video-too-short"]);
       return;
     }
     if (limite === "too-long") {

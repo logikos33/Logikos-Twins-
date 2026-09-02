@@ -45,6 +45,7 @@ export interface AdminViewProps {
   totalCost: number;
   costAlertUsd: number;
   config: PilotConfig;
+  watchdogAlert: { at: string; scanId: string; queuedMin: number } | null;
   errors: Array<{ id: string; createdAt: string; msg: string | null }>;
 }
 
@@ -205,6 +206,14 @@ export function AdminView(p: AdminViewProps) {
             .replace("{custo}", p.totalCost.toFixed(2))
             .replace("{brl}", (p.totalCost * cfg.usdBrlRate).toFixed(2))}
         </p>
+        {p.watchdogAlert && (
+          <p className="mt-2 rounded-md border border-line border-l-[3px] border-l-danger bg-graphite px-3 py-2 font-mono text-xs text-danger-soft">
+            {t("admin", "watchdogAlert")
+              .replace("{scan}", p.watchdogAlert.scanId.slice(0, 8))
+              .replace("{min}", String(p.watchdogAlert.queuedMin))
+              .replace("{at}", p.watchdogAlert.at.slice(11, 16))}
+          </p>
+        )}
         {rerunMsg && <p className="mt-2 font-mono text-xs text-warning">{rerunMsg}</p>}
         <nav
           className="mt-4 flex gap-1 border-b border-line"
@@ -243,6 +252,7 @@ export function AdminView(p: AdminViewProps) {
             [
               ["usdBrlRate", t("admin", "configUsdBrl")],
               ["gpuUsdPerS", t("admin", "configGpuUsd")],
+              ["costAlertUsd", t("admin", "configCostAlert")],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="mb-3 block text-xs text-mist">

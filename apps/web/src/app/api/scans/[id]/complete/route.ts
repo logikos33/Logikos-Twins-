@@ -53,6 +53,17 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const scan = auth.scan;
 
   const { durationS } = parsed.data;
+  // Mínimo do contrato (video-too-short): recusar ANTES de completar o multipart
+  // e enfileirar — gravação curta é dinheiro de GPU queimado e mapa ruim.
+  if (durationS !== null && durationS < env().MIN_VIDEO_SECONDS) {
+    return NextResponse.json(
+      {
+        error: `Vídeo de ${Math.round(durationS)}s fica abaixo do mínimo de ${env().MIN_VIDEO_SECONDS}s.`,
+        errorCode: "video-too-short",
+      },
+      { status: 422 },
+    );
+  }
   if (durationS !== null && durationS > env().MAX_VIDEO_SECONDS) {
     return NextResponse.json(
       {

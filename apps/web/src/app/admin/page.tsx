@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { CONFIG_DEFAULTS, getConfig } from "@/lib/services/app-config";
+import { lastWatchdogAlert } from "@/lib/services/watchdog";
 import { AdminView, type AdminProject, type AdminRow } from "./AdminView";
 import { listProjects } from "@/lib/services/projects";
 
@@ -26,8 +27,9 @@ export default async function AdminPage() {
         today={0}
         maxPerDay={env().MAX_SCANS_PER_DAY}
         totalCost={0}
-        costAlertUsd={env().COST_ALERT_USD}
+        costAlertUsd={CONFIG_DEFAULTS.costAlertUsd}
         config={CONFIG_DEFAULTS}
+        watchdogAlert={null}
         errors={[]}
       />
     );
@@ -78,8 +80,9 @@ export default async function AdminPage() {
       today={scans.filter((s) => s.createdAt >= dayStart).length}
       maxPerDay={env().MAX_SCANS_PER_DAY}
       totalCost={totalCost}
-      costAlertUsd={env().COST_ALERT_USD}
+      costAlertUsd={(await getConfig()).costAlertUsd}
       config={await getConfig()}
+      watchdogAlert={await lastWatchdogAlert()}
       errors={scans
         .filter((s) => s.status === "error")
         .slice(0, 20)

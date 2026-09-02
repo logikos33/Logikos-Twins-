@@ -98,4 +98,18 @@ describe("checkFileLimits — limites do fallback antes de gastar rede", () => {
   it("duração ilegível (metadata falhou) → passa; o servidor revalida", () => {
     expect(checkFileLimits(10 * 1024 * 1024, null, 120)).toBeNull();
   });
+
+  // Bloco 2 da régua: 10 recusa · 20 aceita · 120 aceita · 121 recusa
+  it("10 s → too-short (contrato minDurationS)", () => {
+    expect(checkFileLimits(10 * 1024 * 1024, 10, 120)).toBe("too-short");
+  });
+  it("20 s exatos → aceita", () => {
+    expect(checkFileLimits(10 * 1024 * 1024, 20, 120)).toBeNull();
+  });
+  it("120 s exatos → aceita", () => {
+    expect(checkFileLimits(10 * 1024 * 1024, 120, 120)).toBeNull();
+  });
+  it("121 s → too-long", () => {
+    expect(checkFileLimits(10 * 1024 * 1024, 121, 120)).toBe("too-long");
+  });
 });

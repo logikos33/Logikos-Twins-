@@ -10,11 +10,17 @@ import { db } from "@/lib/db";
 export type PilotConfig = {
   usdBrlRate: number;
   gpuUsdPerS: number;
+  /** Limiar de destaque de custo por scan no admin. Régua real (2026-09-04):
+   *  US$ 0,118 por 10 s de vídeo vertical → ~US$ 1,42 aos 120 s. O antigo 0,75
+   *  dispararia em quase todo scan real — alerta que sempre dispara é alerta
+   *  que ninguém lê. 2,00 = "saiu do normal". */
+  costAlertUsd: number;
 };
 
 export const CONFIG_DEFAULTS: PilotConfig = {
   usdBrlRate: 5.5,
   gpuUsdPerS: 0.000694,
+  costAlertUsd: 2.0,
 };
 
 export async function getConfig(): Promise<PilotConfig> {

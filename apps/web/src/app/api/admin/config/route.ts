@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 const putSchema = z.object({
   usdBrlRate: z.number().positive().max(1000).optional(),
   gpuUsdPerS: z.number().positive().max(1).optional(),
+  costAlertUsd: z.number().positive().max(100).optional(),
 });
 
 function authed(req: NextRequest): boolean {
