@@ -4,6 +4,7 @@ import { devStatesEnabled } from "@/lib/piloto/dev-flag";
 import { STRINGS } from "@/lib/piloto/strings";
 import { EntryClient } from "@/app/entry/EntryClient";
 import { CaptureView, type CaptureState } from "@/app/new/CaptureView";
+import { JobBody, type JobStatus } from "@/app/scan/[id]/JobBody";
 import { ERROR_CODES, ERROR_MESSAGES } from "@/lib/piloto/error-codes";
 import { PROCESSING_STAGES, type JobState } from "@/lib/piloto/job-state";
 
@@ -121,6 +122,39 @@ export default function DevStatesPage() {
                       </span>
                     </div>
                   }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-mist">tela job — 7 estados do contrato</h2>
+        <div className="space-y-6">
+          {(
+            [
+              "uploading",
+              "upload-paused-offline",
+              "queued",
+              "processing",
+              "done",
+              "error",
+              "cancelled",
+            ] as JobStatus[]
+          ).map((st) => (
+            <div key={st}>
+              <p className="mb-1 font-mono text-xs text-faint">job · {st}</p>
+              <div className="max-h-[640px] overflow-hidden rounded-xl border border-line">
+                <JobBody
+                  status={st}
+                  title="Galpão Vila Anchieta"
+                  durationS={108}
+                  rawError={st === "error" ? "exit 4: reconstrução abortada" : null}
+                  copied={false}
+                  onCopyLink={() => undefined}
+                  onCancel={() => undefined}
+                  onRetry={() => undefined}
                 />
               </div>
             </div>
