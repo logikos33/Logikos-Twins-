@@ -14,7 +14,7 @@ Convenções deste documento:
 ## 1. Princípios herdados do manual (governam tudo abaixo)
 
 1. **Proporção de uso: 70% preto · 20% branco-cinza · 10% acento.** O acento **nunca vira fundo de página**. [manual]
-2. **Magenta `#FF2E63` ("Magenta Glitch") aparece apenas no glitch e em micro-detalhes.** [manual] — a tradução para o produto (§3.2) trata gravação/erro como os "micro-detalhes" críticos do produto. [extensão do manual]
+2. **Magenta `#FF2E63` ("Magenta Glitch") aparece APENAS no glitch.** [manual] — D-1 do piloto (2026-09-02) revogou a extensão que o usava em gravação/erro: estado usa a paleta semântica do §3.2, magenta nunca em UI operacional.
 3. **Tom de voz:** direto, técnico sem jargão, frases curtas, números quando há números. "A marca prova, não promete." [manual] — vale para toda microcopy, inclusive estados de espera (nunca inventar progresso).
 4. **Motion de marca:** curto e seco (`steps()`, não easing suave), 0,4–0,6 s, sempre terminando em repouso; glitch nunca em loop. [manual] — navegação 3D usa easing suave por ser motion *funcional*, não de marca (ver MOTION-SPEC §1). [extensão do manual]
 5. **Personalidade:** "o encontro entre um filósofo grego e um engenheiro de IA" — racional, precisa, discreta-mas-confiante. Nada de UI barulhenta.
@@ -50,21 +50,21 @@ Convenções deste documento:
   --color-accent:         var(--color-cyan);       /* CTA, links, foco, seleção */
   --color-accent-press:   var(--color-cyan-deep);  /* hover/active de CTA [manual: "hover"] */
   --color-on-accent:      var(--color-ink);        /* texto sobre ciano (12,8:1) */
-  --color-record:         var(--color-magenta);    /* botão de gravar + indicador ao vivo [extensão] */
-  --color-danger:         var(--color-magenta);    /* erro — ícones, bordas, fills de chip [extensão] */
+  --color-record:         #f5f7fa;                 /* gravando: branco-gelo pulsante + ponto + palavra (D-1 do piloto: magenta é SÓ glitch; ciano nunca é estado) */
+  --color-danger:         #ff5a36;                 /* erro — ícones, bordas, fills de chip (D-1: fora do magenta) */
   --color-danger-text:    #ff5c85;  /* texto de erro sobre superfícies (≥5,2:1) [extensão] */
   --color-success:        #2ee6a3;  /* verde-menta: pronto/confirmações [extensão] */
   --color-warning:        #ffb224;  /* âmbar: fila/quotas/atenção [extensão] */
 
   /* ── Status do scan (8 estados da API) ───────────────────── */
   --color-status-created:    var(--color-mist);     /* criado */
-  --color-status-recording:  var(--color-magenta);  /* gravando (ao vivo) */
+  --color-status-recording:  var(--color-record);   /* gravando (ao vivo) — D-1 */
   --color-status-uploading:  var(--color-cyan);     /* recebendo */
   --color-status-queued:     var(--color-warning);  /* na fila */
   --color-status-processing: var(--color-cyan);     /* reconstruindo (com pulso) */
   --color-status-finalizing: var(--color-cyan);     /* finalizando */
   --color-status-done:       var(--color-success);  /* pronto */
-  --color-status-failed:     var(--color-magenta);  /* falhou */
+  --color-status-failed:     var(--color-danger);   /* falhou — D-1 */
 
   /* ── Classes de detecção (cor estável por rótulo) [extensão] ─
      Paleta categórica que NÃO colide com o ciano de UI.
@@ -151,14 +151,19 @@ Convenções deste documento:
 
 ### 3.2 Magenta: a tradução mais sensível
 
-O manual restringe `#FF2E63` a "glitch e micro-detalhes" **na marca**. O produto, porém, precisa de:
-(a) um **botão de gravar** — o componente mais importante do produto; (b) estados de **erro**.
+O manual restringe `#FF2E63` a "glitch e micro-detalhes" **na marca**. A extensão
+anterior deste doc o usava também em gravar/erro — **revogada pelo D-1 do piloto
+(2026-09-02)**: magenta NUNCA em UI operacional; ciano NUNCA significa estado;
+estado sempre com **cor + ícone + palavra** (WCAG 1.4.1).
 
-Tradução proposta [extensão do manual]:
+Paleta semântica de estado vigente:
 
-- **`record`/`danger` = #FF2E63**, com orçamento visual de micro-detalhe: botão de gravar, ponto pulsante "ao vivo", timer nos últimos 15 s, bordas/ícones de erro, chip "falhou". Nunca em áreas grandes, nunca como fundo. Isso preserva a regra 70/20/10 e conversa com a convenção universal de REC vermelho.
-- **`danger-text` = #FF5C85** — `#FF2E63` como *texto* sobre `surface-2` fica em 4,27:1 (reprova AA por pouco). Para parágrafos/mensagens de erro sobre superfícies usa-se este tom clareado (5,2–6,7:1). `#FF2E63` continua válido para texto sobre `bg`/`surface-1` (5,5 / 5,1:1) e para grafismos.
-- Texto **sobre** magenta (chip "falhou" preenchido): usar `ink` `#0a0a0f` (5,5:1). **Nunca branco** (3,6:1 — reprova AA de texto normal).
+- **`danger` = #FF5A36** — erro/falhou (bordas, ícones, chips; texto sobre superfícies usa `danger-text`).
+- **`record` = #F5F7FA (branco-gelo)** — gravando: ponto pulsante em steps + a palavra. Não colide com erro, atenção nem com o ciano de interação.
+- **`success`/`warning`** — os tokens já existentes (`#2EE6A3` / `#FFB224`).
+- **processando = Névoa `#8A8F98` + ícone.**
+- **`danger-text` = #FF5C85** — tom clareado para parágrafos/mensagens de erro sobre superfícies (5,2–6,7:1); `danger #FF5A36` fica para bordas, ícones e chips. (`#FF2E63` permanece APENAS no glitch decorativo.)
+- Chip "falhou" preenchido usa `--color-danger #ff5a36` com texto `ink #0a0a0f` (D-1); a regra do magenta segue valendo só para o glitch decorativo.
 
 ### 3.3 Ciano: acento único de interação
 
@@ -175,13 +180,13 @@ O manual não define verde/âmbar. Propostas: `#2ee6a3` (verde-menta, 12,2:1 —
 | Estado (API) | Rótulo pt-BR | Cor | Anim. |
 |---|---|---|---|
 | `created` | criado | `mist` | — |
-| `recording` | gravando | `magenta` | ponto pulsante 1 s |
+| `recording` | gravando | `record` (branco-gelo, D-1) | ponto pulsante 1 s, steps |
 | `uploading` | recebendo o vídeo | `cyan` | barra indeterminada |
 | `queued` | na fila | `warning` | — |
 | `processing` | reconstruindo em 3D | `cyan` | pulso 2 s |
 | `finalizing` | finalizando o mapa | `cyan` | pulso 2 s |
 | `done` | pronto | `success` | — |
-| `failed` | falhou | `magenta` | — |
+| `failed` | falhou | `danger` `#ff5a36` (D-1) | — |
 
 Regra: chips de status = ponto colorido + rótulo `text` sobre `surface-2` (nunca depender só da cor — acessibilidade para daltônicos; o rótulo textual é obrigatório).
 

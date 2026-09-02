@@ -26,6 +26,12 @@
   --color-surface-2: #23242f; /* superfície elevada (sheets/inputs)       */
   --color-faint: #5c6470; /* SÓ desabilitado/decoração (3,3:1)        */
   --color-danger-soft: #ff5c85; /* texto de erro sobre superfícies (≥5,2:1) */
+  /* Extensão semântica de ESTADO (D-1 do piloto): magenta é SÓ glitch; estado
+     comunica-se com cor+ícone+palavra. Gravando é branco-gelo pulsante — não
+     colide com erro, atenção nem com o ciano de interação. */
+  --color-danger: #ff5a36; /* erro/falhou — chips, bordas, ícones     */
+  --color-record: #f5f7fa; /* gravando — ponto pulsante + palavra     */
+  --color-status-processing: var(--color-mist); /* processando (Névoa + ícone) */
   --color-success: #2ee6a3;
   --color-warning: #ffb224;
   --color-line: rgb(244 246 248 / 0.08);
