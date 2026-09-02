@@ -13,6 +13,8 @@ export const ARQUIVOS_CONVERTIDOS = [
   "app/entry/EntryClient.tsx",
   "app/entry/page.tsx",
   "components/piloto/MapChip.tsx",
+  "app/new/CaptureView.tsx",
+  "app/new/CaptureClient.tsx",
   "components/piloto/StateChip.tsx",
 ];
 

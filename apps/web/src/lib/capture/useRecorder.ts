@@ -36,6 +36,10 @@ export type RecorderState = {
   shareToken: string | null;
   /** Navegador não suporta captura — a página mostra o fallback de arquivo. */
   unsupported: boolean;
+  /** Permissão de câmera negada (NotAllowedError) — estado próprio no contrato. */
+  denied: boolean;
+  /** Lanterna ligada (quando o hardware suporta torch). */
+  torchOn: boolean;
 };
 
 const TIMESLICE_MS = 3000;
@@ -74,6 +78,8 @@ async function api<T>(path: string, body: unknown): Promise<T> {
 export function useRecorder(maxSeconds: number) {
   const [state, setState] = useState<RecorderState>({
     phase: "idle",
+    denied: false,
+    torchOn: false,
     elapsedS: 0,
     partsSent: 0,
     partsQueued: 0,
@@ -143,10 +149,12 @@ export function useRecorder(maxSeconds: number) {
       }
       patch({ phase: "ready" });
     } catch (err) {
+      const negada = err instanceof DOMException && err.name === "NotAllowedError";
       patch({
         phase: "error",
+        denied: negada,
         error:
-          err instanceof DOMException && err.name === "NotAllowedError"
+          negada
             ? "Permissão de câmera negada. Libere a câmera nas configurações do navegador."
             : `Não foi possível abrir a câmera: ${String(err)}`,
       });
@@ -297,5 +305,22 @@ export function useRecorder(maxSeconds: number) {
     };
   }, []);
 
-  return { state, videoRef, openCamera, start, stop };
+  // Lanterna: melhor-esforço — hardware sem torch ignora em silêncio (o botão
+  // continua no contrato; ligar sem suporte simplesmente não muda nada).
+  const toggleTorch = useCallback(async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    const caps = track.getCapabilities?.() as { torch?: boolean } | undefined;
+    if (!caps?.torch) return;
+    const atual = (track.getSettings() as { torch?: boolean }).torch ?? false;
+    const ligar = !atual;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: ligar } as MediaTrackConstraintSet] });
+      patch({ torchOn: ligar });
+    } catch {
+      // dispositivo recusou — estado não muda
+    }
+  }, [patch]);
+
+  return { state, videoRef, openCamera, start, stop, toggleTorch };
 }

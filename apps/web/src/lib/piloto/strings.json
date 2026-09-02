@@ -14,7 +14,12 @@
     "capture": "Gravar novo mapa",
     "mapsTitle": "Mapas do projeto",
     "guideTitle": "Como gravar bem",
-    "guide": ["Ande devagar", "Sem giros rápidos", "Luz acesa, sem contraluz", "60 a 120 s, celular na horizontal"],
+    "guide": [
+      "Ande devagar",
+      "Sem giros rápidos",
+      "Luz acesa, sem contraluz",
+      "60 a 120 s, celular na horizontal"
+    ],
     "chipDone": "Pronto",
     "chipProcessing": "Processando",
     "chipFailed": "Falhou",
@@ -28,7 +33,11 @@
     "permissionPrompt": "Precisamos da câmera para gravar o espaço.",
     "allow": "Permitir",
     "deniedTitle": "Câmera bloqueada no navegador",
-    "deniedSteps": ["Toque no cadeado (ou ⋮) na barra do navegador", "Abra as permissões do site", "Ative a câmera e recarregue"],
+    "deniedSteps": [
+      "Toque no cadeado (ou ⋮) na barra do navegador",
+      "Abra as permissões do site",
+      "Ative a câmera e recarregue"
+    ],
     "unsupported": "Este navegador não grava direto. Use “Enviar vídeo do celular”.",
     "httpsRequired": "A câmera exige conexão segura (https). Abra o link exatamente como o recebeu.",
     "fallback": "Enviar vídeo do celular",
@@ -42,7 +51,41 @@
     "partsShort": "{sent}/{total} partes",
     "portraitHint": "Vire o celular",
     "portraitHintSub": "O mapa fica melhor na horizontal.",
-    "portraitDismiss": "Continuar assim"
+    "portraitDismiss": "Continuar assim",
+    "screenLabel": "novo scan",
+    "close": "Fechar",
+    "reopenGuide": "Rever instruções",
+    "opening": "Abrindo a câmera…",
+    "openingSub": "Autorize o acesso quando o navegador pedir.",
+    "readyHint": "horizontal · 1 passo/s · feche a volta",
+    "recStart": "Começar a gravar",
+    "recStop": "Parar e processar",
+    "recKeepAwake": "tela ativa · não vai apagar",
+    "sendingLast": "Enviando as últimas partes…",
+    "dontClose": "Não feche esta página.",
+    "startsAlone": "O processamento começa sozinho.",
+    "sendingCount": "enviando {n} ✓",
+    "hintClose": "1 passo por segundo · feche a volta",
+    "hintEnding": "encerrando em 0:{ss} · feche a volta",
+    "instrTitle": "Como capturar bem",
+    "instrHorizontal": "Segure na horizontal.",
+    "instrHorizontalSub": "Aponte para onde quer mapear.",
+    "instrPace": "Ande devagar:",
+    "instrPaceSub": "1 passo/s. Sem giros bruscos.",
+    "instrLoop": "Feche a volta.",
+    "instrLoopSub": "Termine perto de onde começou.",
+    "instrLimit": "Limite:",
+    "instrLimitSub": "até {m} min. O envio acontece durante a filmagem.",
+    "blurTitle": "Borrar rostos",
+    "blurSub": "LGPD · desfoque automático no processamento",
+    "markerTitle": "Marcador de escala (PDF A4)",
+    "markerSub": "imprima e deixe no chão · escala automática em metros",
+    "lgpd": "O vídeo bruto é apagado após 7 dias; o mapa 3D e as fotos de evidência permanecem. Ao gravar, você concorda com o processamento das imagens.",
+    "instrGo": "Entendi, vamos filmar",
+    "deniedHeadline": "Sem acesso à câmera",
+    "nothingSent": "Nada foi gravado nem enviado — o vídeo só sai do aparelho durante a gravação.",
+    "fallbackDesktop": "Enviar um arquivo de vídeo",
+    "fallbackMobileLink": "ou envie um arquivo de vídeo (desktop / drone)"
   },
   "job": {
     "uploadingTitle": "Enviando o vídeo",
@@ -53,7 +96,13 @@
     "queuedPos": "posição {n}",
     "queuedNote": "Você pode voltar por este link depois.",
     "cancel": "Cancelar",
-    "stages": ["Extraindo frames", "Borrando rostos", "Reconstruindo o espaço", "Montando a nuvem", "Publicando"],
+    "stages": [
+      "Extraindo frames",
+      "Borrando rostos",
+      "Reconstruindo o espaço",
+      "Montando a nuvem",
+      "Publicando"
+    ],
     "elapsed": "decorrido {t}",
     "completedChip": "Mapa pronto",
     "openMap": "Abrir mapa",
@@ -76,7 +125,12 @@
     "lodLight": "Leve",
     "lodFull": "Cheia",
     "share": "Compartilhar",
-    "tools": ["Medir", "Anotar", "Buscar", "Camadas"],
+    "tools": [
+      "Medir",
+      "Anotar",
+      "Buscar",
+      "Camadas"
+    ],
     "measureFirst": "Toque no primeiro ponto",
     "measureSecond": "Toque no segundo ponto",
     "measureNote": "Precisão depende da gravação. Confira medidas críticas com trena.",
@@ -85,16 +139,34 @@
     "note": "Nota",
     "noteLimit": "até 140 caracteres",
     "tag": "Etiqueta",
-    "tags": ["Manutenção", "Segurança", "Estoque"],
+    "tags": [
+      "Manutenção",
+      "Segurança",
+      "Estoque"
+    ],
     "searchPlaceholder": "Onde está…?",
-    "searchExamples": ["mesa", "extintor", "empilhadeira"],
+    "searchExamples": [
+      "mesa",
+      "extintor",
+      "empilhadeira"
+    ],
     "searchCount": "{n} encontrados · {q}",
     "searchEmpty": "Nada encontrado para “{q}”.",
     "layersTitle": "Camadas",
-    "layers": ["Nuvem leve", "Nuvem cheia", "Pinos", "Objetos", "Trajetória da câmera"],
+    "layers": [
+      "Nuvem leve",
+      "Nuvem cheia",
+      "Pinos",
+      "Objetos",
+      "Trajetória da câmera"
+    ],
     "shareTitle": "Compartilhar mapa",
     "validity": "Validade",
-    "days": ["1 dia", "7 dias", "30 dias"],
+    "days": [
+      "1 dia",
+      "7 dias",
+      "30 dias"
+    ],
     "readOnly": "somente leitura",
     "copy": "Copiar",
     "whatsapp": "WhatsApp",
@@ -112,17 +184,101 @@
     "footer": "Válido até {date} · Logikos Twins",
     "expired": "Este link expirou. Peça um novo a quem compartilhou.",
     "revoked": "Este link foi revogado por quem enviou.",
-    "tools": ["Buscar", "Camadas"]
+    "tools": [
+      "Buscar",
+      "Camadas"
+    ]
   },
   "admin": {
-    "login": { "title": "Painel do operador", "email": "E-mail", "password": "Senha", "submit": "Entrar" },
-    "nav": ["Projetos", "Jobs", "Links", "Config"],
-    "projects": { "title": "Projetos", "new": "Novo projeto", "cols": ["Cliente", "Mapas", "Última atividade", "Link de captura"], "copyLink": "Copiar link", "revoke": "Revogar" },
-    "jobs": { "title": "Jobs", "filter": "Estado", "filters": ["Todos", "Na fila", "Processando", "Pronto", "Falhou"], "cols": ["Job", "Projeto", "Estado", "Etapa", "Vídeo", "Proc.", "GPU s", "Custo", "Proveniência"], "costAlert": "acima do limiar" },
-    "jobDetail": { "timeline": "Etapas", "provenance": "Proveniência", "archive": "Arquivar", "purge": "Apagar arquivos…", "rerun": "Reprocessar", "export": "Exportar PLY/LAS", "gpu": "GPU", "cost": "Custo estimado" },
-    "links": { "title": "Links compartilhados", "cols": ["Mapa", "Validade", "Visualizações", "Estado"], "revoke": "Revogar" },
-    "config": { "title": "Config do piloto", "maxDurationS": "Duração máx. do vídeo (s)", "maxSizeMb": "Tamanho máx. (MB)", "gpuUsdPerS": "Tarifa GPU (US$/s)", "defaultLinkDays": "Validade padrão do link (dias)", "rawVideoTtlDays": "Retenção do vídeo bruto (dias)", "ttlNote": "não ativado no piloto", "usdBrlRate": "Cotação US$ → R$", "costAlertUsd": "Alerta de custo por job (US$)", "save": "Salvar" },
-    "confirm": { "title": "Apagar arquivos do job {id}", "body": "Remove o vídeo e todos os artefatos do armazenamento. Ação irreversível.", "label": "Digite o ID do job para confirmar", "confirm": "Apagar arquivos", "cancel": "Cancelar" }
+    "login": {
+      "title": "Painel do operador",
+      "email": "E-mail",
+      "password": "Senha",
+      "submit": "Entrar"
+    },
+    "nav": [
+      "Projetos",
+      "Jobs",
+      "Links",
+      "Config"
+    ],
+    "projects": {
+      "title": "Projetos",
+      "new": "Novo projeto",
+      "cols": [
+        "Cliente",
+        "Mapas",
+        "Última atividade",
+        "Link de captura"
+      ],
+      "copyLink": "Copiar link",
+      "revoke": "Revogar"
+    },
+    "jobs": {
+      "title": "Jobs",
+      "filter": "Estado",
+      "filters": [
+        "Todos",
+        "Na fila",
+        "Processando",
+        "Pronto",
+        "Falhou"
+      ],
+      "cols": [
+        "Job",
+        "Projeto",
+        "Estado",
+        "Etapa",
+        "Vídeo",
+        "Proc.",
+        "GPU s",
+        "Custo",
+        "Proveniência"
+      ],
+      "costAlert": "acima do limiar"
+    },
+    "jobDetail": {
+      "timeline": "Etapas",
+      "provenance": "Proveniência",
+      "archive": "Arquivar",
+      "purge": "Apagar arquivos…",
+      "rerun": "Reprocessar",
+      "export": "Exportar PLY/LAS",
+      "gpu": "GPU",
+      "cost": "Custo estimado"
+    },
+    "links": {
+      "title": "Links compartilhados",
+      "cols": [
+        "Mapa",
+        "Validade",
+        "Visualizações",
+        "Estado"
+      ],
+      "revoke": "Revogar"
+    },
+    "config": {
+      "title": "Config do piloto",
+      "maxDurationS": "Duração máx. do vídeo (s)",
+      "maxSizeMb": "Tamanho máx. (MB)",
+      "gpuUsdPerS": "Tarifa GPU (US$/s)",
+      "defaultLinkDays": "Validade padrão do link (dias)",
+      "rawVideoTtlDays": "Retenção do vídeo bruto (dias)",
+      "ttlNote": "não ativado no piloto",
+      "usdBrlRate": "Cotação US$ → R$",
+      "costAlertUsd": "Alerta de custo por job (US$)",
+      "save": "Salvar"
+    },
+    "confirm": {
+      "title": "Apagar arquivos do job {id}",
+      "body": "Remove o vídeo e todos os artefatos do armazenamento. Ação irreversível.",
+      "label": "Digite o ID do job para confirmar",
+      "confirm": "Apagar arquivos",
+      "cancel": "Cancelar"
+    }
   },
-  "devStates": { "title": "Estados — QA e cobertura do contrato", "note": "Cada estado de cada tela, com dados fake." }
+  "devStates": {
+    "title": "Estados — QA e cobertura do contrato",
+    "note": "Cada estado de cada tela, com dados fake."
+  }
 }
