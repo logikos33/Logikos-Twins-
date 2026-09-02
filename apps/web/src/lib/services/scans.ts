@@ -81,15 +81,32 @@ export function maxUploadParts(maxVideoMb: number = env().MAX_VIDEO_MB): number 
   return Math.ceil((maxVideoMb * 1024 * 1024) / (5 * 1024 * 1024)) + 1;
 }
 
-/** Assina a parte N do multipart da gravação em andamento. */
-export async function presignPart(scan: Scan, partNumber: number): Promise<string> {
+/** Pré-condições de receber a parte N — compartilhadas por presign e proxy. */
+export function assertAcceptsParts(
+  scan: Scan,
+): asserts scan is Scan & { videoKey: string; uploadId: string } {
   if (!scan.videoKey || !scan.uploadId) {
     throw new InvalidStateError("scan sem upload multipart aberto");
   }
   if (scan.status !== "recording" && scan.status !== "uploading") {
     throw new InvalidStateError(`scan em '${scan.status}' não aceita mais partes`);
   }
+}
+
+/** Assina a parte N do multipart da gravação em andamento. */
+export async function presignPart(scan: Scan, partNumber: number): Promise<string> {
+  assertAcceptsParts(scan);
   return storage.presignUploadPart(scan.videoKey, scan.uploadId, partNumber);
+}
+
+/** Recebe a parte N pelo PROXY (D- do CORS): mesmo contrato do PUT presignado. */
+export async function uploadPartDirect(
+  scan: Scan,
+  partNumber: number,
+  body: Uint8Array,
+): Promise<string> {
+  assertAcceptsParts(scan);
+  return storage.uploadPartServer(scan.videoKey, scan.uploadId, partNumber, body);
 }
 
 /**

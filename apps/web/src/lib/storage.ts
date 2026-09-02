@@ -181,6 +181,29 @@ export async function presignUploadPart(
   );
 }
 
+/** UploadPart SERVER-SIDE (modo proxy, D- do CORS): o browser manda o chunk
+ * para a nossa rota same-origin e o servidor repassa ao R2 — dispensa CORS no
+ * bucket. Volta o ETag como no PUT presignado. */
+export async function uploadPartServer(
+  key: string,
+  uploadId: string,
+  partNumber: number,
+  body: Uint8Array,
+): Promise<string> {
+  const out = await client().send(
+    new UploadPartCommand({
+      Bucket: bucket(),
+      Key: key,
+      UploadId: uploadId,
+      PartNumber: partNumber,
+      Body: body,
+    }),
+  );
+  const etag = out.ETag?.replaceAll('"', "");
+  if (!etag) throw new Error(`parte ${partNumber} sem ETag do storage`);
+  return etag;
+}
+
 export async function completeMultipart(
   key: string,
   uploadId: string,

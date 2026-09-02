@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PartBuffer } from "./partBuffer";
 import { UploadQueue, type PartUploadResult } from "./uploadQueue";
+import { makeUploadPart } from "./upload-part";
 
 /**
  * Orquestra a captura ao vivo (ADR-0008):
@@ -177,19 +178,7 @@ export function useRecorder(maxSeconds: number) {
         });
 
         const queue = new UploadQueue(
-          async (partNumber, blob) => {
-            const { url } = await api<{ url: string }>(
-              `/api/scans/${created.scanId}/parts`,
-              { partNumber, shareToken: created.shareToken },
-            );
-            const put = await fetch(url, { method: "PUT", body: blob });
-            if (!put.ok)
-              throw new Error(`PUT da parte ${partNumber}: HTTP ${put.status}`);
-            // O ETag é a prova de recebimento — obrigatório no complete.
-            const etag = put.headers.get("ETag");
-            if (!etag) throw new Error(`parte ${partNumber} sem ETag na resposta`);
-            return etag;
-          },
+          makeUploadPart(created.scanId, created.shareToken),
           (sent, queued) => patch({ partsSent: sent, partsQueued: queued }),
         );
 

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PartBuffer } from "@/lib/capture/partBuffer";
 import { UploadQueue } from "@/lib/capture/uploadQueue";
+import { makeUploadPart } from "@/lib/capture/upload-part";
 import { IconBack, IconFile, IconShield, IconUpFile, IconX } from "@/components/icons";
 
 /**
@@ -62,17 +63,7 @@ export function FileFallback({
       setProgress({ sent: 0, total: totalParts });
 
       const queue = new UploadQueue(
-        async (partNumber, blob) => {
-          const { url } = await api<{ url: string }>(
-            `/api/scans/${created.scanId}/parts`,
-            { partNumber, shareToken: created.shareToken },
-          );
-          const put = await fetch(url, { method: "PUT", body: blob });
-          if (!put.ok) throw new Error(`PUT da parte ${partNumber}: HTTP ${put.status}`);
-          const etag = put.headers.get("ETag");
-          if (!etag) throw new Error(`parte ${partNumber} sem ETag`);
-          return etag;
-        },
+        makeUploadPart(created.scanId, created.shareToken),
         (sent) => setProgress((p) => ({ ...p, sent })),
       );
 
