@@ -223,3 +223,7 @@ cd ~/twins-piloto/wt-piloto-bloco1 && make test   # 83 + novos
 cd ~/twins-piloto/repo && git worktree add ~/twins-piloto/wt-piloto-bloco1 -b piloto/bloco1 origin/main
 # → bloco 1 (issue #9): worker/engine/lingbot.py residente, blur antes do motor, proveniência completa
 ```
+
+## Export do design (02/09/2026)
+
+- Export do Claude Design commitado em `design/piloto-mobile/` (commit `2113680`, 15 arquivos, 4.344 linhas). **Camada B do Bloco 4 destravada.** Verificação de contrato na data do commit: 46/46 `data-plug` do `ui-contract.json` presentes no DOM dos `.dc.html` (78 ocorrências, 47 valores distintos), zero `data-plug` estático fora do contrato, e `Viewer.dc.html` como único com plug dinâmico (`{{ rootPlug }}`) — o 47º valor. Dívidas registradas no `README.md` da pasta: três controles sem plug (`tg.pick`, `ex.go`, `dop.pick`) e divergência de cor `#3DDC84`/`#FFB020` contra `--color-success: #2EE6A3` / `--color-warning: #FFB224`.
